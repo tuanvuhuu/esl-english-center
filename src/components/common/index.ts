@@ -14,3 +14,5 @@ export { PageHeader } from './PageHeader';
 export { InfoRow } from './InfoRow';
 export { LoadingSpinner } from './LoadingSpinner';
 export { ConfirmDialog } from './ConfirmDialog';
+export { DataGrid } from './DataGrid';
+export type { DataGridColumn } from './DataGrid';

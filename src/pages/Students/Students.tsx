@@ -44,10 +44,9 @@ export const Students: React.FC = () => {
     refetch();
   };
 
-  const handleFormClose = () => {
-    setShowForm(false);
-    setEditStudent(null);
-  };
+  const viewTabs = (
+    <Tabs tabs={[{ id: 'table', label: '☰' }, { id: 'grid', label: '⊞' }]} active={viewMode} onChange={setViewMode} />
+  );
 
   return (
     <div>
@@ -57,46 +56,39 @@ export const Students: React.FC = () => {
         actions={<Button icon="plus" onClick={() => { setEditStudent(null); setShowForm(true); }}>Thêm học viên</Button>}
       />
 
-      <Card animate style={{ marginBottom: 20, padding: 16 }}>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: 200 }}>
-            <Input
-              placeholder="Tìm theo tên học viên, phụ huynh..."
-              value={search}
-              onChange={setSearch}
-              icon="search"
+      {viewMode === 'grid' && (
+        <Card animate style={{ marginBottom: 20, padding: 16 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <Input placeholder="Tìm theo tên học viên, phụ huynh..." value={search} onChange={setSearch} icon="search" />
+            </div>
+            <Select
+              value={filterLevel}
+              onChange={setFilterLevel}
+              options={[
+                { value: 'all', label: 'Tất cả trình độ' },
+                { value: 'A1', label: 'A1 · Starter' },
+                { value: 'A2', label: 'A2 · Elementary' },
+                { value: 'B1', label: 'B1 · Pre-Inter' },
+                { value: 'B2', label: 'B2 · Intermediate' },
+              ]}
+              style={{ minWidth: 160 }}
             />
+            <Select
+              value={filterStatus}
+              onChange={setFilterStatus}
+              options={[
+                { value: 'all', label: 'Tất cả trạng thái' },
+                { value: 'active', label: 'Đang học' },
+                { value: 'trial', label: 'Học thử' },
+                { value: 'paused', label: 'Tạm nghỉ' },
+              ]}
+              style={{ minWidth: 160 }}
+            />
+            {viewTabs}
           </div>
-          <Select
-            value={filterLevel}
-            onChange={setFilterLevel}
-            options={[
-              { value: 'all', label: 'Tất cả trình độ' },
-              { value: 'A1', label: 'A1 · Starter' },
-              { value: 'A2', label: 'A2 · Elementary' },
-              { value: 'B1', label: 'B1 · Pre-Inter' },
-              { value: 'B2', label: 'B2 · Intermediate' },
-            ]}
-            style={{ minWidth: 160 }}
-          />
-          <Select
-            value={filterStatus}
-            onChange={setFilterStatus}
-            options={[
-              { value: 'all', label: 'Tất cả trạng thái' },
-              { value: 'active', label: 'Đang học' },
-              { value: 'trial', label: 'Học thử' },
-              { value: 'paused', label: 'Tạm nghỉ' },
-            ]}
-            style={{ minWidth: 160 }}
-          />
-          <Tabs
-            tabs={[{ id: 'table', label: '☰' }, { id: 'grid', label: '⊞' }]}
-            active={viewMode}
-            onChange={setViewMode}
-          />
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {loading ? (
         <LoadingSpinner />
@@ -104,10 +96,12 @@ export const Students: React.FC = () => {
         <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
       ) : viewMode === 'table' ? (
         <StudentTable
-          students={filtered}
+          students={students}
+          subtitle={`${students.length} học viên · ${activeCount} đang học`}
           onSelectStudent={setSelectedStudent}
           onEdit={handleEdit}
           onDelete={setDeleteTarget}
+          actions={viewTabs}
         />
       ) : (
         <StudentGrid students={filtered} onSelectStudent={setSelectedStudent} />
@@ -117,7 +111,7 @@ export const Students: React.FC = () => {
 
       <StudentFormModal
         open={showForm}
-        onClose={handleFormClose}
+        onClose={() => { setShowForm(false); setEditStudent(null); }}
         onSuccess={refetch}
         student={editStudent}
       />

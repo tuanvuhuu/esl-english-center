@@ -9,7 +9,7 @@ export async function getTeachers() {
       teacher_subjects (
         subject: subjects ( id, name )
       ),
-      primary_branch: branches ( id, name )
+      primary_branch: branches!primary_branch_id ( id, name )
     `)
     .eq('is_deleted', false)
     .order('full_name')
@@ -24,7 +24,7 @@ export async function getTeacherById(id: string) {
     .select(`
       *,
       teacher_subjects ( subject: subjects ( id, name ) ),
-      primary_branch: branches ( id, name, address, phone )
+      primary_branch: branches!primary_branch_id ( id, name, address, phone )
     `)
     .eq('id', id)
     .eq('is_deleted', false)

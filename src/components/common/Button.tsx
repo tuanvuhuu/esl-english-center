@@ -28,10 +28,10 @@ export const Button: React.FC<ButtonProps> = ({
     danger: { bg: 'var(--error-light)', color: '#DC2626', hoverBg: '#FECACA', border: 'none' },
   };
 
-  const sizes = { 
-    sm: { p: '6px 12px', fs: 13 }, 
-    md: { p: '10px 18px', fs: 14 }, 
-    lg: { p: '12px 24px', fs: 15 } 
+  const sizes = {
+    sm: { p: '4px 8px',  fs: 11 },
+    md: { p: '6px 12px', fs: 12 },
+    lg: { p: '8px 16px', fs: 13 }
   };
 
   const v = variants[variant];

@@ -17,7 +17,7 @@ body {
   background: var(--bg);
   color: var(--text-1);
   font-family: var(--font);
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1.5;
   transition: background 0.35s, color 0.35s;
   -webkit-font-smoothing: antialiased;

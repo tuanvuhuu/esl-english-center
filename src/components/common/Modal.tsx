@@ -38,7 +38,7 @@ export const Modal: React.FC<ModalProps> = ({ open, onClose, title, children, wi
         background: 'var(--card)', 
         borderRadius: 20, 
         width: '100%', 
-        maxWidth: width, 
+        maxWidth: typeof width === 'number' ? width + 80 : width, 
         maxHeight: '90vh',
         overflow: 'auto', 
         boxShadow: 'var(--shadow-xl)', 

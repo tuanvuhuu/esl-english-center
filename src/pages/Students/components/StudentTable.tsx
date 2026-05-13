@@ -1,100 +1,114 @@
-import React from 'react';
-import { Card, Avatar, Badge, StatusBadge, Icon, EmptyState } from '../../../components';
-import type { Student } from '../../../types/data';
+import React from 'react'
+import { DataGrid, Avatar, Badge, StatusBadge, Icon } from '../../../components'
+import type { DataGridColumn } from '../../../components'
+import type { Student } from '../../../types/data'
 
 interface StudentTableProps {
-  students: Student[];
-  onSelectStudent: (student: Student) => void;
-  onEdit?: (student: Student) => void;
-  onDelete?: (student: Student) => void;
+  students: Student[]
+  onSelectStudent: (s: Student) => void
+  onEdit?: (s: Student) => void
+  onDelete?: (s: Student) => void
+  actions?: React.ReactNode
+  subtitle?: string
 }
 
-export const StudentTable: React.FC<StudentTableProps> = ({ students, onSelectStudent, onEdit, onDelete }) => {
+export const StudentTable: React.FC<StudentTableProps> = ({
+  students, onSelectStudent, onEdit, onDelete, actions, subtitle,
+}) => {
+  const columns: DataGridColumn<Student>[] = [
+    {
+      key: 'name',
+      title: 'Học viên',
+      filterable: true,
+      filterValue: s => s.name + ' ' + (s.parent ?? ''),
+      render: s => (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Avatar initials={s.avatar || s.name[0]} size={32} />
+          <div>
+            <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>{s.name}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
+              {s.enrollDate ? `Nhập học: ${s.enrollDate}` : `#${String(s.id).slice(0, 6)}`}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'dob',
+      title: 'Ngày sinh',
+      filterable: true,
+    },
+    {
+      key: 'level',
+      title: 'Trình độ',
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'A1', label: 'A1' },
+        { value: 'A2', label: 'A2' },
+        { value: 'B1', label: 'B1' },
+        { value: 'B2', label: 'B2' },
+      ],
+      render: s => <Badge variant="primary">{s.level}</Badge>,
+    },
+    {
+      key: 'parent',
+      title: 'Phụ huynh',
+      filterable: true,
+    },
+    { key: 'phone', title: 'SĐT', noWrap: true },
+    {
+      key: 'status',
+      title: 'Trạng thái',
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'active', label: 'Đang học' },
+        { value: 'trial', label: 'Học thử' },
+        { value: 'paused', label: 'Tạm nghỉ' },
+        { value: 'inactive', label: 'Nghỉ học' },
+      ],
+      render: s => <StatusBadge status={s.status} />,
+    },
+    {
+      key: '_actions',
+      title: '',
+      width: 72,
+      render: s => (
+        <div style={{ display: 'flex', gap: 4 }}>
+          {onEdit && (
+            <button
+              onClick={e => { e.stopPropagation(); onEdit(s) }}
+              title="Chỉnh sửa"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: 4, borderRadius: 6 }}
+            >
+              <Icon name="edit" size={14} />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={e => { e.stopPropagation(); onDelete(s) }}
+              title="Xoá"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)', padding: 4, borderRadius: 6 }}
+            >
+              <Icon name="trash" size={14} />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ]
+
   return (
-    <Card animate delay={80} style={{ padding: 0, overflow: 'hidden' }}>
-      <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: 'var(--table-header)', borderBottom: '1px solid var(--border)' }}>
-              {['Học viên', 'Ngày sinh', 'Trình độ', 'Phụ huynh', 'SĐT', 'Trạng thái', ''].map((h, i) => (
-                <th
-                  key={i}
-                  style={{
-                    padding: '12px 16px',
-                    textAlign: 'left',
-                    fontWeight: 600,
-                    color: 'var(--text-3)',
-                    whiteSpace: 'nowrap',
-                    fontSize: 12,
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {students.map((s, idx) => (
-              <tr
-                key={s.id}
-                onClick={() => onSelectStudent(s)}
-                style={{
-                  borderBottom: '1px solid var(--border-light)',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s',
-                  animation: `slideUp 0.3s ease ${idx * 30}ms both`,
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--table-row-hover)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <Avatar initials={s.avatar || s.name[0]} size={34} />
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>{s.name}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-                        {s.enrollDate ? `Nhập học: ${s.enrollDate}` : `#${String(s.id).slice(0, 6)}`}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td style={{ padding: '12px 16px', color: 'var(--text-2)' }}>{s.dob || '—'}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <Badge variant="primary">{s.level}</Badge>
-                </td>
-                <td style={{ padding: '12px 16px', color: 'var(--text-2)' }}>{s.parent || '—'}</td>
-                <td style={{ padding: '12px 16px', color: 'var(--text-2)', whiteSpace: 'nowrap' }}>{s.phone || '—'}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <StatusBadge status={s.status} />
-                </td>
-                <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {onEdit && (
-                      <button
-                        onClick={() => onEdit(s)}
-                        title="Chỉnh sửa"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: 4, borderRadius: 6 }}
-                      >
-                        <Icon name="edit" size={15} />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        onClick={() => onDelete(s)}
-                        title="Xoá"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--error)', padding: 4, borderRadius: 6 }}
-                      >
-                        <Icon name="trash" size={15} />
-                      </button>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {students.length === 0 && <EmptyState icon="users" title="Không tìm thấy học viên" desc="Thử thay đổi bộ lọc" />}
-    </Card>
-  );
-};
+    <DataGrid<Student>
+      title="Danh sách học viên"
+      subtitle={subtitle}
+      data={students}
+      columns={columns}
+      rowKey={s => s.id}
+      onRowClick={onSelectStudent}
+      exportFilename="hoc-vien"
+      actions={actions}
+    />
+  )
+}
