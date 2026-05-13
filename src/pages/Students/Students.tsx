@@ -1,40 +1,60 @@
 import React, { useState } from 'react';
-import { Card, Button, PageHeader, Input, Select, Tabs } from '../../components';
-import { STUDENTS_DATA } from '../../data';
+import { Card, Button, PageHeader, Input, Select, Tabs, LoadingSpinner, EmptyState, ConfirmDialog } from '../../components';
 import { StudentTable } from './components/StudentTable';
 import { StudentGrid } from './components/StudentGrid';
 import { StudentDetail } from './components/StudentDetail';
-import { AddStudentModal } from './components/AddStudentModal';
-import { Student } from '../../types/data';
+import { StudentFormModal } from './components/StudentFormModal';
+import type { Student } from '../../types/data';
+import { useQuery } from '../../hooks';
+import { getStudents, softDeleteStudent } from '../../services';
+import { mapStudent } from '../../lib/mappers';
 
 export const Students: React.FC = () => {
-  const [students] = useState<Student[]>(STUDENTS_DATA);
+  const { data: raw, loading, error, refetch } = useQuery(getStudents);
+  const students: Student[] = (raw ?? []).map(mapStudent);
+
   const [search, setSearch] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [showAdd, setShowAdd] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editStudent, setEditStudent] = useState<Student | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [viewMode, setViewMode] = useState('table');
 
   const filtered = students.filter(s => {
-    const ms =
-      s.name.toLowerCase().includes(search.toLowerCase()) || s.parent.toLowerCase().includes(search.toLowerCase());
+    const ms = s.name.toLowerCase().includes(search.toLowerCase()) ||
+               (s.parent ?? '').toLowerCase().includes(search.toLowerCase());
     const ml = filterLevel === 'all' || s.level === filterLevel;
     const mt = filterStatus === 'all' || s.status === filterStatus;
     return ms && ml && mt;
   });
 
-  const counts = {
-    all: students.length,
-    active: students.filter(s => s.status === 'active').length,
+  const activeCount = students.filter(s => s.status === 'active').length;
+
+  const handleEdit = (student: Student) => {
+    setEditStudent(student);
+    setShowForm(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await softDeleteStudent(String(deleteTarget.id));
+    setDeleteTarget(null);
+    refetch();
+  };
+
+  const handleFormClose = () => {
+    setShowForm(false);
+    setEditStudent(null);
   };
 
   return (
     <div>
       <PageHeader
         title="Quản lý học viên"
-        subtitle={`${students.length} học viên · ${counts.active} đang học`}
-        actions={<Button icon="plus" onClick={() => setShowAdd(true)}>Thêm học viên</Button>}
+        subtitle={`${students.length} học viên · ${activeCount} đang học`}
+        actions={<Button icon="plus" onClick={() => { setEditStudent(null); setShowForm(true); }}>Thêm học viên</Button>}
       />
 
       <Card animate style={{ marginBottom: 20, padding: 16 }}>
@@ -71,24 +91,45 @@ export const Students: React.FC = () => {
             style={{ minWidth: 160 }}
           />
           <Tabs
-            tabs={[
-              { id: 'table', label: '☰' },
-              { id: 'grid', label: '⊞' },
-            ]}
+            tabs={[{ id: 'table', label: '☰' }, { id: 'grid', label: '⊞' }]}
             active={viewMode}
             onChange={setViewMode}
           />
         </div>
       </Card>
 
-      {viewMode === 'table' ? (
-        <StudentTable students={filtered} onSelectStudent={setSelectedStudent} />
+      {loading ? (
+        <LoadingSpinner />
+      ) : error ? (
+        <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
+      ) : viewMode === 'table' ? (
+        <StudentTable
+          students={filtered}
+          onSelectStudent={setSelectedStudent}
+          onEdit={handleEdit}
+          onDelete={setDeleteTarget}
+        />
       ) : (
         <StudentGrid students={filtered} onSelectStudent={setSelectedStudent} />
       )}
 
       <StudentDetail student={selectedStudent} onClose={() => setSelectedStudent(null)} />
-      <AddStudentModal open={showAdd} onClose={() => setShowAdd(false)} />
+
+      <StudentFormModal
+        open={showForm}
+        onClose={handleFormClose}
+        onSuccess={refetch}
+        student={editStudent}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Xoá học viên"
+        message={`Bạn có chắc muốn xoá học viên "${deleteTarget?.name}"? Hành động này không thể hoàn tác.`}
+        confirmLabel="Xoá"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 };

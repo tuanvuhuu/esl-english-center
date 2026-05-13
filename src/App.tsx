@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Sidebar, Header } from './components';
 import { pageTitles, pageComponents } from './config/routers';
+import { useAuth } from './context/AuthContext';
+import { Login } from './pages/Login/Login';
 
 export default function App() {
+  const { session, loading: authLoading } = useAuth();
   const [page, setPage] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -17,6 +20,29 @@ export default function App() {
     window.addEventListener('resize', h);
     return () => window.removeEventListener('resize', h);
   }, []);
+
+  if (authLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'var(--bg)', fontFamily: 'var(--font)',
+      }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14,
+            background: 'linear-gradient(135deg, #FF6B35, #e85d04)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, fontWeight: 800, color: '#fff',
+          }}>E</div>
+          <div style={{ fontSize: 14, color: 'var(--text-3)' }}>Đang tải...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Login />;
+  }
 
   return (
     <div

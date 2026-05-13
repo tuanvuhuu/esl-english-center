@@ -12,3 +12,5 @@ export { FadeIn } from './FadeIn';
 export { EmptyState } from './EmptyState';
 export { PageHeader } from './PageHeader';
 export { InfoRow } from './InfoRow';
+export { LoadingSpinner } from './LoadingSpinner';
+export { ConfirmDialog } from './ConfirmDialog';

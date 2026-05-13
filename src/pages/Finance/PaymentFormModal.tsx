@@ -1,0 +1,139 @@
+import React, { useState, useEffect } from 'react'
+import { Modal, Input, Select, Button } from '../../components'
+import { createPayment, getStudents, getClasses } from '../../services'
+import { useQuery } from '../../hooks'
+
+interface PaymentFormModalProps {
+  open: boolean
+  onClose: () => void
+  onSuccess: () => void
+  studentId?: string
+  classId?: string
+}
+
+interface Form {
+  studentId: string
+  classId: string
+  amount: string
+  type: string
+  method: string
+  periodMonth: string
+  periodYear: string
+  dueDate: string
+  notes: string
+}
+
+const now = new Date()
+const EMPTY: Form = {
+  studentId: '', classId: '', amount: '',
+  type: 'tuition', method: 'cash',
+  periodMonth: String(now.getMonth() + 1),
+  periodYear: String(now.getFullYear()),
+  dueDate: '', notes: '',
+}
+
+export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
+  open, onClose, onSuccess, studentId, classId,
+}) => {
+  const [form, setForm] = useState<Form>({ ...EMPTY, studentId: studentId ?? '', classId: classId ?? '' })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const { data: studentsRaw } = useQuery(getStudents)
+  const { data: classesRaw } = useQuery(getClasses)
+
+  useEffect(() => {
+    setForm({ ...EMPTY, studentId: studentId ?? '', classId: classId ?? '' })
+    setError(null)
+  }, [open, studentId, classId])
+
+  const set = (k: keyof Form, v: string) => setForm(f => ({ ...f, [k]: v }))
+
+  const handleSave = async () => {
+    if (!form.studentId) { setError('Vui lòng chọn học viên'); return }
+    if (!form.amount || isNaN(Number(form.amount))) { setError('Vui lòng nhập số tiền hợp lệ'); return }
+    setSaving(true)
+    setError(null)
+    try {
+      await createPayment({
+        student_id: form.studentId,
+        class_id: form.classId || null,
+        amount: parseFloat(form.amount),
+        type: form.type as any,
+        payment_method: form.method as any,
+        period_month: parseInt(form.periodMonth),
+        period_year: parseInt(form.periodYear),
+        due_date: form.dueDate || null,
+        payment_date: new Date().toISOString().split('T')[0],
+        status: 'paid',
+        notes: form.notes || null,
+      })
+      onSuccess()
+      onClose()
+    } catch (e: any) {
+      setError(e.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const months = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `Tháng ${i + 1}` }))
+  const years = [2025, 2026, 2027].map(y => ({ value: String(y), label: String(y) }))
+
+  return (
+    <Modal open={open} onClose={onClose} title="Tạo phiếu thu" width={520}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div style={{ gridColumn: '1/-1' }}>
+          <Select label="Học viên *" value={form.studentId} onChange={v => set('studentId', v)}
+            options={[
+              { value: '', label: 'Chọn học viên...' },
+              ...(studentsRaw ?? []).map(s => ({ value: s.id, label: s.full_name })),
+            ]} />
+        </div>
+        <div style={{ gridColumn: '1/-1' }}>
+          <Select label="Lớp học" value={form.classId} onChange={v => set('classId', v)}
+            options={[
+              { value: '', label: 'Không thuộc lớp nào' },
+              ...(classesRaw ?? []).map(c => ({ value: c.id, label: c.name })),
+            ]} />
+        </div>
+        <Input label="Số tiền (VNĐ) *" value={form.amount} onChange={v => set('amount', v)} type="number" placeholder="1500000" />
+        <Select label="Loại phiếu" value={form.type} onChange={v => set('type', v)}
+          options={[
+            { value: 'tuition', label: 'Học phí' },
+            { value: 'material', label: 'Học liệu' },
+            { value: 'exam_fee', label: 'Phí thi' },
+            { value: 'other', label: 'Khác' },
+          ]} />
+        <Select label="Phương thức" value={form.method} onChange={v => set('method', v)}
+          options={[
+            { value: 'cash', label: 'Tiền mặt' },
+            { value: 'bank_transfer', label: 'Chuyển khoản' },
+            { value: 'momo', label: 'MoMo' },
+            { value: 'vnpay', label: 'VNPay' },
+          ]} />
+        <Select label="Tháng" value={form.periodMonth} onChange={v => set('periodMonth', v)} options={months} />
+        <Select label="Năm" value={form.periodYear} onChange={v => set('periodYear', v)} options={years} />
+        <div style={{ gridColumn: '1/-1' }}>
+          <Input label="Hạn đóng" value={form.dueDate} onChange={v => set('dueDate', v)} type="date" />
+        </div>
+        <div style={{ gridColumn: '1/-1' }}>
+          <Input label="Ghi chú" value={form.notes} onChange={v => set('notes', v)} placeholder="Ghi chú thêm (nếu có)..." />
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ marginTop: 12, padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', fontSize: 13, color: '#ef4444' }}>
+          {error}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+        <Button variant="secondary" onClick={onClose}>Huỷ</Button>
+        <Button icon={saving ? undefined : 'check'} onClick={handleSave} disabled={saving}>
+          {saving ? 'Đang lưu...' : 'Tạo phiếu thu'}
+        </Button>
+      </div>
+    </Modal>
+  )
+}

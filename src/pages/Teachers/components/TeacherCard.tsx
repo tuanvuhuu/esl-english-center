@@ -1,15 +1,24 @@
 import React, { useState } from 'react';
-import { Card, Avatar, StatusBadge, Icon, Badge, Modal, InfoRow, Button } from '../../../components';
-import { CLASSES_DATA } from '../../../data';
-import { Teacher } from '../../../types/data';
+import { Card, Avatar, StatusBadge, Icon, Badge, Modal, InfoRow, Button, ConfirmDialog } from '../../../components';
+import { softDeleteTeacher } from '../../../services';
+import type { Teacher } from '../../../types/data';
 
 interface TeacherCardProps {
   teacher: Teacher;
+  onEdit?: (teacher: Teacher) => void;
+  onDelete?: () => void;
 }
 
-export const TeacherCard: React.FC<TeacherCardProps> = ({ teacher }) => {
+export const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, onEdit, onDelete }) => {
   const [open, setOpen] = useState(false);
-  const teacherClasses = CLASSES_DATA.filter(c => c.teacherId === teacher.id);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDelete = async () => {
+    await softDeleteTeacher(String(teacher.id));
+    setConfirmDelete(false);
+    setOpen(false);
+    onDelete?.();
+  };
 
   return (
     <>
@@ -26,94 +35,72 @@ export const TeacherCard: React.FC<TeacherCardProps> = ({ teacher }) => {
           <StatusBadge status={teacher.status} />
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-          {teacher.subjects && teacher.subjects.map((s: string) => (
-            <Badge key={s} variant="info">
-              {s}
-            </Badge>
+          {teacher.subjects?.map((s: string) => (
+            <Badge key={s} variant="info">{s}</Badge>
           ))}
+          {(!teacher.subjects || teacher.subjects.length === 0) && (
+            <span style={{ fontSize: 12, color: 'var(--text-4)' }}>Chưa có môn giảng dạy</span>
+          )}
         </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding: '12px 0 0',
-            borderTop: '1px solid var(--border-light)',
-            fontSize: 13,
-            color: 'var(--text-3)',
-          }}
-        >
+        <div style={{
+          display: 'flex', justifyContent: 'space-between',
+          padding: '12px 0 0', borderTop: '1px solid var(--border-light)',
+          fontSize: 13, color: 'var(--text-3)',
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="book" size={14} />
-            {teacher.classCount} lớp
+            <Icon name="phone" size={14} />
+            {teacher.phone || '—'}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, maxWidth: '60%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, maxWidth: '55%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             <Icon name="mail" size={14} />
-            {teacher.email}
+            {teacher.email || '—'}
           </div>
         </div>
       </Card>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Thông tin giáo viên" width={520}>
         <div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              marginBottom: 24,
-              padding: 20,
-              background: 'var(--hover-bg)',
-              borderRadius: 14,
-            }}
-          >
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24,
+            padding: 20, background: 'var(--hover-bg)', borderRadius: 14,
+          }}>
             <Avatar initials={teacher.avatar || teacher.name[0]} size={56} color={teacher.color} />
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)' }}>{teacher.name}</div>
               <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{teacher.nationality}</div>
+              {teacher.bio && <div style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 4 }}>{teacher.bio}</div>}
             </div>
             <StatusBadge status={teacher.status} />
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <InfoRow icon="phone" label="Điện thoại" value={teacher.phone} />
-            <InfoRow icon="mail" label="Email" value={teacher.email} />
-            <InfoRow icon="book" label="Số lớp dạy" value={`${teacher.classCount} lớp`} />
-            <InfoRow icon="award" label="Chuyên môn" value={teacher.subjects ? teacher.subjects.join(', ') : ''} />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+            <InfoRow icon="phone" label="Điện thoại" value={teacher.phone || '—'} />
+            <InfoRow icon="mail" label="Email" value={teacher.email || '—'} />
+            <InfoRow icon="calendar" label="Ngày vào" value={teacher.joinDate || '—'} />
+            <InfoRow icon="award" label="Chuyên môn" value={teacher.subjects?.join(', ') || '—'} />
           </div>
-          <div style={{ marginTop: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)', marginBottom: 10 }}>Lớp đang dạy</div>
-            {teacherClasses.map(c => (
-              <div
-                key={c.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  padding: '10px 14px',
-                  background: 'var(--hover-bg)',
-                  borderRadius: 10,
-                  marginBottom: 6,
-                  transition: 'background 0.35s',
-                }}
-              >
-                <div style={{ width: 4, height: 28, borderRadius: 2, background: teacher.color }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>{c.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{c.schedule}</div>
-                </div>
-                <Badge>{c.room}</Badge>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-            <Button icon="edit" variant="outline" style={{ flex: 1 }}>
+
+          <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <Button icon="edit" variant="outline" style={{ flex: 1 }}
+              onClick={() => { setOpen(false); onEdit?.(teacher); }}>
               Chỉnh sửa
             </Button>
-            <Button icon="calendar" variant="secondary" style={{ flex: 1 }}>
-              Xem lịch dạy
+            <Button icon="trash" variant="danger" style={{ flex: 1 }}
+              onClick={() => setConfirmDelete(true)}>
+              Xoá
             </Button>
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title="Xoá giáo viên"
+        message={`Bạn có chắc muốn xoá giáo viên "${teacher.name}"?`}
+        confirmLabel="Xoá"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
     </>
   );
 };
