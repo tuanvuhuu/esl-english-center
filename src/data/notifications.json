@@ -1,0 +1,7 @@
+[
+  { "id": 1, "title": "Học viên mới đăng ký", "desc": "Bùi Nhật Linh đăng ký lớp Kids Starter A", "time": "5 phút trước", "type": "info", "read": false },
+  { "id": 2, "title": "Học phí quá hạn", "desc": "Hoàng Thị Mai chưa đóng học phí tháng 5", "time": "1 giờ trước", "type": "warning", "read": false },
+  { "id": 3, "title": "Giáo viên xin nghỉ", "desc": "Amanda Lee xin nghỉ từ 15/05 - 20/05", "time": "2 giờ trước", "type": "alert", "read": false },
+  { "id": 4, "title": "Lớp đã đầy", "desc": "Teen Pre-Inter B đã đạt 16/18 học viên", "time": "3 giờ trước", "type": "info", "read": true },
+  { "id": 5, "title": "Bài kiểm tra sắp tới", "desc": "Mid-term Test lớp Kids Elementary A ngày 20/05", "time": "5 giờ trước", "type": "info", "read": true }
+]

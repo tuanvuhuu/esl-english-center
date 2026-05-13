@@ -1,0 +1,78 @@
+export interface Student {
+  id: string | number;
+  name: string;
+  parent: string;
+  phone: string;
+  level: string;
+  status: 'active' | 'trial' | 'paused' | 'inactive';
+  avatar?: string;
+  joinDate?: string;
+  birthDate?: string;
+  attendance?: number;
+  balance?: number;
+  classes?: string[];
+  [key: string]: any;
+}
+
+export interface Teacher {
+  id: string | number;
+  name: string;
+  phone: string;
+  email: string;
+  nationality: string;
+  subjects: string[];
+  classCount: number;
+  status: 'active' | 'on-leave' | 'inactive';
+  avatar?: string;
+  color?: string;
+  [key: string]: any;
+}
+
+export interface Class {
+  id: string | number;
+  name: string;
+  level: string;
+  teacherId: string | number;
+  teacher: string;
+  room: string;
+  schedule: string;
+  students: number;
+  maxStudents: number;
+  status: 'active' | 'paused' | 'inactive';
+  ageGroup?: string;
+  days?: number[];
+  time?: string;
+  endTime?: string;
+  startDate?: string;
+  endDate?: string;
+  fee?: string;
+  [key: string]: any;
+}
+
+export interface Notification {
+  id: string | number;
+  title: string;
+  desc: string;
+  time: string;
+  type: string;
+  read: boolean;
+}
+
+export interface Payment {
+  id: string | number;
+  student: string;
+  amount: string | number;
+  date: string;
+  status: 'paid' | 'pending' | 'overdue';
+  type: string;
+}
+
+export interface Room {
+  id: string | number;
+  name: string;
+  floor: string;
+  capacity: number;
+  type: string;
+  status: 'available' | 'in-use' | 'maintenance';
+  equipment: string[];
+}

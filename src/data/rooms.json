@@ -1,0 +1,8 @@
+[
+  { "id": 1, "name": "P.201", "floor": "Tầng 2", "capacity": 15, "type": "Kids", "status": "available", "equipment": ["Máy chiếu", "Bảng tương tác", "Loa"] },
+  { "id": 2, "name": "P.202", "floor": "Tầng 2", "capacity": 12, "type": "Kids", "status": "in-use", "equipment": ["Máy chiếu", "TV", "Loa"] },
+  { "id": 3, "name": "P.203", "floor": "Tầng 2", "capacity": 20, "type": "Multi", "status": "available", "equipment": ["Máy chiếu", "Bảng tương tác", "Loa", "Micro"] },
+  { "id": 4, "name": "P.301", "floor": "Tầng 3", "capacity": 18, "type": "Teens", "status": "in-use", "equipment": ["Máy chiếu", "Bảng trắng", "Loa"] },
+  { "id": 5, "name": "P.302", "floor": "Tầng 3", "capacity": 25, "type": "Teens", "status": "available", "equipment": ["Máy chiếu", "Bảng tương tác", "Loa", "Micro"] },
+  { "id": 6, "name": "P.303", "floor": "Tầng 3", "capacity": 10, "type": "Tutorial", "status": "maintenance", "equipment": ["TV", "Bảng trắng"] }
+]

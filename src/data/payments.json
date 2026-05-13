@@ -1,0 +1,7 @@
+[
+  { "id": 1, "student": "Nguyễn Minh Anh", "amount": "3.500.000đ", "date": "12/05/2026", "type": "Học phí", "status": "paid" },
+  { "id": 2, "student": "Trần Bảo Ngọc", "amount": "3.800.000đ", "date": "11/05/2026", "type": "Học phí", "status": "paid" },
+  { "id": 3, "student": "Lê Hoàng Nam", "amount": "4.200.000đ", "date": "10/05/2026", "type": "Học phí", "status": "pending" },
+  { "id": 4, "student": "Vũ Đức Minh", "amount": "4.200.000đ", "date": "09/05/2026", "type": "Học phí", "status": "paid" },
+  { "id": 5, "student": "Hoàng Thị Mai", "amount": "3.800.000đ", "date": "08/05/2026", "type": "Học phí", "status": "overdue" }
+]

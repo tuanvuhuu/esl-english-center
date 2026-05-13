@@ -1,0 +1,23 @@
+﻿src/App.tsx(1,8): error TS6133: 'React' is declared but its value is never read.
+src/data/index.ts(10,23): error TS2352: Conversion of type '{ id: number; name: string; avatar: string; nationality: string; phone: string; email: string; subjects: string[]; classCount: number; status: string; color: string; }[]' to type 'Teacher[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: number; name: string; avatar: string; nationality: string; phone: string; email: string; subjects: string[]; classCount: number; status: string; color: string; }' is missing the following properties from type 'Teacher': specialization, level, experience
+src/data/index.ts(11,22): error TS2352: Conversion of type '{ id: number; name: string; level: string; ageGroup: string; teacher: string; teacherId: number; schedule: string; days: number[]; time: string; endTime: string; room: string; students: number; maxStudents: number; status: string; startDate: string; endDate: string; fee: string; }[]' to type 'Class[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ id: number; name: string; level: string; ageGroup: string; teacher: string; teacherId: number; schedule: string; days: number[]; time: string; endTime: string; room: string; students: number; maxStudents: number; status: string; startDate: string; endDate: string; fee: string; }' is missing the following properties from type 'Class': teacherName, studentsCount
+src/data/index.ts(13,25): error TS2352: Conversion of type '{ id: number; student: string; amount: string; date: string; type: string; status: string; }[]' to type 'Payment[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Property 'studentName' is missing in type '{ id: number; student: string; amount: string; date: string; type: string; status: string; }' but required in type 'Payment'.
+src/index.tsx(5,8): error TS2882: Cannot find module or type declarations for side-effect import of './styles/global.css'.
+src/pages/Attendance/Attendance.tsx(19,12): error TS2345: Argument of type '(p: Record<string | number, AttendanceStatus>) => { [x: string]: string; }' is not assignable to parameter of type 'SetStateAction<Record<string | number, AttendanceStatus>>'.
+  Type '(p: Record<string | number, AttendanceStatus>) => { [x: string]: string; }' is not assignable to type '(prevState: Record<string | number, AttendanceStatus>) => Record<string | number, AttendanceStatus>'.
+    Type '{ [x: string]: string; }' is not assignable to type 'Record<string | number, AttendanceStatus>'.
+      'string' index signatures are incompatible.
+        Type 'string' is not assignable to type 'AttendanceStatus'.
+src/pages/Classes/components/ClassCard.tsx(2,45): error TS6133: 'Button' is declared but its value is never read.
+src/pages/Notifications/Notifications.tsx(51,29): error TS2339: Property 'type' does not exist on type 'Notification'.
+src/pages/Notifications/Notifications.tsx(54,32): error TS2339: Property 'type' does not exist on type 'Notification'.
+src/pages/Rooms/Rooms.tsx(37,24): error TS2339: Property 'floor' does not exist on type 'Room'.
+src/pages/Rooms/Rooms.tsx(37,36): error TS2339: Property 'type' does not exist on type 'Room'.
+src/pages/Rooms/Rooms.tsx(54,24): error TS2339: Property 'equipment' does not exist on type 'Room'.
+src/pages/Rooms/Rooms.tsx(54,38): error TS2339: Property 'equipment' does not exist on type 'Room'.
+src/pages/Rooms/Rooms.tsx(57,18): error TS2339: Property 'equipment' does not exist on type 'Room'.
+src/pages/Rooms/Rooms.tsx(57,33): error TS2339: Property 'equipment' does not exist on type 'Room'.
+src/pages/Schedule/Schedule.tsx(68,27): error TS6133: 'h' is declared but its value is never read.
