@@ -343,15 +343,16 @@ export function DataGrid<T = any>({
 
           {actions}
 
-          <button
-            onClick={handleExport}
-            title="Export CSV"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
-          >
-            <Icon name="download" size={13} />
-          </button>
+          {onAdd && (
+            <button
+              onClick={onAdd}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', height: 30, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'opacity 0.15s', flexShrink: 0 }}
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '0.88')}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+            >
+              <Icon name="plus" size={13} /> {addLabel}
+            </button>
+          )}
 
           {onRefresh && (
             <button
@@ -365,16 +366,15 @@ export function DataGrid<T = any>({
             </button>
           )}
 
-          {onAdd && (
-            <button
-              onClick={onAdd}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', height: 30, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'opacity 0.15s', flexShrink: 0 }}
-              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '0.88')}
-              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '1')}
-            >
-              <Icon name="plus" size={13} /> {addLabel}
-            </button>
-          )}
+          <button
+            onClick={handleExport}
+            title="Export CSV"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
+          >
+            <Icon name="download" size={13} />
+          </button>
         </div>
       </div>
 
