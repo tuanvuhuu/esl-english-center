@@ -1,4 +1,19 @@
-import React, { useState, useMemo } from 'react'
+import React, { useMemo, useState, useRef, useEffect } from 'react'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  flexRender,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+  type RowSelectionState,
+  type ColumnPinningState,
+  type ColumnSizingState,
+  type Row,
+} from '@tanstack/react-table'
 import { Icon } from './Icon'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -10,10 +25,12 @@ export interface DataGridColumn<T = any> {
   filterable?: boolean
   filterType?: 'text' | 'select'
   filterOptions?: { value: string; label: string }[]
-  filterValue?: (row: T) => string      // override what value to filter on
-  width?: number | string
+  filterValue?: (row: T) => string
+  width?: number
   align?: 'left' | 'center' | 'right'
   noWrap?: boolean
+  sortable?: boolean       // default true
+  pin?: 'left' | 'right'  // sticky column
 }
 
 interface DataGridProps<T = any> {
@@ -28,6 +45,8 @@ interface DataGridProps<T = any> {
   defaultPageSize?: number
   exportFilename?: string
   emptyText?: string
+  enableRowSelection?: boolean
+  onSelectionChange?: (rows: T[]) => void
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -36,27 +55,46 @@ const PAGE_SIZES = [10, 20, 50, 100]
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-const FilterInput: React.FC<{ value: string; onChange: (v: string) => void; placeholder?: string }> = ({ value, onChange, placeholder }) => (
+const IndeterminateCheckbox: React.FC<{ checked?: boolean; indeterminate?: boolean; onChange?: React.ChangeEventHandler<HTMLInputElement>; onClick?: React.MouseEventHandler<HTMLInputElement>; disabled?: boolean }> = ({
+  checked, indeterminate, onChange, onClick, disabled,
+}) => {
+  const ref = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = Boolean(indeterminate)
+  }, [indeterminate])
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      onClick={onClick}
+      disabled={disabled}
+      style={{ cursor: disabled ? 'not-allowed' : 'pointer', accentColor: 'var(--primary)', width: 14, height: 14 }}
+    />
+  )
+}
+
+const FilterInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
   <div style={{ position: 'relative' }}>
-    <Icon name="search" size={11} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)', pointerEvents: 'none' }} />
+    <Icon name="search" size={10} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)', pointerEvents: 'none' }} />
     <input
       value={value}
       onChange={e => onChange(e.target.value)}
-      placeholder={placeholder ?? ''}
+      placeholder="Lọc..."
       style={{
-        width: '100%', padding: '4px 6px 4px 22px',
+        width: '100%', padding: '3px 20px 3px 20px',
         border: '1px solid var(--border)', borderRadius: 6,
         fontSize: 11, fontFamily: 'var(--font)',
         background: 'var(--input-bg)', color: 'var(--text-1)',
         outline: 'none', boxSizing: 'border-box',
-        transition: 'border-color 0.15s',
       }}
       onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
       onBlur={e => (e.target.style.borderColor = 'var(--border)')}
     />
     {value && (
       <button onClick={() => onChange('')}
-        style={{ position: 'absolute', right: 5, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-4)', padding: 0, lineHeight: 1 }}>
+        style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-4)', padding: 0, lineHeight: 1, fontSize: 13 }}>
         ×
       </button>
     )}
@@ -68,7 +106,7 @@ const FilterSelect: React.FC<{ value: string; onChange: (v: string) => void; opt
     value={value}
     onChange={e => onChange(e.target.value)}
     style={{
-      width: '100%', padding: '4px 6px',
+      width: '100%', padding: '3px 6px',
       border: '1px solid var(--border)', borderRadius: 6,
       fontSize: 11, fontFamily: 'var(--font)',
       background: 'var(--input-bg)', color: 'var(--text-1)',
@@ -80,21 +118,6 @@ const FilterSelect: React.FC<{ value: string; onChange: (v: string) => void; opt
   </select>
 )
 
-const PageButton: React.FC<{ page: number; active?: boolean; onClick: () => void }> = ({ page, active, onClick }) => (
-  <button onClick={onClick}
-    style={{
-      minWidth: 28, height: 28, padding: '0 6px', borderRadius: 7,
-      border: active ? 'none' : '1px solid var(--border)',
-      background: active ? 'var(--primary)' : 'transparent',
-      color: active ? '#fff' : 'var(--text-3)',
-      fontSize: 12, fontWeight: active ? 700 : 400,
-      fontFamily: 'var(--font)', cursor: 'pointer',
-      transition: 'all 0.15s',
-    }}>
-    {page}
-  </button>
-)
-
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export function DataGrid<T = any>({
@@ -104,39 +127,125 @@ export function DataGrid<T = any>({
   defaultPageSize = 20,
   exportFilename = 'export',
   emptyText = 'Không có dữ liệu',
+  enableRowSelection = false,
+  onSelectionChange,
 }: DataGridProps<T>) {
-  const [filters, setFilters] = useState<Record<string, string>>({})
-  const [page, setPage] = useState(1)
-  const [pageSize, setPageSize] = useState(defaultPageSize)
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
+  const [columnSizing, setColumnSizing] = useState<ColumnSizingState>({})
 
-  const setFilter = (key: string, val: string) => {
-    setFilters(f => ({ ...f, [key]: val }))
-    setPage(1)
-  }
+  const columnPinning = useMemo<ColumnPinningState>(() => {
+    const left: string[] = []
+    const right: string[] = []
+    if (enableRowSelection) left.push('_select')
+    columns.forEach(col => {
+      if (col.pin === 'left') left.push(col.key)
+      if (col.pin === 'right') right.push(col.key)
+    })
+    return { left, right }
+  }, [columns, enableRowSelection])
 
-  const filtered = useMemo(() => {
-    return data.filter(row =>
-      columns.every(col => {
-        const val = filters[col.key]
-        if (!val) return true
-        const raw = col.filterValue ? col.filterValue(row) : String((row as any)[col.key] ?? '')
-        return raw.toLowerCase().includes(val.toLowerCase())
+  // Map our column defs → TanStack ColumnDef
+  const tanstackColumns = useMemo<ColumnDef<T>[]>(() => {
+    const defs: ColumnDef<T>[] = []
+
+    if (enableRowSelection) {
+      defs.push({
+        id: '_select',
+        size: 40,
+        enableResizing: false,
+        enableSorting: false,
+        enableColumnFilter: false,
+        header: ({ table }) => (
+          <IndeterminateCheckbox
+            checked={table.getIsAllPageRowsSelected()}
+            indeterminate={table.getIsSomePageRowsSelected()}
+            onChange={table.getToggleAllPageRowsSelectedHandler()}
+          />
+        ),
+        cell: ({ row }) => (
+          <IndeterminateCheckbox
+            checked={row.getIsSelected()}
+            disabled={!row.getCanSelect()}
+            onChange={row.getToggleSelectedHandler()}
+            onClick={e => e.stopPropagation()}
+          />
+        ),
       })
-    )
-  }, [data, filters, columns])
+    }
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
-  const curPage = Math.min(page, totalPages)
-  const pageData = filtered.slice((curPage - 1) * pageSize, curPage * pageSize)
+    columns.forEach(col => {
+      defs.push({
+        id: col.key,
+        accessorFn: (row: T) =>
+          col.filterValue ? col.filterValue(row) : (row as any)[col.key],
+        header: col.title,
+        size: col.width ?? 150,
+        enableResizing: true,
+        enableSorting: col.sortable !== false,
+        enableColumnFilter: col.filterable ?? false,
+        filterFn: (row: Row<T>, _columnId: string, filterValue: string) => {
+          if (!filterValue) return true
+          const cellValue = col.filterValue
+            ? col.filterValue(row.original)
+            : String((row.original as any)[col.key] ?? '')
+          if (col.filterType === 'select') return cellValue === filterValue
+          return cellValue.toLowerCase().includes(filterValue.toLowerCase())
+        },
+        cell: col.render
+          ? ({ row }) => col.render!(row.original, row.index)
+          : ({ row }) => {
+              const v = (row.original as any)[col.key]
+              return v != null ? String(v) : '—'
+            },
+      })
+    })
 
-  const activeFilters = Object.values(filters).filter(Boolean).length
+    return defs
+  }, [columns, enableRowSelection])
 
-  // CSV export (raw values only)
+  const table = useReactTable({
+    data,
+    columns: tanstackColumns,
+    state: { sorting, columnFilters, rowSelection, columnSizing, columnPinning },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: updater => {
+      const next = typeof updater === 'function' ? updater(rowSelection) : updater
+      setRowSelection(next)
+      if (onSelectionChange) {
+        onSelectionChange(data.filter(row => next[String(rowKey(row))]))
+      }
+    },
+    onColumnSizingChange: setColumnSizing,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    columnResizeMode: 'onChange',
+    enableColumnResizing: true,
+    enableRowSelection,
+    getRowId: (row, index) => String(rowKey ? rowKey(row) : index),
+    initialState: { pagination: { pageSize: defaultPageSize, pageIndex: 0 } },
+  })
+
+  const { pageIndex, pageSize } = table.getState().pagination
+  const totalFiltered = table.getFilteredRowModel().rows.length
+  const from = totalFiltered === 0 ? 0 : pageIndex * pageSize + 1
+  const to = Math.min((pageIndex + 1) * pageSize, totalFiltered)
+  const activeFilters = columnFilters.filter(f => f.value).length
+  const selectedCount = Object.keys(rowSelection).length
+  const hasFilterRow = columns.some(c => c.filterable)
+
   const handleExport = () => {
+    const rows = table.getFilteredRowModel().rows
     const header = columns.map(c => `"${c.title}"`).join(',')
-    const body = filtered.map(row =>
+    const body = rows.map(row =>
       columns.map(col => {
-        const v = col.filterValue ? col.filterValue(row) : String((row as any)[col.key] ?? '')
+        const v = col.filterValue
+          ? col.filterValue(row.original)
+          : String((row.original as any)[col.key] ?? '')
         return `"${v.replace(/"/g, '""')}"`
       }).join(',')
     )
@@ -148,19 +257,35 @@ export function DataGrid<T = any>({
     a.click()
   }
 
-  const hasFilterRow = columns.some(c => c.filterable)
-
-  // Build visible page numbers
+  // Build page number list with ellipsis
+  const totalPages = table.getPageCount()
   const pageNums: (number | '...')[] = []
   if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pageNums.push(i)
+    for (let i = 0; i < totalPages; i++) pageNums.push(i + 1)
   } else {
     pageNums.push(1)
-    if (curPage > 3) pageNums.push('...')
-    for (let i = Math.max(2, curPage - 1); i <= Math.min(totalPages - 1, curPage + 1); i++) pageNums.push(i)
-    if (curPage < totalPages - 2) pageNums.push('...')
+    if (pageIndex > 2) pageNums.push('...')
+    for (let i = Math.max(1, pageIndex - 1); i <= Math.min(totalPages - 2, pageIndex + 1); i++) pageNums.push(i + 1)
+    if (pageIndex < totalPages - 3) pageNums.push('...')
     pageNums.push(totalPages)
   }
+
+  const getPinnedStyle = (column: any, isHeader = false): React.CSSProperties => {
+    const pinned = column.getIsPinned()
+    if (!pinned) return {}
+    return {
+      position: 'sticky',
+      left: pinned === 'left' ? `${column.getStart('left')}px` : undefined,
+      right: pinned === 'right' ? `${column.getAfter('right')}px` : undefined,
+      zIndex: isHeader ? 3 : 1,
+      background: 'var(--card)',
+      boxShadow: pinned === 'left'
+        ? '2px 0 6px -2px rgba(0,0,0,0.08)'
+        : '-2px 0 6px -2px rgba(0,0,0,0.08)',
+    }
+  }
+
+  const headerGroups = table.getHeaderGroups()
 
   return (
     <div style={{ background: 'var(--card)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
@@ -172,13 +297,21 @@ export function DataGrid<T = any>({
           {subtitle && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{subtitle}</div>}
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+          {selectedCount > 0 && (
+            <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600, padding: '4px 10px', background: 'var(--primary-light)', borderRadius: 8 }}>
+              {selectedCount} đã chọn
+            </span>
+          )}
           {activeFilters > 0 && (
-            <button onClick={() => { setFilters({}); setPage(1) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--warning)', background: 'rgba(245,158,11,0.08)', color: '#b45309', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer' }}>
+            <button
+              onClick={() => { setColumnFilters([]); table.setPageIndex(0) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--warning)', background: 'rgba(245,158,11,0.08)', color: '#b45309', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer' }}
+            >
               <Icon name="x" size={11} /> Xoá lọc ({activeFilters})
             </button>
           )}
-          <button onClick={handleExport}
+          <button
+            onClick={handleExport}
             style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all 0.15s' }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
@@ -191,74 +324,139 @@ export function DataGrid<T = any>({
 
       {/* ── Table ── */}
       <div style={{ overflowX: 'auto' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+        <table style={{ minWidth: '100%', width: table.getTotalSize(), borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
-            {/* Column headers */}
-            <tr style={{ background: 'var(--table-header)', borderBottom: hasFilterRow ? 'none' : '1px solid var(--border)' }}>
-              {columns.map(col => (
-                <th key={col.key} style={{
-                  padding: '10px 14px', textAlign: col.align ?? 'left',
-                  fontWeight: 600, color: 'var(--text-3)', fontSize: 11,
-                  whiteSpace: 'nowrap', width: col.width,
-                  userSelect: 'none',
-                }}>
-                  {col.title}
-                </th>
-              ))}
-            </tr>
-            {/* Filter row */}
-            {hasFilterRow && (
-              <tr style={{ background: 'var(--table-header)', borderBottom: '1px solid var(--border)' }}>
-                {columns.map(col => (
-                  <th key={col.key} style={{ padding: '5px 8px', fontWeight: 'normal' }}>
-                    {col.filterable && (
-                      col.filterType === 'select' && col.filterOptions
-                        ? <FilterSelect value={filters[col.key] ?? ''} onChange={v => setFilter(col.key, v)} options={col.filterOptions} />
-                        : <FilterInput value={filters[col.key] ?? ''} onChange={v => setFilter(col.key, v)} placeholder={`Lọc...`} />
-                    )}
-                  </th>
-                ))}
-              </tr>
-            )}
+            {headerGroups.map(headerGroup => (
+              <React.Fragment key={headerGroup.id}>
+                {/* Column title row (with sort + resize) */}
+                <tr style={{ background: 'var(--table-header)', borderBottom: hasFilterRow ? 'none' : '1px solid var(--border)' }}>
+                  {headerGroup.headers.map(header => {
+                    const colDef = columns.find(c => c.key === header.column.id)
+                    const canSort = header.column.getCanSort()
+                    const sorted = header.column.getIsSorted()
+                    return (
+                      <th
+                        key={header.id}
+                        style={{
+                          width: header.getSize(),
+                          padding: '10px 14px',
+                          textAlign: colDef?.align ?? 'left',
+                          fontWeight: 600, color: 'var(--text-3)', fontSize: 11,
+                          whiteSpace: 'nowrap', userSelect: 'none',
+                          position: 'relative',
+                          cursor: canSort ? 'pointer' : 'default',
+                          ...getPinnedStyle(header.column, true),
+                        }}
+                        onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                          {canSort && (
+                            <span style={{ color: sorted ? 'var(--primary)' : 'var(--text-4)', fontSize: 9, lineHeight: 1 }}>
+                              {sorted === 'asc' ? '▲' : sorted === 'desc' ? '▼' : '⇅'}
+                            </span>
+                          )}
+                        </div>
+                        {/* Resize handle */}
+                        {header.column.getCanResize() && (
+                          <div
+                            onMouseDown={header.getResizeHandler()}
+                            onTouchStart={header.getResizeHandler()}
+                            style={{
+                              position: 'absolute', right: 0, top: 0, height: '100%', width: 4,
+                              cursor: 'col-resize', userSelect: 'none', touchAction: 'none',
+                              background: header.column.getIsResizing() ? 'var(--primary)' : 'transparent',
+                            }}
+                          />
+                        )}
+                      </th>
+                    )
+                  })}
+                </tr>
+                {/* Filter row */}
+                {hasFilterRow && (
+                  <tr style={{ background: 'var(--table-header)', borderBottom: '1px solid var(--border)' }}>
+                    {headerGroup.headers.map(header => {
+                      const colDef = columns.find(c => c.key === header.column.id)
+                      const filterVal = (header.column.getFilterValue() as string) ?? ''
+                      return (
+                        <th
+                          key={header.id}
+                          style={{
+                            padding: '4px 8px', fontWeight: 'normal',
+                            width: header.getSize(),
+                            ...getPinnedStyle(header.column, true),
+                          }}
+                        >
+                          {colDef?.filterable && (
+                            colDef.filterType === 'select' && colDef.filterOptions
+                              ? <FilterSelect
+                                  value={filterVal}
+                                  onChange={v => { header.column.setFilterValue(v || undefined); table.setPageIndex(0) }}
+                                  options={colDef.filterOptions}
+                                />
+                              : <FilterInput
+                                  value={filterVal}
+                                  onChange={v => { header.column.setFilterValue(v || undefined); table.setPageIndex(0) }}
+                                />
+                          )}
+                        </th>
+                      )
+                    })}
+                  </tr>
+                )}
+              </React.Fragment>
+            ))}
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={columns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)' }}>
+                <td colSpan={tanstackColumns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
                     <span style={{ fontSize: 12 }}>Đang tải...</span>
                   </div>
                 </td>
               </tr>
-            ) : pageData.length === 0 ? (
+            ) : table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>
+                <td colSpan={tanstackColumns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>
                   {emptyText}
                 </td>
               </tr>
             ) : (
-              pageData.map((row, idx) => (
+              table.getRowModel().rows.map(row => (
                 <tr
-                  key={rowKey(row)}
-                  onClick={() => onRowClick?.(row)}
-                  style={{ borderBottom: '1px solid var(--border-light)', cursor: onRowClick ? 'pointer' : 'default', transition: 'background 0.12s' }}
-                  onMouseEnter={e => { if (onRowClick) (e.currentTarget as HTMLElement).style.background = 'var(--table-row-hover)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+                  key={row.id}
+                  onClick={() => onRowClick?.(row.original)}
+                  style={{
+                    borderBottom: '1px solid var(--border-light)',
+                    cursor: onRowClick ? 'pointer' : 'default',
+                    transition: 'background 0.12s',
+                    background: row.getIsSelected() ? 'var(--primary-light)' : 'transparent',
+                  }}
+                  onMouseEnter={e => { if (!row.getIsSelected()) (e.currentTarget as HTMLElement).style.background = 'var(--table-row-hover)' }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.getIsSelected() ? 'var(--primary-light)' : 'transparent' }}
                 >
-                  {columns.map(col => (
-                    <td key={col.key} style={{
-                      padding: '10px 14px',
-                      textAlign: col.align ?? 'left',
-                      color: 'var(--text-2)',
-                      whiteSpace: col.noWrap ? 'nowrap' : undefined,
-                      verticalAlign: 'middle',
-                    }}>
-                      {col.render
-                        ? col.render(row, (curPage - 1) * pageSize + idx)
-                        : String((row as any)[col.key] ?? '—')}
-                    </td>
-                  ))}
+                  {row.getVisibleCells().map(cell => {
+                    const colDef = columns.find(c => c.key === cell.column.id)
+                    return (
+                      <td
+                        key={cell.id}
+                        style={{
+                          padding: '10px 14px',
+                          textAlign: colDef?.align ?? 'left',
+                          color: 'var(--text-2)',
+                          whiteSpace: colDef?.noWrap ? 'nowrap' : undefined,
+                          verticalAlign: 'middle',
+                          width: cell.column.getSize(),
+                          ...getPinnedStyle(cell.column),
+                        }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    )
+                  })}
                 </tr>
               ))
             )}
@@ -269,30 +467,52 @@ export function DataGrid<T = any>({
       {/* ── Pagination ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderTop: '1px solid var(--border)', gap: 12, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
-          {filtered.length === 0 ? '0 kết quả' : `${(curPage - 1) * pageSize + 1}–${Math.min(curPage * pageSize, filtered.length)} / ${filtered.length} dòng`}
-          {data.length !== filtered.length && <span style={{ color: 'var(--warning)', marginLeft: 6 }}>(đang lọc từ {data.length})</span>}
+          {totalFiltered === 0 ? '0 kết quả' : `${from}–${to} / ${totalFiltered} dòng`}
+          {data.length !== totalFiltered && (
+            <span style={{ color: 'var(--warning)', marginLeft: 6 }}>(đang lọc từ {data.length})</span>
+          )}
         </span>
 
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-          <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={curPage === 1}
-            style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: curPage === 1 ? 'var(--text-4)' : 'var(--text-2)', cursor: curPage === 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button
+            onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}
+            style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: !table.getCanPreviousPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanPreviousPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
             <Icon name="chevron-left" size={13} />
           </button>
 
           {pageNums.map((n, i) =>
             n === '...'
               ? <span key={`e${i}`} style={{ padding: '0 4px', color: 'var(--text-4)', fontSize: 12 }}>…</span>
-              : <PageButton key={n} page={n} active={n === curPage} onClick={() => setPage(n)} />
+              : <button
+                  key={n}
+                  onClick={() => table.setPageIndex((n as number) - 1)}
+                  style={{
+                    minWidth: 28, height: 28, padding: '0 6px', borderRadius: 7,
+                    border: pageIndex + 1 === n ? 'none' : '1px solid var(--border)',
+                    background: pageIndex + 1 === n ? 'var(--primary)' : 'transparent',
+                    color: pageIndex + 1 === n ? '#fff' : 'var(--text-3)',
+                    fontSize: 12, fontWeight: pageIndex + 1 === n ? 700 : 400,
+                    fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all 0.15s',
+                  }}
+                >
+                  {n}
+                </button>
           )}
 
-          <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={curPage === totalPages}
-            style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: curPage === totalPages ? 'var(--text-4)' : 'var(--text-2)', cursor: curPage === totalPages ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button
+            onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}
+            style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: !table.getCanNextPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanNextPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
             <Icon name="chevron-right" size={13} />
           </button>
         </div>
 
-        <select value={pageSize} onChange={e => { setPageSize(Number(e.target.value)); setPage(1) }}
-          style={{ padding: '4px 8px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text-2)', fontSize: 11, fontFamily: 'var(--font)', cursor: 'pointer', outline: 'none' }}>
+        <select
+          value={pageSize}
+          onChange={e => { table.setPageSize(Number(e.target.value)); table.setPageIndex(0) }}
+          style={{ padding: '4px 8px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text-2)', fontSize: 11, fontFamily: 'var(--font)', cursor: 'pointer', outline: 'none' }}
+        >
           {PAGE_SIZES.map(n => <option key={n} value={n}>{n} / trang</option>)}
         </select>
       </div>
