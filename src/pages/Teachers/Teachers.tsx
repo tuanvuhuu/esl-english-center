@@ -53,11 +53,7 @@ export const Teachers: React.FC = () => {
       <PageHeader
         title="Quản lý giáo viên"
         subtitle={`${teachers.length} giáo viên · ${activeCount} đang dạy`}
-        actions={
-          <Button icon="plus" onClick={() => { setEditTeacher(null); setShowForm(true) }}>
-            Thêm giáo viên
-          </Button>
-        }
+        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => { setEditTeacher(null); setShowForm(true) }}>Thêm giáo viên</Button> : undefined}
       />
 
       {viewMode === 'grid' && (
@@ -94,6 +90,8 @@ export const Teachers: React.FC = () => {
           onEdit={handleEdit}
           onDelete={setDeleteTarget}
           actions={viewTabs}
+          onAdd={() => { setEditTeacher(null); setShowForm(true) }}
+          onRefresh={refetch}
         />
       ) : (
         <TeacherGrid

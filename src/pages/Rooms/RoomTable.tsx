@@ -10,10 +10,12 @@ interface RoomTableProps {
   onDelete?: (r: Room) => void
   actions?: React.ReactNode
   subtitle?: string
+  onAdd?: () => void
+  onRefresh?: () => void
 }
 
 export const RoomTable: React.FC<RoomTableProps> = ({
-  rooms, onSelectRoom, onEdit, onDelete, actions, subtitle,
+  rooms, onSelectRoom, onEdit, onDelete, actions, subtitle, onAdd, onRefresh,
 }) => {
   const columns: DataGridColumn<Room>[] = [
     {
@@ -114,6 +116,9 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       onRowClick={onSelectRoom}
       exportFilename="phong-hoc"
       actions={actions}
+      onAdd={onAdd}
+      addLabel="Thêm phòng"
+      onRefresh={onRefresh}
     />
   )
 }

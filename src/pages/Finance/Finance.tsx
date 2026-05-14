@@ -57,7 +57,7 @@ export const Finance: React.FC = () => {
       <PageHeader
         title="Quản lý tài chính"
         subtitle={`${rows.length} phiếu thu`}
-        actions={<Button icon="plus" onClick={() => setShowForm(true)}>Tạo phiếu thu</Button>}
+        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => setShowForm(true)}>Tạo phiếu thu</Button> : undefined}
       />
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
@@ -115,6 +115,8 @@ export const Finance: React.FC = () => {
           onMarkPaid={handleMarkPaid}
           markingId={markingId}
           actions={viewTabs}
+          onAdd={() => setShowForm(true)}
+          onRefresh={refetch}
         />
       ) : (
         <PaymentGrid rows={filtered} onMarkPaid={handleMarkPaid} markingId={markingId} />

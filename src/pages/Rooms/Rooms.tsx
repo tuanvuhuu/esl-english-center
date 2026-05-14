@@ -58,11 +58,7 @@ export const Rooms: React.FC = () => {
       <PageHeader
         title="Quản lý phòng học"
         subtitle={`${rooms.length} phòng · ${available} sẵn sàng · ${inUse} đang dùng`}
-        actions={
-          <Button icon="plus" onClick={() => { setEditRoom(null); setShowForm(true) }}>
-            Thêm phòng
-          </Button>
-        }
+        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => { setEditRoom(null); setShowForm(true) }}>Thêm phòng</Button> : undefined}
       />
 
       {viewMode === 'grid' && (
@@ -99,6 +95,8 @@ export const Rooms: React.FC = () => {
           onEdit={handleEdit}
           onDelete={setDeleteTarget}
           actions={viewTabs}
+          onAdd={() => { setEditRoom(null); setShowForm(true) }}
+          onRefresh={refetch}
         />
       ) : filtered.length === 0 ? (
         <EmptyState icon="building" title="Không có phòng nào" desc="Nhấn 'Thêm phòng' để tạo mới" />

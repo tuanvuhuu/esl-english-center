@@ -53,7 +53,7 @@ export const Students: React.FC = () => {
       <PageHeader
         title="Quản lý học viên"
         subtitle={`${students.length} học viên · ${activeCount} đang học`}
-        actions={<Button icon="plus" onClick={() => { setEditStudent(null); setShowForm(true); }}>Thêm học viên</Button>}
+        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => { setEditStudent(null); setShowForm(true); }}>Thêm học viên</Button> : undefined}
       />
 
       {viewMode === 'grid' && (
@@ -102,6 +102,8 @@ export const Students: React.FC = () => {
           onEdit={handleEdit}
           onDelete={setDeleteTarget}
           actions={viewTabs}
+          onAdd={() => { setEditStudent(null); setShowForm(true); }}
+          onRefresh={refetch}
         />
       ) : (
         <StudentGrid students={filtered} onSelectStudent={setSelectedStudent} />

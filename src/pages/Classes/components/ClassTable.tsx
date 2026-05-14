@@ -10,12 +10,14 @@ interface ClassTableProps {
   onDelete?: (c: Class) => void
   actions?: React.ReactNode
   subtitle?: string
+  onAdd?: () => void
+  onRefresh?: () => void
 }
 
 const LVL_COLOR: Record<string, string> = { A1: '#FF6B35', A2: '#3B82F6', B1: '#10B981', B2: '#8B5CF6' }
 
 export const ClassTable: React.FC<ClassTableProps> = ({
-  classes, onSelectClass, onEdit, onDelete, actions, subtitle,
+  classes, onSelectClass, onEdit, onDelete, actions, subtitle, onAdd, onRefresh,
 }) => {
   const columns: DataGridColumn<Class>[] = [
     {
@@ -120,6 +122,9 @@ export const ClassTable: React.FC<ClassTableProps> = ({
       onRowClick={onSelectClass}
       exportFilename="lop-hoc"
       actions={actions}
+      onAdd={onAdd}
+      addLabel="Mở lớp mới"
+      onRefresh={onRefresh}
     />
   )
 }

@@ -37,6 +37,9 @@ interface DataGridProps<T = any> {
   title?: string
   subtitle?: string
   actions?: React.ReactNode
+  onAdd?: () => void
+  addLabel?: string
+  onRefresh?: () => void
   columns: DataGridColumn<T>[]
   data: T[]
   rowKey: (row: T) => string | number
@@ -143,6 +146,7 @@ const FilterSelect: React.FC<{
 
 export function DataGrid<T = any>({
   title, subtitle, actions,
+  onAdd, addLabel = 'Thêm mới', onRefresh,
   columns, data, rowKey,
   onRowClick, loading,
   defaultPageSize = 20,
@@ -317,7 +321,7 @@ export function DataGrid<T = any>({
           {title && <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{title}</div>}
           {subtitle && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{subtitle}</div>}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           {selectedCount > 0 && (
             <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600, padding: '4px 10px', background: 'var(--primary-light)', borderRadius: 8 }}>
               {selectedCount} đã chọn
@@ -331,15 +335,46 @@ export function DataGrid<T = any>({
               <Icon name="x" size={11} /> Xoá lọc ({activeFilters})
             </button>
           )}
+
+          {/* Divider before action buttons */}
+          {(onRefresh || onAdd || actions) && (
+            <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
+          )}
+
+          {actions}
+
+          {onRefresh && (
+            <button
+              onClick={onRefresh}
+              title="Làm mới"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
+            >
+              <Icon name="refresh" size={13} />
+            </button>
+          )}
+
           <button
             onClick={handleExport}
-            style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all 0.15s' }}
+            title="Export CSV"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
             onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
             onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
           >
-            <Icon name="download" size={12} /> Export CSV
+            <Icon name="download" size={13} />
           </button>
-          {actions}
+
+          {onAdd && (
+            <button
+              onClick={onAdd}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', height: 30, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'opacity 0.15s', flexShrink: 0 }}
+              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '0.88')}
+              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+            >
+              <Icon name="plus" size={13} /> {addLabel}
+            </button>
+          )}
         </div>
       </div>
 

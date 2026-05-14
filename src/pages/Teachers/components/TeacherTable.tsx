@@ -10,10 +10,12 @@ interface TeacherTableProps {
   onDelete?: (t: Teacher) => void
   actions?: React.ReactNode
   subtitle?: string
+  onAdd?: () => void
+  onRefresh?: () => void
 }
 
 export const TeacherTable: React.FC<TeacherTableProps> = ({
-  teachers, onSelectTeacher, onEdit, onDelete, actions, subtitle,
+  teachers, onSelectTeacher, onEdit, onDelete, actions, subtitle, onAdd, onRefresh,
 }) => {
   const columns: DataGridColumn<Teacher>[] = [
     {
@@ -101,6 +103,9 @@ export const TeacherTable: React.FC<TeacherTableProps> = ({
       onRowClick={onSelectTeacher}
       exportFilename="giao-vien"
       actions={actions}
+      onAdd={onAdd}
+      addLabel="Thêm giáo viên"
+      onRefresh={onRefresh}
     />
   )
 }

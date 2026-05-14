@@ -12,6 +12,8 @@ interface PaymentTableProps {
   markingId: string | null
   actions?: React.ReactNode
   subtitle?: string
+  onAdd?: () => void
+  onRefresh?: () => void
 }
 
 const METHOD_LABEL: Record<string, string> = {
@@ -22,7 +24,7 @@ const METHOD_LABEL: Record<string, string> = {
 }
 
 export const PaymentTable: React.FC<PaymentTableProps> = ({
-  rows, onMarkPaid, markingId, actions, subtitle,
+  rows, onMarkPaid, markingId, actions, subtitle, onAdd, onRefresh,
 }) => {
   const columns: DataGridColumn<PaymentRow>[] = [
     {
@@ -135,6 +137,9 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       exportFilename="phieu-thu"
       emptyText="Không có phiếu thu"
       actions={actions}
+      onAdd={onAdd}
+      addLabel="Tạo phiếu thu"
+      onRefresh={onRefresh}
     />
   )
 }
