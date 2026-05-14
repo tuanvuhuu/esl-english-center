@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, LoadingSpinner, EmptyState, Icon } from '../../../components';
+import { Modal, Button, LoadingSpinner, EmptyState, Icon, useToast } from '../../../components';
 import { QuestionCard } from './QuestionCard';
 import { AddQuestionModal } from './AddQuestionModal';
 import { AiSuggestPanel } from './AiSuggestPanel';
 import { ImportQuestionModal } from './ImportQuestionModal';
 import { PdfUploadTab } from './PdfUploadTab';
+import { QuestionBankModal } from './QuestionBankModal';
 import { exportTestToPdf } from '../testExport';
+import { saveQuestionToBank } from '../../../services/tests';
 import { 
   getTestQuestions, 
   createTestQuestion, 
@@ -28,6 +30,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
   onClose,
   test
 }) => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState<'questions' | 'pdf'>('questions');
   const [currentTest, setCurrentTest] = useState<DbTest | null>(null);
   const [questions, setQuestions] = useState<DbTestQuestion[]>([]);
@@ -36,6 +39,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
   const [showImport, setShowImport] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<DbTestQuestion | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showBank, setShowBank] = useState(false);
 
   const loadQuestions = async () => {
     if (!test) return;
@@ -243,6 +247,9 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
               <Button size="sm" variant="outline" icon="upload" onClick={() => setShowImport(true)}>
                 Import
               </Button>
+              <Button size="sm" variant="outline" icon="book" onClick={() => setShowBank(true)}>
+                Từ kho
+              </Button>
               <Button size="sm" icon="plus" onClick={() => { setEditingQuestion(null); setShowAdd(true); }}>
                 Thêm câu hỏi
               </Button>
@@ -260,12 +267,20 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
               />
             ) : (
               questions.map((q, i) => (
-                <QuestionCard 
-                  key={q.id} 
-                  question={q} 
-                  index={i} 
+                <QuestionCard
+                  key={q.id}
+                  question={q}
+                  index={i}
                   onEdit={(item) => { setEditingQuestion(item); setShowAdd(true); }}
                   onDelete={handleDeleteQuestion}
+                  onSaveToBank={async (id) => {
+                    try {
+                      await saveQuestionToBank(id)
+                      toast.success('Đã lưu vào kho câu hỏi.')
+                    } catch (e: any) {
+                      toast.error('Lỗi: ' + e.message)
+                    }
+                  }}
                 />
               ))
             )}
@@ -295,6 +310,16 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
         onClose={() => setShowImport(false)}
         onImport={handleImport}
       />
+
+      {test && (
+        <QuestionBankModal
+          open={showBank}
+          onClose={() => setShowBank(false)}
+          testId={test.id}
+          startOrderIndex={questions.length}
+          onAdded={loadQuestions}
+        />
+      )}
     </Modal>
   );
 };

@@ -8,13 +8,15 @@ interface QuestionCardProps {
   index: number;
   onEdit?: (q: DbTestQuestion) => void;
   onDelete?: (id: string) => void;
+  onSaveToBank?: (id: string) => void;
 }
 
-export const QuestionCard: React.FC<QuestionCardProps> = ({ 
-  question, 
-  index, 
-  onEdit, 
-  onDelete 
+export const QuestionCard: React.FC<QuestionCardProps> = ({
+  question,
+  index,
+  onEdit,
+  onDelete,
+  onSaveToBank,
 }) => {
   const getSkillIcon = (skill: string) => {
     switch (skill) {
@@ -70,6 +72,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500 }}>{getTypeText(question.type)}</span>
         </div>
         <div style={{ display: 'flex', gap: 4 }}>
+          {onSaveToBank && (
+            <Button variant="ghost" size="sm" icon="book" title="Lưu vào kho câu hỏi" onClick={() => onSaveToBank(question.id)} children="" />
+          )}
           <Button variant="ghost" size="sm" icon="edit" onClick={() => onEdit?.(question)} children="" />
           <Button variant="ghost" size="sm" icon="trash" style={{ color: '#ef4444' }} onClick={() => onDelete?.(question.id)} children="" />
         </div>

@@ -32,25 +32,32 @@ export async function geminiParseQuestions(
   }
 
   const prompt = `
-    Analyze the ${imageFile ? 'image' : 'text'} from an ESL exam.
-    Extract all questions and return ONLY a valid JSON array.
-    
-    Each object in the array MUST follow this format:
-    {
-      "skill": "reading" | "listening" | "speaking" | "writing" | "general",
-      "type": "mcq" | "true_false" | "short_answer" | "essay" | "speaking_prompt",
-      "question_text": "string",
-      "options": [ { "text": "string", "isCorrect": boolean } ],
-      "points": number,
-      "explanation": "string"${imageFile ? ',\n      "box_2d": [ymin, xmin, ymax, xmax]' : ''}
-    }
+Bạn là chuyên gia trích xuất câu hỏi từ đề thi tiếng Anh. Nội dung có thể là tiếng Việt lẫn tiếng Anh (vd trang ila.edu.vn, hoctot.com, vietjack.com...).
 
-    Rules:
-    1. Fix OCR/spelling errors.
-    2. For MCQ, ensure one option is marked isCorrect: true.
-    ${imageFile ? '3. "box_2d" should be the normalized coordinates [0-1000] of ONLY the ILLUSTRATION or IMAGE associated with this question. Do NOT include the question text in the crop area. If there is no image/illustration, omit "box_2d".' : ''}
-    
-    ${imageFile ? 'IMAGE PROVIDED. ANALYZE THE IMAGE CONTENT.' : `TEXT TO ANALYZE:\n${text}`}
+Phân tích ${imageFile ? 'hình ảnh' : 'văn bản'} sau và trích xuất TẤT CẢ câu hỏi tiếng Anh.
+
+Trả về JSON ARRAY (không có markdown fence). Mỗi object format:
+{
+  "skill": "reading" | "listening" | "speaking" | "writing" | "general",
+  "type": "mcq" | "true_false" | "short_answer" | "essay" | "speaking_prompt",
+  "question_text": "string (BẰNG TIẾNG ANH)",
+  "options": [ { "text": "string", "isCorrect": boolean } ],
+  "points": number,
+  "explanation": "string"${imageFile ? ',\n  "box_2d": [ymin, xmin, ymax, xmax]' : ''}
+}
+
+QUY TẮC:
+1. **BỎ QUA**: navigation, ads, related posts, comments, footer, dịch tiếng Việt của câu hỏi, lời giải/lời bình tiếng Việt.
+2. **CHỈ TRÍCH**: câu hỏi tiếng Anh GỐC + đáp án.
+3. Nếu trang có ĐÁP ÁN (vd "Đáp án: B", "Answer key: 1.B 2.C..."), dùng nó để đánh dấu \`isCorrect: true\` cho option đúng.
+4. MCQ phải có CHÍNH XÁC 1 option \`isCorrect: true\`.
+5. Sửa lỗi OCR/typo nếu có.
+6. Reading: nếu có passage, gắn vào question_text TRƯỚC câu hỏi.
+7. Listening: nội dung audio vào \`explanation\`.
+8. \`points\`: 1 cho MCQ/T-F, 5+ cho essay/speaking.
+${imageFile ? '9. "box_2d" là tọa độ [0-1000] của ẢNH MINH HỌA (nếu có) trong câu hỏi, KHÔNG bao gồm phần text.' : ''}
+
+${imageFile ? 'PHÂN TÍCH NỘI DUNG HÌNH ẢNH.' : `VĂN BẢN CẦN PHÂN TÍCH:\n\n${text}`}
   `;
 
   const parts: any[] = [{ text: prompt }];
@@ -288,19 +295,54 @@ export async function readImageText(file: File): Promise<string> {
 }
 
 /**
- * Attempts to fetch content from a URL and extract text.
+ * Fetch content từ URL — tự fallback qua CORS proxy nếu direct fetch fail.
  */
 export async function fetchUrlContent(url: string): Promise<string> {
+  // CORS proxies free, public. Thử theo thứ tự.
+  const proxies = [
+    (u: string) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+    (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+    (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+  ];
+
+  const tryFetch = async (fetchUrl: string): Promise<string> => {
+    const response = await fetch(fetchUrl);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.text();
+  };
+
+  let html: string | null = null;
+  let lastErr: any = null;
+
+  // 1. Try direct (same-origin only, hiếm khi work)
   try {
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch URL');
-    const html = await response.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const scripts = doc.querySelectorAll('script, style, nav, footer, header');
-    scripts.forEach(s => s.remove());
-    return doc.body.innerText || '';
-  } catch (err) {
-    console.error(err);
-    throw new Error('CORS error: Hãy thử copy văn bản trực tiếp.');
+    html = await tryFetch(url);
+  } catch (e) {
+    lastErr = e;
+    // 2. Fallback through proxies
+    for (const proxy of proxies) {
+      try {
+        html = await tryFetch(proxy(url));
+        break;
+      } catch (e2) {
+        lastErr = e2;
+      }
+    }
   }
+
+  if (!html) {
+    console.error('[fetchUrlContent] all attempts failed:', lastErr);
+    throw new Error('Không fetch được URL (CORS hoặc URL không tồn tại). Hãy copy thẳng nội dung trang.');
+  }
+
+  // Parse và clean HTML
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.querySelectorAll('script, style, nav, footer, header, aside, iframe, noscript, .ads, .advertisement, .related, .comments, .sidebar')
+    .forEach(s => s.remove());
+
+  // Lấy main content nếu có
+  const main = doc.querySelector('article, main, .post-content, .entry-content, .article-content, #content');
+  const text = (main as HTMLElement)?.innerText || doc.body.innerText || '';
+
+  return text.replace(/\n{3,}/g, '\n\n').trim();
 }

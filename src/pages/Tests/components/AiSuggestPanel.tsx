@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Card, Input, Select, Button, Icon, Badge } from '../../../components';
 import { generateQuestions, GeneratedQuestion } from '../questionGenerator';
+import { generateQuestionsWithAi } from '../aiQuestionGenerator';
+import { searchQuestionsOnline, WebSearchedQuestion } from '../webSearchQuestions';
+import { getActiveProvider, hasAi } from '../../../lib/ai';
+import { hasGeminiKey } from '../../../lib/gemini';
 import { QuestionSkill } from '../../../types/database';
 
 interface AiSuggestPanelProps {
@@ -12,19 +16,54 @@ export const AiSuggestPanel: React.FC<AiSuggestPanelProps> = ({ level, onAddSele
   const [topic, setTopic] = useState('');
   const [skill, setSkill] = useState<QuestionSkill | 'all'>('all');
   const [count, setCount] = useState(5);
-  const [suggestions, setSuggestions] = useState<GeneratedQuestion[]>([]);
+  const [suggestions, setSuggestions] = useState<(GeneratedQuestion & { source_url?: string; source_title?: string })[]>([]);
   const [selectedIndices, setSelectedIndices] = useState<number[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [usingAi, setUsingAi] = useState<boolean>(false);
+  const [mode, setMode] = useState<'generate' | 'search'>('generate');
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setGenerating(true);
-    // Simulate AI thinking time
-    setTimeout(() => {
-      const results = generateQuestions({ topic, skill, level, count });
+    setError(null);
+    try {
+      let results: (GeneratedQuestion & { source_url?: string; source_title?: string })[]
+
+      if (mode === 'search') {
+        // Tìm từ internet bằng Gemini Search Grounding
+        if (!hasGeminiKey()) {
+          setError('Chế độ tìm internet cần Gemini API key.')
+          setGenerating(false)
+          return
+        }
+        try {
+          results = await searchQuestionsOnline({ topic, skill, level, count })
+          setUsingAi(true)
+        } catch (e: any) {
+          console.error('[Web Search]', e)
+          setError(`Lỗi tìm kiếm: ${e?.message ?? 'unknown'}`)
+          setGenerating(false)
+          return
+        }
+      } else if (hasAi()) {
+        try {
+          results = await generateQuestionsWithAi({ topic, skill, level, count });
+          setUsingAi(true)
+        } catch (e: any) {
+          console.warn('[AI] failed, fallback procedural:', e?.message)
+          setError(`AI lỗi (${e?.message ?? 'unknown'}). Dùng generator nội bộ.`)
+          results = generateQuestions({ topic, skill, level, count });
+          setUsingAi(false)
+        }
+      } else {
+        results = generateQuestions({ topic, skill, level, count });
+        setUsingAi(false)
+      }
       setSuggestions(results);
-      setSelectedIndices(results.map((_, i) => i)); // select all by default
+      setSelectedIndices(results.map((_, i) => i));
+    } finally {
       setGenerating(false);
-    }, 800);
+    }
   };
 
   const toggleSelection = (idx: number) => {
@@ -44,18 +83,57 @@ export const AiSuggestPanel: React.FC<AiSuggestPanelProps> = ({ level, onAddSele
           }}>
             <Icon name="zap" size={18} />
           </div>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-1)' }}>Gợi ý bởi AI</div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Tự động tạo câu hỏi theo chủ đề</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text-1)' }}>Gợi ý bởi AI</div>
+              {hasAi() && (
+                <Badge variant="success" style={{ fontSize: 9 }}>
+                  {getActiveProvider() === 'claude' ? 'Claude' : 'Gemini'} {usingAi && suggestions.length > 0 ? 'ON' : ''}
+                </Badge>
+              )}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+              {hasAi()
+                ? `${getActiveProvider() === 'claude' ? 'Claude' : 'Gemini'} tạo câu hỏi cho mầm non & tiểu học`
+                : 'Generator nội bộ — cấu hình API key để dùng AI thật'}
+            </div>
           </div>
+        </div>
+
+        {/* Mode toggle: Generate vs Search internet */}
+        <div style={{ display: 'flex', gap: 4, marginBottom: 12, padding: 3, borderRadius: 10, background: 'var(--hover-bg)' }}>
+          {([
+            { id: 'generate', label: '🤖 AI tạo mới',    desc: 'AI tự sinh câu hỏi' },
+            { id: 'search',   label: '🌐 Tìm internet', desc: 'Lấy từ đề thi online' },
+          ] as const).map(m => (
+            <button
+              key={m.id}
+              onClick={() => setMode(m.id)}
+              style={{
+                flex: 1, padding: '8px 10px',
+                border: 'none', cursor: 'pointer',
+                borderRadius: 8,
+                background: mode === m.id ? 'var(--card)' : 'transparent',
+                color: mode === m.id ? 'var(--primary)' : 'var(--text-3)',
+                fontWeight: mode === m.id ? 700 : 500,
+                fontSize: 12, transition: 'all 0.15s',
+                boxShadow: mode === m.id ? 'var(--shadow-sm)' : 'none',
+              }}
+              title={m.desc}
+            >
+              {m.label}
+            </button>
+          ))}
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Input
-            label="Chủ đề bài kiểm tra"
+            label={mode === 'search' ? 'Chủ đề cần tìm' : 'Chủ đề bài kiểm tra'}
             value={topic}
             onChange={setTopic}
-            placeholder="Ví dụ: Family, Environment, Hobbies..."
+            placeholder={mode === 'search'
+              ? 'Vd: con vật, gia đình, màu sắc...'
+              : 'Vd: Family, Environment, Hobbies...'}
             icon="tag"
           />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
@@ -82,13 +160,25 @@ export const AiSuggestPanel: React.FC<AiSuggestPanelProps> = ({ level, onAddSele
               ]}
             />
           </div>
-          <Button 
-            onClick={handleGenerate} 
-            loading={generating} 
+          <Button
+            onClick={handleGenerate}
+            loading={generating}
             style={{ marginTop: 4, width: '100%', background: 'linear-gradient(135deg, var(--primary), #FF9F1C)' }}
           >
-            Tạo câu hỏi gợi ý
+            {generating
+              ? (mode === 'search' ? '🔍 Đang tìm trên internet...' : `Đang gọi ${getActiveProvider() === 'claude' ? 'Claude' : 'Gemini'}...`)
+              : (mode === 'search' ? '🌐 Tìm câu hỏi từ internet' : '🤖 Tạo câu hỏi gợi ý')}
           </Button>
+          {error && (
+            <div style={{
+              fontSize: 11, color: 'var(--warning-dark)',
+              padding: '6px 10px', borderRadius: 6,
+              background: 'var(--warning-light)',
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <Icon name="alert-circle" size={11} /> {error}
+            </div>
+          )}
         </div>
       </Card>
 
@@ -138,15 +228,54 @@ export const AiSuggestPanel: React.FC<AiSuggestPanelProps> = ({ level, onAddSele
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-1)', paddingRight: 24, lineHeight: 1.4 }}>
                   {q.question_text}
                 </div>
+                {(q as any).source_url && (
+                  <a
+                    href={(q as any).source_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={e => e.stopPropagation()}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 4,
+                      marginTop: 6, fontSize: 10, color: 'var(--text-4)',
+                      textDecoration: 'none',
+                    }}
+                  >
+                    <Icon name="eye" size={10} />
+                    Nguồn: {(q as any).source_title || new URL((q as any).source_url).hostname}
+                  </a>
+                )}
                 {q.image_url && (
-                  <div style={{ marginTop: 8, borderRadius: 6, overflow: 'hidden', border: '1px solid var(--border)' }}>
-                    <img src={q.image_url} alt="Preview" style={{ width: '100%', height: 100, objectFit: 'cover' }} />
+                  <div style={{
+                    marginTop: 8, borderRadius: 6, overflow: 'hidden',
+                    border: '1px solid var(--border)',
+                    position: 'relative', minHeight: 100,
+                    background: 'var(--hover-bg)',
+                  }}>
+                    <div style={{
+                      position: 'absolute', inset: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--text-4)', fontSize: 11,
+                    }}>
+                      Đang tạo ảnh AI...
+                    </div>
+                    <img
+                      src={q.image_url}
+                      alt="Preview"
+                      loading="lazy"
+                      style={{ width: '100%', height: 120, objectFit: 'cover', position: 'relative', zIndex: 1 }}
+                      onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    />
                   </div>
                 )}
-                {q.hasImageSuggestion && !q.image_url && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, color: 'var(--primary)', fontSize: 10, fontWeight: 700 }}>
-                    <Icon name="image" size={10} />
-                    Gợi ý: Cần thêm hình ảnh
+                {q.hasImageSuggestion && q.imageSuggestion && !q.image_url && (
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 6, marginTop: 6,
+                    padding: '4px 8px', borderRadius: 6,
+                    background: 'var(--primary-light)',
+                    color: 'var(--primary)', fontSize: 10, fontWeight: 600,
+                  }}>
+                    <Icon name="image" size={11} />
+                    <span>Gợi ý ảnh: <strong>{q.imageSuggestion}</strong></span>
                   </div>
                 )}
               </div>

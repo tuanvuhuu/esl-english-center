@@ -1,11 +1,16 @@
 import React, { useMemo, useCallback, useRef, useState } from 'react'
-import { Card, Badge, Icon } from '../../../components'
+import { Card, Badge, Icon, Button, Modal, useConfirm, useToast } from '../../../components'
 import { TextWithEllipse } from '../../../components/common/TextWithEllipse'
 import { useQuery } from '../../../hooks/useSupabase'
 import { getEnrollmentsByClass } from '../../../services/classes'
 import { getTestResults, upsertTestResult } from '../../../services/tests'
 import type { DbTest, DbTestResult } from '../../../types/database'
 import { generateStudentFeedback } from '../aiInsights'
+import { generateParentReport } from '../parentReport'
+import { StudentProgressModal } from './StudentProgressModal'
+import { ImportScoresModal } from './ImportScoresModal'
+import { AudioRecorder } from './AudioRecorder'
+import { uploadStudentAudio } from '../../../services/tests'
 
 const PASS_THRESHOLD_DEFAULT = 60
 
@@ -55,9 +60,56 @@ interface TestsResultsTabProps {
 export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
   tests, selectedTest, onSelectTest,
 }) => {
+  const confirm = useConfirm()
+  const toast = useToast()
   const [editingId, setEditingId] = useState<string | null>(null)
   const [draft, setDraft]         = useState<Draft>(toDraft(null))
   const [savingId, setSavingId]   = useState<string | null>(null)
+  const [bulkRunning, setBulkRunning] = useState(false)
+  const [bulkDone, setBulkDone]   = useState(0)
+  const [progressStudent, setProgressStudent] = useState<{ id: string; name: string } | null>(null)
+  const [showImport, setShowImport] = useState(false)
+  const [audioStudent, setAudioStudent] = useState<StudentRow | null>(null)
+  const [uploadingAudio, setUploadingAudio] = useState(false)
+
+  const handleExportReport = (row: StudentRow) => {
+    if (!selectedTest || !row.result || row.result.total_score == null) {
+      toast.warning('Học sinh chưa có điểm để xuất báo cáo.')
+      return
+    }
+    const fb = row.result.teacher_feedback || generateStudentFeedback(
+      { ...row.result, student: { id: row.studentId, full_name: row.studentName, level: row.level, status: '' } } as DbTestResult,
+      selectedTest
+    )
+    const { blobUrl, fileName } = generateParentReport({
+      test: selectedTest,
+      studentName: row.studentName,
+      level: row.level,
+      result: row.result,
+      classAvg: stats?.avg ?? null,
+      feedback: fb,
+    })
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = fileName
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+  }
+
+  const handleBulkExport = async () => {
+    if (!selectedTest) return
+    const targets = rows.filter(r => r.result?.total_score != null)
+    if (targets.length === 0) { toast.warning('Chưa có học sinh nào có điểm.'); return }
+    const ok = await confirm({
+      title: 'Xuất báo cáo hàng loạt',
+      message: `Xuất ${targets.length} báo cáo PDF gửi phụ huynh?`,
+      confirmLabel: 'Xuất PDF',
+      variant: 'primary',
+    })
+    if (!ok) return
+    targets.forEach((row, i) => setTimeout(() => handleExportReport(row), i * 300))
+    toast.success(`Đang xuất ${targets.length} báo cáo...`)
+  }
   const blurTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const fetchEnrollments = useCallback(
@@ -95,6 +147,49 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
   }, [rows])
 
   const threshold = selectedTest?.pass_threshold ?? PASS_THRESHOLD_DEFAULT
+
+  const handleBulkAi = async () => {
+    if (!selectedTest) return
+    const targets = rows.filter(r => r.result?.total_score != null && !r.result?.teacher_feedback)
+    if (targets.length === 0) {
+      toast.info('Tất cả học sinh có điểm đã có nhận xét rồi.')
+      return
+    }
+    const ok = await confirm({
+      title: 'Nhận xét AI cả lớp',
+      message: `Tạo nhận xét AI cho ${targets.length} học sinh chưa có nhận xét?`,
+      confirmLabel: 'Tạo nhận xét',
+      variant: 'primary',
+    })
+    if (!ok) return
+
+    setBulkRunning(true)
+    setBulkDone(0)
+    try {
+      for (const row of targets) {
+        const fb = generateStudentFeedback(
+          { ...row.result!, student: { id: row.studentId, full_name: row.studentName, level: row.level, status: '' } } as DbTestResult,
+          selectedTest
+        )
+        await upsertTestResult({
+          test_id:          selectedTest.id,
+          student_id:       row.studentId,
+          score_reading:    row.result!.score_reading,
+          score_listening:  row.result!.score_listening,
+          score_speaking:   row.result!.score_speaking,
+          score_writing:    row.result!.score_writing,
+          total_score:      row.result!.total_score,
+          is_passed:        row.result!.is_passed,
+          teacher_feedback: fb,
+        })
+        setBulkDone(prev => prev + 1)
+      }
+      await refetchResults()
+    } finally {
+      setBulkRunning(false)
+      setBulkDone(0)
+    }
+  }
 
   const startEdit = (row: StudentRow) => {
     if (blurTimer.current) clearTimeout(blurTimer.current)
@@ -231,8 +326,40 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
 
             {/* Table */}
             <Card style={{ padding: 0, overflow: 'hidden' }}>
-              <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border)', fontSize: 11, color: 'var(--text-4)' }}>
-                Click vào ô điểm để chỉnh sửa · Enter để lưu · Esc để hủy
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '8px 16px', borderBottom: '1px solid var(--border)',
+              }}>
+                <span style={{ fontSize: 11, color: 'var(--text-4)' }}>
+                  Click ô điểm để sửa · Enter lưu · Esc hủy
+                </span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon="zap"
+                    loading={bulkRunning}
+                    onClick={handleBulkAi}
+                  >
+                    {bulkRunning ? `Đang tạo ${bulkDone}...` : 'Nhận xét AI cả lớp'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon="upload"
+                    onClick={() => setShowImport(true)}
+                  >
+                    Import Excel
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon="download"
+                    onClick={handleBulkExport}
+                  >
+                    Xuất PDF cả lớp
+                  </Button>
+                </div>
               </div>
               <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <thead>
@@ -279,8 +406,22 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
                       >
                         {/* Name */}
                         <td style={{ ...tdStyle, textAlign: 'left' }}>
-                          <div style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 13 }}>{row.studentName}</div>
-                          {row.level && <div style={{ fontSize: 11, color: 'var(--text-4)' }}>{row.level}</div>}
+                          <button
+                            onClick={e => { e.stopPropagation(); setProgressStudent({ id: row.studentId, name: row.studentName }) }}
+                            style={{
+                              background: 'none', border: 'none', padding: 0, cursor: 'pointer', textAlign: 'left',
+                              display: 'flex', alignItems: 'center', gap: 6,
+                            }}
+                            title="Xem lịch sử học tập"
+                          >
+                            <div>
+                              <div style={{ fontWeight: 600, color: 'var(--primary)', fontSize: 13, textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: 3 }}>
+                                {row.studentName}
+                              </div>
+                              {row.level && <div style={{ fontSize: 11, color: 'var(--text-4)' }}>{row.level}</div>}
+                            </div>
+                            <Icon name="trending-up" size={12} style={{ color: 'var(--text-4)' }} />
+                          </button>
                         </td>
 
                         {/* Score cells */}
@@ -390,17 +531,44 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
                           )}
                         </td>
 
-                        {/* Edit / status */}
-                        <td
-                          style={{ ...tdStyle, cursor: isEditing || isSaving ? 'default' : 'pointer' }}
-                          onClick={() => !isEditing && !isSaving && startEdit(row)}
-                        >
+                        {/* Edit / status / export */}
+                        <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
                           {isSaving ? (
                             <Icon name="loader" size={14} style={{ color: 'var(--primary)', animation: 'spin 0.8s linear infinite' }} />
                           ) : isEditing ? (
                             <Icon name="check" size={14} style={{ color: 'var(--success)' }} />
                           ) : (
-                            <Icon name="edit" size={14} style={{ color: 'var(--text-4)' }} className="row-edit-icon" />
+                            <div style={{ display: 'inline-flex', gap: 4 }}>
+                              <button
+                                onClick={e => { e.stopPropagation(); startEdit(row) }}
+                                title="Sửa điểm"
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                              >
+                                <Icon name="edit" size={14} style={{ color: 'var(--text-3)' }} />
+                              </button>
+                              {row.result?.total_score != null && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); handleExportReport(row) }}
+                                  title="Xuất báo cáo PDF gửi phụ huynh"
+                                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                                >
+                                  <Icon name="file-text" size={14} style={{ color: 'var(--primary)' }} />
+                                </button>
+                              )}
+                              {selectedTest?.type === 'speaking' && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setAudioStudent(row) }}
+                                  title="Ghi âm bài nói"
+                                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                                >
+                                  <Icon
+                                    name="zap"
+                                    size={14}
+                                    style={{ color: row.result?.speaking_audio_url ? 'var(--success)' : 'var(--text-3)' }}
+                                  />
+                                </button>
+                              )}
+                            </div>
                           )}
                         </td>
                       </tr>
@@ -419,6 +587,77 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
           </>
         )}
       </div>
+
+      {progressStudent && (
+        <StudentProgressModal
+          open={!!progressStudent}
+          onClose={() => setProgressStudent(null)}
+          studentId={progressStudent.id}
+          studentName={progressStudent.name}
+        />
+      )}
+
+      <ImportScoresModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        test={selectedTest}
+        rows={rows}
+        threshold={threshold}
+        onDone={refetchResults}
+      />
+
+      {audioStudent && selectedTest && (
+        <Modal
+          open={!!audioStudent}
+          onClose={() => setAudioStudent(null)}
+          title={`Ghi âm bài nói — ${audioStudent.studentName}`}
+          width={560}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 13, color: 'var(--text-3)', lineHeight: 1.5 }}>
+              Nhấn "Bắt đầu ghi âm" để ghi âm bài nói của học sinh. Tối đa 2 phút.
+            </div>
+            <AudioRecorder
+              existingUrl={audioStudent.result?.speaking_audio_url}
+              onRecorded={async (blob) => {
+                setUploadingAudio(true)
+                try {
+                  const url = await uploadStudentAudio(selectedTest.id, audioStudent.studentId, blob)
+                  await upsertTestResult({
+                    test_id: selectedTest.id,
+                    student_id: audioStudent.studentId,
+                    score_reading: audioStudent.result?.score_reading ?? null,
+                    score_listening: audioStudent.result?.score_listening ?? null,
+                    score_speaking: audioStudent.result?.score_speaking ?? null,
+                    score_writing: audioStudent.result?.score_writing ?? null,
+                    total_score: audioStudent.result?.total_score ?? null,
+                    is_passed: audioStudent.result?.is_passed ?? null,
+                    teacher_feedback: audioStudent.result?.teacher_feedback ?? null,
+                    speaking_audio_url: url,
+                  })
+                  await refetchResults()
+                } catch (e: any) {
+                  toast.error('Upload audio thất bại: ' + e.message)
+                } finally {
+                  setUploadingAudio(false)
+                }
+              }}
+              onRemove={async () => {
+                await upsertTestResult({
+                  test_id: selectedTest.id,
+                  student_id: audioStudent.studentId,
+                  speaking_audio_url: null,
+                })
+                await refetchResults()
+                setAudioStudent(null)
+              }}
+            />
+            {uploadingAudio && (
+              <div style={{ fontSize: 12, color: 'var(--primary)' }}>Đang upload...</div>
+            )}
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

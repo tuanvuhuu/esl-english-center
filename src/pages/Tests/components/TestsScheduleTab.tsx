@@ -41,10 +41,11 @@ interface TestsScheduleTabProps {
   onBuildQuestions?: (test: DbTest) => void
   onExportPdf?: (test: DbTest) => Promise<void>
   onViewPdf?: (test: DbTest) => void
+  onTakeOnline?: (test: DbTest) => void
 }
 
 export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
-  tests, loading, onSelectTest, onCreate, onBuildQuestions, onExportPdf, onViewPdf
+  tests, loading, onSelectTest, onCreate, onBuildQuestions, onExportPdf, onViewPdf, onTakeOnline
 }) => {
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [search, setSearch] = useState('')
@@ -149,6 +150,17 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
                 style={{ color: 'var(--primary)', fontWeight: 700 }}
               >
                 Câu hỏi
+              </Button>
+            )}
+            {isUpcoming && onTakeOnline && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="zap"
+                onClick={e => { e.stopPropagation(); onTakeOnline(t) }}
+                style={{ color: 'var(--success)', fontWeight: 700 }}
+              >
+                Làm online
               </Button>
             )}
             {onViewPdf && (

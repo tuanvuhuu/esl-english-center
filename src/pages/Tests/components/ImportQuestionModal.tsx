@@ -15,7 +15,9 @@ export const ImportQuestionModal: React.FC<ImportQuestionModalProps> = ({
 }) => {
   const [sourceType, setSourceType] = useState<'text' | 'link' | 'pdf' | 'image'>('text');
   const [useAI, setUseAI] = useState(true);
-  const [geminiKey, setGeminiKey] = useState(localStorage.getItem('gemini_api_key') || 'AIzaSyCfVZsNxQ-FCaFXXqZei5HD_4BPGGihCUs');
+  const [geminiKey, setGeminiKey] = useState(
+    localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || ''
+  );
   const [inputValue, setInputValue] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ParsedQuestion[]>([]);

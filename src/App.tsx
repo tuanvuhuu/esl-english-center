@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sidebar, Header, ToastProvider } from './components';
+import { Sidebar, Header, ToastProvider, ConfirmProvider } from './components';
 import { useNavCounts } from './hooks';
 import { pageTitles, pageComponents } from './config/routers';
 import { useAuth } from './context/AuthContext';
@@ -44,11 +44,12 @@ export default function App() {
   }
 
   if (!session) {
-    return <ToastProvider><Login /></ToastProvider>;
+    return <ToastProvider><ConfirmProvider><Login /></ConfirmProvider></ToastProvider>;
   }
 
   return (
     <ToastProvider>
+    <ConfirmProvider>
     <AppProvider>
     <div
       style={{
@@ -83,6 +84,7 @@ export default function App() {
       </div>
     </div>
     </AppProvider>
+    </ConfirmProvider>
     </ToastProvider>
   );
 }

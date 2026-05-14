@@ -259,6 +259,7 @@ export interface DbTestResult {
   is_passed: boolean | null
   teacher_feedback: string | null
   ai_feedback: string | null
+  speaking_audio_url: string | null
   is_deleted: boolean
   created_at: string
   created_by: string | null

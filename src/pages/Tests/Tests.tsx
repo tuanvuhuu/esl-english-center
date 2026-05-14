@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { PageHeader, Tabs } from '../../components'
+import { PageHeader, Tabs, useToast } from '../../components'
 import { useQuery } from '../../hooks/useSupabase'
 import { getTests, createTest, getTestQuestions } from '../../services/tests'
 import { getClasses } from '../../services/classes'
@@ -11,6 +11,7 @@ import { TestsAnalyticsTab } from './components/TestsAnalyticsTab'
 import { CreateTestModal }   from './components/CreateTestModal'
 import { QuestionBuilderModal } from './components/QuestionBuilderModal'
 import { PdfViewerModal } from './components/PdfViewerModal'
+import { OnlineTestModal } from './components/OnlineTestModal'
 import { exportTestToPdf } from './testExport'
 
 const TABS = [
@@ -20,12 +21,14 @@ const TABS = [
 ]
 
 export const Tests: React.FC = () => {
+  const toast = useToast()
   const [activeTab,    setActiveTab]    = useState('schedule')
   const [selectedTest, setSelectedTest] = useState<DbTest | null>(null)
   const [showCreate,   setShowCreate]   = useState(false)
   const [creating,     setCreating]     = useState(false)
   const [questionBuilderTest, setQuestionBuilderTest] = useState<DbTest | null>(null)
   const [pdfViewTest, setPdfViewTest] = useState<DbTest | null>(null)
+  const [onlineTest, setOnlineTest] = useState<DbTest | null>(null)
 
   const { data: rawTests, loading: testsLoading, refetch: refetchTests } = useQuery(getTests)
   const { data: rawClasses } = useQuery(getClasses)
@@ -53,7 +56,7 @@ export const Tests: React.FC = () => {
       await exportTestToPdf({ test, questions: questions as any });
     } catch (err) {
       console.error('Export PDF Error:', err);
-      alert('Không thể xuất PDF. Hãy kiểm tra lại dữ liệu câu hỏi.');
+      toast.error('Không thể xuất PDF. Hãy kiểm tra lại dữ liệu câu hỏi.');
     }
   };
 
@@ -77,6 +80,7 @@ export const Tests: React.FC = () => {
             onBuildQuestions={setQuestionBuilderTest}
             onExportPdf={handleExportPdf}
             onViewPdf={setPdfViewTest}
+            onTakeOnline={setOnlineTest}
             onCreate={() => setShowCreate(true)}
           />
         )
@@ -135,6 +139,12 @@ export const Tests: React.FC = () => {
         open={!!pdfViewTest}
         onClose={() => setPdfViewTest(null)}
         test={pdfViewTest}
+      />
+
+      <OnlineTestModal
+        open={!!onlineTest}
+        onClose={() => { setOnlineTest(null); refetchTests() }}
+        test={onlineTest}
       />
     </div>
   )
