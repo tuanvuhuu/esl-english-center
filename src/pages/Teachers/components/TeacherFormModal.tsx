@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button } from '../../../components'
+import { Modal, Input, Select, Button, useToast } from '../../../components'
 import { createTeacher, updateTeacher } from '../../../services'
 import type { Teacher } from '../../../types/data'
 
@@ -29,6 +29,7 @@ const COLORS = ['#6366f1', '#FF6B35', '#10B981', '#3B82F6', '#F59E0B', '#EC4899'
 
 export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClose, onSuccess, teacher }) => {
   const isEdit = !!teacher
+  const toast = useToast()
   const [form, setForm] = useState<Form>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,10 +72,12 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
       } else {
         await createTeacher(payload)
       }
+      toast.success(isEdit ? 'Cập nhật giáo viên thành công' : 'Thêm giáo viên thành công')
       onSuccess()
       onClose()
     } catch (e: any) {
       setError(e.message)
+      toast.error(e.message || 'Đã có lỗi xảy ra')
     } finally {
       setSaving(false)
     }
@@ -120,7 +123,7 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'center' }}>
         <Button variant="secondary" onClick={onClose}>Huỷ</Button>
         <Button icon={saving ? undefined : 'check'} onClick={handleSave} disabled={saving}>
           {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Thêm giáo viên'}

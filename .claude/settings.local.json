@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(Get-ChildItem -Path \"E:\\\\004. MMCV_2026\\\\07. PERSONAL\\\\esl-english-center_\\\\.claude\\\\worktrees\\\\keen-cray-2c4064\" -Recurse -Include \"*.ts\", \"*.tsx\")",
+      "Bash(Select-Object FullName)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(gh pr create --title 'feat: reusable DataGrid + full table/grid view for all screens' --body ' *)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/@tanstack/react-table/package.json'\\).version\\)\")"
+    ]
+  }
+}

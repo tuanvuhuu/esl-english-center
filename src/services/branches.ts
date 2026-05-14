@@ -22,3 +22,26 @@ export async function getBranchById(id: string) {
   if (error) throw error
   return data as Branch
 }
+
+export async function createBranch(payload: {
+  code: string; name: string; address?: string | null
+  phone?: string | null; email?: string | null; status: 'active' | 'inactive'; notes?: string | null
+}) {
+  const { data, error } = await supabase.from('branches').insert(payload).select().single()
+  if (error) throw error
+  return data as Branch
+}
+
+export async function updateBranch(id: string, payload: Partial<{
+  code: string; name: string; address: string | null
+  phone: string | null; email: string | null; status: 'active' | 'inactive'; notes: string | null
+}>) {
+  const { data, error } = await supabase.from('branches').update(payload).eq('id', id).select().single()
+  if (error) throw error
+  return data as Branch
+}
+
+export async function softDeleteBranch(id: string) {
+  const { error } = await supabase.from('branches').update({ is_deleted: true }).eq('id', id)
+  if (error) throw error
+}

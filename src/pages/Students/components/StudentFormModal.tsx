@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button } from '../../../components'
+import { Modal, Input, Select, Button, useToast } from '../../../components'
 import { createStudentWithParent, updateStudent } from '../../../services'
 import { useQuery } from '../../../hooks'
 import { getClasses } from '../../../services'
@@ -33,6 +33,7 @@ const EMPTY: Form = {
 
 export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClose, onSuccess, student }) => {
   const isEdit = !!student
+  const toast = useToast()
   const [form, setForm] = useState<Form>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -91,10 +92,12 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
           form.parentRelation,
         )
       }
+      toast.success(isEdit ? 'Cập nhật học viên thành công' : 'Thêm học viên thành công')
       onSuccess()
       onClose()
     } catch (e: any) {
       setError(e.message)
+      toast.error(e.message || 'Đã có lỗi xảy ra')
     } finally {
       setSaving(false)
     }
@@ -152,7 +155,7 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'center' }}>
         <Button variant="secondary" onClick={onClose}>Huỷ</Button>
         <Button icon={saving ? undefined : 'check'} onClick={handleSave} disabled={saving}>
           {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Lưu học viên'}

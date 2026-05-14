@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Sidebar, Header } from './components';
+import { Sidebar, Header, ToastProvider } from './components';
+import { useNavCounts } from './hooks';
 import { pageTitles, pageComponents } from './config/routers';
 import { useAuth } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
 import { Login } from './pages/Login/Login';
 
 export default function App() {
   const { session, loading: authLoading } = useAuth();
+  const navCounts = useNavCounts();
   const [page, setPage] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -41,10 +44,12 @@ export default function App() {
   }
 
   if (!session) {
-    return <Login />;
+    return <ToastProvider><Login /></ToastProvider>;
   }
 
   return (
+    <ToastProvider>
+    <AppProvider>
     <div
       style={{
         display: 'flex',
@@ -60,6 +65,7 @@ export default function App() {
         collapsed={isMobile ? !mobileSidebarOpen : sidebarCollapsed}
         onToggle={isMobile ? (v: boolean) => setMobileSidebarOpen(v) : (v: boolean) => setSidebarCollapsed(v)}
         isMobile={isMobile}
+        counts={navCounts}
       />
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh' }}>
@@ -76,5 +82,7 @@ export default function App() {
         </main>
       </div>
     </div>
+    </AppProvider>
+    </ToastProvider>
   );
 }

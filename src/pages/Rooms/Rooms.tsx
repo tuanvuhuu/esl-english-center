@@ -1,11 +1,12 @@
-import React, { useState } from 'react'
-import { Card, Button, PageHeader, Input, Select, Tabs, Badge, StatusBadge, Icon, LoadingSpinner, EmptyState, Modal, InfoRow, ConfirmDialog } from '../../components'
+import React from 'react'
+import { Card, Button, Input, Select, Tabs, Badge, StatusBadge, Icon, LoadingSpinner, EmptyState, Modal, InfoRow, ConfirmDialog } from '../../components'
 import { RoomTable } from './RoomTable'
 import { RoomFormModal } from './RoomFormModal'
-import { useQuery } from '../../hooks'
+import { useQuery, useCRUDPage, useListFilter, useEntityDelete } from '../../hooks'
 import { getRooms, softDeleteRoom } from '../../services'
 import { mapRoom } from '../../lib/mappers'
 import type { Room } from '../../types/data'
+import { useAppContext } from '../../context/AppContext'
 
 const STATUS_COLOR: Record<string, string> = {
   available: '#10B981', 'in-use': '#3B82F6', maintenance: '#F59E0B',
@@ -15,51 +16,59 @@ const TYPE_ICON: Record<string, string> = {
 }
 
 export const Rooms: React.FC = () => {
-  const { data: raw, loading, error, refetch } = useQuery(getRooms)
+  const { selectedBranch } = useAppContext()
+  const branchId = selectedBranch?.id
+  const { data: raw, loading, error, refetch } = useQuery(
+    () => getRooms(branchId),
+    [branchId]
+  )
   const rooms = (raw ?? []).map(mapRoom)
 
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [viewMode, setViewMode] = useState('table')
-  const [showForm, setShowForm] = useState(false)
-  const [editRoom, setEditRoom] = useState<Room | null>(null)
-  const [detailRoom, setDetailRoom] = useState<Room | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Room | null>(null)
+  const {
+    state: { search, filters, viewMode, showForm, editItem: editRoom, deleteTarget, detailItem: detailRoom },
+    setSearch, setFilter, setViewMode,
+    openAdd, openEdit, closeForm,
+    setDetail, setDeleteTarget,
+  } = useCRUDPage<Room>({ status: 'all' })
 
-  const filtered = rooms.filter(r => {
-    const ms = r.name.toLowerCase().includes(search.toLowerCase())
-    const mf = filterStatus === 'all' || r.status === filterStatus
-    return ms && mf
+  const filtered = useListFilter(rooms, search, filters, {
+    searchKeys: ['name'],
+    filterMap: { status: 'status' },
+  })
+
+  const { handleDelete } = useEntityDelete<Room>({
+    deleteFn: softDeleteRoom,
+    refetch,
+    entityLabel: 'phòng học',
+    getName: r => r.name,
+    onSuccess: () => { setDeleteTarget(null); setDetail(null) },
   })
 
   const available = rooms.filter(r => r.status === 'available').length
-  const inUse = rooms.filter(r => r.status === 'in-use').length
-
-  const handleEdit = (room: Room) => {
-    setDetailRoom(null)
-    setEditRoom(room)
-    setShowForm(true)
-  }
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    await softDeleteRoom(String(deleteTarget.id))
-    setDeleteTarget(null)
-    setDetailRoom(null)
-    refetch()
-  }
+  const inUse     = rooms.filter(r => r.status === 'in-use').length
 
   const viewTabs = (
-    <Tabs tabs={[{ id: 'table', label: '☰' }, { id: 'grid', label: '⊞' }]} active={viewMode} onChange={setViewMode} />
+    <Tabs
+      tabs={[
+        { id: 'table', label: '☰', tooltip: 'Dạng bảng' },
+        { id: 'grid',  label: '⊞', tooltip: 'Dạng lưới' },
+      ]}
+      active={viewMode}
+      onChange={v => setViewMode(v as 'table' | 'grid')}
+    />
   )
 
   return (
     <div>
-      <PageHeader
-        title="Quản lý phòng học"
-        subtitle={`${rooms.length} phòng · ${available} sẵn sàng · ${inUse} đang dùng`}
-        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => { setEditRoom(null); setShowForm(true) }}>Thêm phòng</Button> : undefined}
-      />
+      {viewMode === 'grid' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>Quản lý phòng học</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{`${rooms.length} phòng · ${available} sẵn sàng · ${inUse} đang dùng`}</div>
+          </div>
+          <Button icon="plus" onClick={openAdd}>Thêm phòng</Button>
+        </div>
+      )}
 
       {viewMode === 'grid' && (
         <Card animate style={{ marginBottom: 20, padding: 16 }}>
@@ -67,9 +76,7 @@ export const Rooms: React.FC = () => {
             <div style={{ flex: 1, minWidth: 200 }}>
               <Input placeholder="Tìm theo tên phòng..." value={search} onChange={setSearch} icon="search" />
             </div>
-            <Select
-              value={filterStatus}
-              onChange={setFilterStatus}
+            <Select value={filters.status} onChange={v => setFilter('status', v)}
               options={[
                 { value: 'all', label: 'Tất cả trạng thái' },
                 { value: 'available', label: 'Sẵn sàng' },
@@ -83,21 +90,22 @@ export const Rooms: React.FC = () => {
         </Card>
       )}
 
-      {loading ? (
-        <LoadingSpinner />
-      ) : error ? (
+      {error ? (
         <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
       ) : viewMode === 'table' ? (
         <RoomTable
           rooms={rooms}
           subtitle={`${rooms.length} phòng · ${available} sẵn sàng · ${inUse} đang dùng`}
-          onSelectRoom={setDetailRoom}
-          onEdit={handleEdit}
+          onSelectRoom={setDetail}
+          onEdit={openEdit}
           onDelete={setDeleteTarget}
           actions={viewTabs}
-          onAdd={() => { setEditRoom(null); setShowForm(true) }}
+          onAdd={openAdd}
           onRefresh={refetch}
+          loading={loading}
         />
+      ) : loading ? (
+        <LoadingSpinner />
       ) : filtered.length === 0 ? (
         <EmptyState icon="building" title="Không có phòng nào" desc="Nhấn 'Thêm phòng' để tạo mới" />
       ) : (
@@ -105,7 +113,7 @@ export const Rooms: React.FC = () => {
           {filtered.map((room, i) => (
             <Card key={room.id} hover animate delay={i * 60}
               style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
-              onClick={() => setDetailRoom(room)}
+              onClick={() => setDetail(room)}
             >
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 4, background: STATUS_COLOR[room.status] || 'var(--text-4)' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, marginTop: 4 }}>
@@ -135,7 +143,7 @@ export const Rooms: React.FC = () => {
                 </div>
               )}
               <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
-                <button onClick={() => handleEdit(room)}
+                <button onClick={() => openEdit(room)}
                   style={{ background: 'var(--hover-bg)', border: 'none', cursor: 'pointer', color: 'var(--primary)', padding: '4px 8px', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, fontFamily: 'var(--font)' }}>
                   <Icon name="edit" size={13} /> Sửa
                 </button>
@@ -149,8 +157,7 @@ export const Rooms: React.FC = () => {
         </div>
       )}
 
-      {/* Detail modal */}
-      <Modal open={!!detailRoom} onClose={() => setDetailRoom(null)} title="Chi tiết phòng học" width={480}>
+      <Modal open={!!detailRoom} onClose={() => setDetail(null)} title="Chi tiết phòng học" width={480}>
         {detailRoom && (
           <div>
             <div style={{ padding: 20, background: 'var(--hover-bg)', borderRadius: 14, marginBottom: 20 }}>
@@ -166,8 +173,8 @@ export const Rooms: React.FC = () => {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-              <InfoRow icon="users" label="Sức chứa" value={`${detailRoom.capacity} người`} />
-              <InfoRow icon="building" label="Tầng" value={`Tầng ${detailRoom.floor}`} />
+              <InfoRow icon="users"    label="Sức chứa" value={`${detailRoom.capacity} người`} />
+              <InfoRow icon="building" label="Tầng"     value={`Tầng ${detailRoom.floor}`} />
             </div>
             {detailRoom.equipment.length > 0 && (
               <div style={{ marginBottom: 20 }}>
@@ -177,22 +184,27 @@ export const Rooms: React.FC = () => {
                 </div>
               </div>
             )}
-            <div style={{ display: 'flex', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-              <Button icon="edit" variant="outline" style={{ flex: 1 }} onClick={() => handleEdit(detailRoom)}>Chỉnh sửa</Button>
-              <Button icon="trash" variant="danger" style={{ flex: 1 }} onClick={() => setDeleteTarget(detailRoom)}>Xoá phòng</Button>
+            <div style={{ display: 'flex', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
+              <Button icon="edit"  variant="outline" onClick={() => openEdit(detailRoom)}>Chỉnh sửa</Button>
+              <Button icon="trash" variant="danger"  onClick={() => setDeleteTarget(detailRoom)}>Xoá phòng</Button>
             </div>
           </div>
         )}
       </Modal>
 
-      <RoomFormModal open={showForm} onClose={() => { setShowForm(false); setEditRoom(null) }} onSuccess={refetch} room={editRoom} />
+      <RoomFormModal
+        open={showForm}
+        onClose={closeForm}
+        onSuccess={refetch}
+        room={editRoom}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
         title="Xoá phòng học"
         message={`Bạn có chắc muốn xoá phòng "${deleteTarget?.name}"?`}
         confirmLabel="Xoá"
-        onConfirm={handleDelete}
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>

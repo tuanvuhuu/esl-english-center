@@ -1,60 +1,70 @@
-import React, { useState } from 'react';
-import { Card, Button, PageHeader, Input, Select, Tabs, LoadingSpinner, EmptyState, ConfirmDialog } from '../../components';
-import { StudentTable } from './components/StudentTable';
-import { StudentGrid } from './components/StudentGrid';
-import { StudentDetail } from './components/StudentDetail';
-import { StudentFormModal } from './components/StudentFormModal';
-import type { Student } from '../../types/data';
-import { useQuery } from '../../hooks';
-import { getStudents, softDeleteStudent } from '../../services';
-import { mapStudent } from '../../lib/mappers';
+import React from 'react'
+import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, ConfirmDialog } from '../../components'
+import { StudentTable } from './components/StudentTable'
+import { StudentGrid } from './components/StudentGrid'
+import { StudentDetail } from './components/StudentDetail'
+import { StudentFormModal } from './components/StudentFormModal'
+import type { Student } from '../../types/data'
+import { useQuery } from '../../hooks'
+import { useCRUDPage, useListFilter, useEntityDelete } from '../../hooks'
+import { getStudents, softDeleteStudent } from '../../services'
+import { mapStudent } from '../../lib/mappers'
+import { useAppContext } from '../../context/AppContext'
 
 export const Students: React.FC = () => {
-  const { data: raw, loading, error, refetch } = useQuery(getStudents);
-  const students: Student[] = (raw ?? []).map(mapStudent);
+  const { selectedBranch, selectedYear } = useAppContext()
+  const branchId = selectedBranch?.id
+  const yearId = selectedYear?.id
+  const { data: raw, loading, error, refetch } = useQuery(
+    () => getStudents({ branchId, yearId }),
+    [branchId, yearId]
+  )
+  const students: Student[] = (raw ?? []).map(mapStudent)
 
-  const [search, setSearch] = useState('');
-  const [filterLevel, setFilterLevel] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [showForm, setShowForm] = useState(false);
-  const [editStudent, setEditStudent] = useState<Student | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Student | null>(null);
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [viewMode, setViewMode] = useState('table');
+  const {
+    state: { search, filters, viewMode, showForm, editItem: editStudent, deleteTarget, detailItem: selectedStudent },
+    setSearch, setFilter, setViewMode,
+    openAdd, openEdit, closeForm,
+    setDetail, setDeleteTarget,
+  } = useCRUDPage<Student>({ status: 'all', level: 'all' })
 
-  const filtered = students.filter(s => {
-    const ms = s.name.toLowerCase().includes(search.toLowerCase()) ||
-               (s.parent ?? '').toLowerCase().includes(search.toLowerCase());
-    const ml = filterLevel === 'all' || s.level === filterLevel;
-    const mt = filterStatus === 'all' || s.status === filterStatus;
-    return ms && ml && mt;
-  });
+  const filtered = useListFilter(students, search, filters, {
+    searchKeys: ['name', (s: Student) => s.parent ?? ''],
+    filterMap: { status: 'status', level: 'level' },
+  })
 
-  const activeCount = students.filter(s => s.status === 'active').length;
+  const { handleDelete } = useEntityDelete<Student>({
+    deleteFn: softDeleteStudent,
+    refetch,
+    entityLabel: 'học viên',
+    getName: s => s.name,
+    onSuccess: () => setDeleteTarget(null),
+  })
 
-  const handleEdit = (student: Student) => {
-    setEditStudent(student);
-    setShowForm(true);
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    await softDeleteStudent(String(deleteTarget.id));
-    setDeleteTarget(null);
-    refetch();
-  };
+  const activeCount = students.filter(s => s.status === 'active').length
 
   const viewTabs = (
-    <Tabs tabs={[{ id: 'table', label: '☰' }, { id: 'grid', label: '⊞' }]} active={viewMode} onChange={setViewMode} />
-  );
+    <Tabs
+      tabs={[
+        { id: 'table', label: '☰', tooltip: 'Dạng bảng' },
+        { id: 'grid',  label: '⊞', tooltip: 'Dạng lưới' },
+      ]}
+      active={viewMode}
+      onChange={v => setViewMode(v as 'table' | 'grid')}
+    />
+  )
 
   return (
     <div>
-      <PageHeader
-        title="Quản lý học viên"
-        subtitle={`${students.length} học viên · ${activeCount} đang học`}
-        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => { setEditStudent(null); setShowForm(true); }}>Thêm học viên</Button> : undefined}
-      />
+      {viewMode === 'grid' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>Quản lý học viên</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{`${students.length} học viên · ${activeCount} đang học`}</div>
+          </div>
+          <Button icon="plus" onClick={openAdd}>Thêm học viên</Button>
+        </div>
+      )}
 
       {viewMode === 'grid' && (
         <Card animate style={{ marginBottom: 20, padding: 16 }}>
@@ -62,9 +72,7 @@ export const Students: React.FC = () => {
             <div style={{ flex: 1, minWidth: 200 }}>
               <Input placeholder="Tìm theo tên học viên, phụ huynh..." value={search} onChange={setSearch} icon="search" />
             </div>
-            <Select
-              value={filterLevel}
-              onChange={setFilterLevel}
+            <Select value={filters.level} onChange={v => setFilter('level', v)}
               options={[
                 { value: 'all', label: 'Tất cả trình độ' },
                 { value: 'A1', label: 'A1 · Starter' },
@@ -74,9 +82,7 @@ export const Students: React.FC = () => {
               ]}
               style={{ minWidth: 160 }}
             />
-            <Select
-              value={filterStatus}
-              onChange={setFilterStatus}
+            <Select value={filters.status} onChange={v => setFilter('status', v)}
               options={[
                 { value: 'all', label: 'Tất cả trạng thái' },
                 { value: 'active', label: 'Đang học' },
@@ -90,30 +96,31 @@ export const Students: React.FC = () => {
         </Card>
       )}
 
-      {loading ? (
-        <LoadingSpinner />
-      ) : error ? (
+      {error ? (
         <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
       ) : viewMode === 'table' ? (
         <StudentTable
           students={students}
           subtitle={`${students.length} học viên · ${activeCount} đang học`}
-          onSelectStudent={setSelectedStudent}
-          onEdit={handleEdit}
+          onSelectStudent={setDetail}
+          onEdit={openEdit}
           onDelete={setDeleteTarget}
           actions={viewTabs}
-          onAdd={() => { setEditStudent(null); setShowForm(true); }}
+          onAdd={openAdd}
           onRefresh={refetch}
+          loading={loading}
         />
+      ) : loading ? (
+        <LoadingSpinner />
       ) : (
-        <StudentGrid students={filtered} onSelectStudent={setSelectedStudent} />
+        <StudentGrid students={filtered} onSelectStudent={setDetail} />
       )}
 
-      <StudentDetail student={selectedStudent} onClose={() => setSelectedStudent(null)} />
+      <StudentDetail student={selectedStudent} onClose={() => setDetail(null)} onEdit={openEdit} onDelete={setDeleteTarget} />
 
       <StudentFormModal
         open={showForm}
-        onClose={() => { setShowForm(false); setEditStudent(null); }}
+        onClose={closeForm}
         onSuccess={refetch}
         student={editStudent}
       />
@@ -123,11 +130,11 @@ export const Students: React.FC = () => {
         title="Xoá học viên"
         message={`Bạn có chắc muốn xoá học viên "${deleteTarget?.name}"? Hành động này không thể hoàn tác.`}
         confirmLabel="Xoá"
-        onConfirm={handleDelete}
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>
-  );
-};
+  )
+}
 
-export default Students;
+export default Students

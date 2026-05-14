@@ -12,10 +12,11 @@ interface RoomTableProps {
   subtitle?: string
   onAdd?: () => void
   onRefresh?: () => void
+  loading?: boolean
 }
 
 export const RoomTable: React.FC<RoomTableProps> = ({
-  rooms, onSelectRoom, onEdit, onDelete, actions, subtitle, onAdd, onRefresh,
+  rooms, onSelectRoom, onEdit, onDelete, actions, subtitle, onAdd, onRefresh, loading,
 }) => {
   const columns: DataGridColumn<Room>[] = [
     {
@@ -119,6 +120,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       onAdd={onAdd}
       addLabel="Thêm phòng"
       onRefresh={onRefresh}
+      loading={loading}
     />
   )
 }

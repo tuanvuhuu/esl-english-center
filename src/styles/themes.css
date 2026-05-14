@@ -10,10 +10,11 @@
 
   --header: #FFFFFF;
   --header-border: #E7E5E4;
-  --sidebar: #1F1917;
-  --sidebar-text: #FAFAF9;
-  --sidebar-hover: rgba(255, 107, 53, 0.1);
-  --sidebar-border: rgba(255, 255, 255, 0.1);
+  --sidebar: #FFFFFF;
+  --sidebar-text: #1C1917;
+  --sidebar-text-sub: #78716C;
+  --sidebar-hover: rgba(255, 107, 53, 0.08);
+  --sidebar-border: #E7E5E4;
 
   --input-bg: #FFFFFF;
   --input-bg-subtle: #F5F5F4;
@@ -45,6 +46,7 @@
   --header-border: #292520;
   --sidebar: #16120F;
   --sidebar-text: #FAFAF9;
+  --sidebar-text-sub: rgba(255, 255, 255, 0.4);
   --sidebar-hover: rgba(255, 107, 53, 0.15);
   --sidebar-border: rgba(255, 255, 255, 0.05);
 

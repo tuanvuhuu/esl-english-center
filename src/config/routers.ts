@@ -11,6 +11,7 @@ import Finance from '../pages/Finance';
 import Reports from '../pages/Reports';
 import Notifications from '../pages/Notifications';
 import Settings from '../pages/Settings';
+import Config from '../pages/Config';
 import { IconName } from '../components';
 
 export const pageTitles: Record<string, string> = {
@@ -26,6 +27,7 @@ export const pageTitles: Record<string, string> = {
   reports: 'Báo cáo & Thống kê',
   notifications: 'Thông báo',
   settings: 'Cài đặt hệ thống',
+  config: 'Cấu hình chung',
 };
 
 export const pageComponents: Record<string, React.ComponentType> = {
@@ -41,6 +43,7 @@ export const pageComponents: Record<string, React.ComponentType> = {
   reports: Reports,
   notifications: Notifications,
   settings: Settings,
+  config: Config,
 };
 
 export interface RouteItem {

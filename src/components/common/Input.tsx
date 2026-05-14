@@ -41,7 +41,7 @@ export const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         style={{
           width: '100%', 
-          padding: icon ? '10px 14px 10px 38px' : '10px 14px', 
+          padding: icon ? '7px 14px 7px 38px' : '7px 14px',
           border: '1.5px solid var(--border)',
           borderRadius: 10, 
           fontSize: 14, 

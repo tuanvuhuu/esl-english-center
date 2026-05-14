@@ -14,7 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
   { section: 'CHÍNH' },
   { id: 'dashboard', icon: 'dashboard', label: 'Tổng quan', labelEn: 'Dashboard' },
   { section: 'QUẢN LÝ' },
-  { id: 'students', icon: 'users', label: 'Học viên', labelEn: 'Students', badge: 245 },
+  { id: 'students', icon: 'users', label: 'Học viên', labelEn: 'Students' },
   { id: 'teachers', icon: 'graduation', label: 'Giáo viên', labelEn: 'Teachers' },
   { id: 'classes', icon: 'book', label: 'Lớp học', labelEn: 'Classes' },
   { id: 'rooms', icon: 'building', label: 'Phòng học', labelEn: 'Rooms' },
@@ -25,10 +25,12 @@ export const NAV_ITEMS: NavItem[] = [
   { section: 'TÀI CHÍNH' },
   { id: 'finance', icon: 'wallet', label: 'Tài chính', labelEn: 'Finance' },
   { id: 'reports', icon: 'bar-chart', label: 'Báo cáo', labelEn: 'Reports' },
+  { section: 'HỆ THỐNG' },
+  { id: 'config', icon: 'settings', label: 'Cấu hình', labelEn: 'Config' },
 ];
 
 export const BOTTOM_NAV: NavItem[] = [
-  { id: 'notifications', icon: 'bell', label: 'Thông báo', badge: 3 },
+  { id: 'notifications', icon: 'bell', label: 'Thông báo' },
   { id: 'settings', icon: 'settings', label: 'Cài đặt' },
 ];
 

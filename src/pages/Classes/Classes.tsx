@@ -1,61 +1,68 @@
-import React, { useState } from 'react'
-import { Card, Button, PageHeader, Input, Select, Tabs, LoadingSpinner, EmptyState, Modal, InfoRow, StatusBadge, Badge, ConfirmDialog } from '../../components'
+import React from 'react'
+import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, Modal, InfoRow, StatusBadge, Badge, ConfirmDialog } from '../../components'
 import { ClassTable } from './components/ClassTable'
 import { ClassGrid } from './components/ClassGrid'
 import { ClassFormModal } from './components/ClassFormModal'
-import { useQuery } from '../../hooks'
+import { useQuery, useCRUDPage, useListFilter, useEntityDelete } from '../../hooks'
 import { getClasses, softDeleteClass } from '../../services'
 import { mapClass } from '../../lib/mappers'
 import type { Class } from '../../types/data'
+import { useAppContext } from '../../context/AppContext'
 
 export const Classes: React.FC = () => {
-  const { data: raw, loading, error, refetch } = useQuery(getClasses)
+  const { selectedBranch, selectedYear } = useAppContext()
+  const branchId = selectedBranch?.id
+  const yearId = selectedYear?.id
+  const { data: raw, loading, error, refetch } = useQuery(
+    () => getClasses({ branchId, academicYearId: yearId }),
+    [branchId, yearId]
+  )
   const classes = (raw ?? []).map(mapClass)
 
-  const [search, setSearch] = useState('')
-  const [filterLevel, setFilterLevel] = useState('all')
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [viewMode, setViewMode] = useState('table')
-  const [showForm, setShowForm] = useState(false)
-  const [editClass, setEditClass] = useState<Class | null>(null)
-  const [detailClass, setDetailClass] = useState<Class | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<Class | null>(null)
+  const {
+    state: { search, filters, viewMode, showForm, editItem: editClass, deleteTarget, detailItem: detailClass },
+    setSearch, setFilter, setViewMode,
+    openAdd, openEdit, closeForm,
+    setDetail, setDeleteTarget,
+  } = useCRUDPage<Class>({ status: 'all', level: 'all' })
 
-  const filtered = classes.filter(c => {
-    const ms = c.name.toLowerCase().includes(search.toLowerCase()) ||
-               c.teacher?.toLowerCase().includes(search.toLowerCase())
-    const ml = filterLevel === 'all' || c.level === filterLevel
-    const mf = filterStatus === 'all' || c.status === filterStatus
-    return ms && ml && mf
+  const filtered = useListFilter(classes, search, filters, {
+    searchKeys: ['name', (c: Class) => c.teacher ?? ''],
+    filterMap: { status: 'status', level: 'level' },
+  })
+
+  const { handleDelete } = useEntityDelete<Class>({
+    deleteFn: softDeleteClass,
+    refetch,
+    entityLabel: 'lớp học',
+    getName: c => c.name,
+    onSuccess: () => { setDeleteTarget(null); setDetail(null) },
   })
 
   const totalStudents = classes.reduce((a, c) => a + c.students, 0)
 
-  const handleEdit = (c: Class) => {
-    setDetailClass(null)
-    setEditClass(c)
-    setShowForm(true)
-  }
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    await softDeleteClass(String(deleteTarget.id))
-    setDeleteTarget(null)
-    setDetailClass(null)
-    refetch()
-  }
-
   const viewTabs = (
-    <Tabs tabs={[{ id: 'table', label: '☰' }, { id: 'grid', label: '⊞' }]} active={viewMode} onChange={setViewMode} />
+    <Tabs
+      tabs={[
+        { id: 'table', label: '☰', tooltip: 'Dạng bảng' },
+        { id: 'grid',  label: '⊞', tooltip: 'Dạng lưới' },
+      ]}
+      active={viewMode}
+      onChange={v => setViewMode(v as 'table' | 'grid')}
+    />
   )
 
   return (
     <div>
-      <PageHeader
-        title="Quản lý lớp học"
-        subtitle={`${classes.length} lớp · ${totalStudents} học viên`}
-        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => { setEditClass(null); setShowForm(true) }}>Mở lớp mới</Button> : undefined}
-      />
+      {viewMode === 'grid' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>Quản lý lớp học</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{`${classes.length} lớp · ${totalStudents} học viên`}</div>
+          </div>
+          <Button icon="plus" onClick={openAdd}>Mở lớp mới</Button>
+        </div>
+      )}
 
       {viewMode === 'grid' && (
         <Card animate style={{ marginBottom: 20, padding: 16 }}>
@@ -63,9 +70,7 @@ export const Classes: React.FC = () => {
             <div style={{ flex: 1, minWidth: 200 }}>
               <Input placeholder="Tìm theo tên lớp, giáo viên..." value={search} onChange={setSearch} icon="search" />
             </div>
-            <Select
-              value={filterLevel}
-              onChange={setFilterLevel}
+            <Select value={filters.level} onChange={v => setFilter('level', v)}
               options={[
                 { value: 'all', label: 'Tất cả trình độ' },
                 { value: 'A1', label: 'A1 · Starter' },
@@ -75,9 +80,7 @@ export const Classes: React.FC = () => {
               ]}
               style={{ minWidth: 160 }}
             />
-            <Select
-              value={filterStatus}
-              onChange={setFilterStatus}
+            <Select value={filters.status} onChange={v => setFilter('status', v)}
               options={[
                 { value: 'all', label: 'Tất cả trạng thái' },
                 { value: 'active', label: 'Đang học' },
@@ -91,27 +94,27 @@ export const Classes: React.FC = () => {
         </Card>
       )}
 
-      {loading ? (
-        <LoadingSpinner />
-      ) : error ? (
+      {error ? (
         <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
       ) : viewMode === 'table' ? (
         <ClassTable
           classes={classes}
           subtitle={`${classes.length} lớp · ${totalStudents} học viên`}
-          onSelectClass={setDetailClass}
-          onEdit={handleEdit}
+          onSelectClass={setDetail}
+          onEdit={openEdit}
           onDelete={setDeleteTarget}
           actions={viewTabs}
-          onAdd={() => { setEditClass(null); setShowForm(true) }}
+          onAdd={openAdd}
           onRefresh={refetch}
+          loading={loading}
         />
+      ) : loading ? (
+        <LoadingSpinner />
       ) : (
-        <ClassGrid classes={filtered} onSelectClass={setDetailClass} onEdit={handleEdit} onDelete={setDeleteTarget} />
+        <ClassGrid classes={filtered} onSelectClass={setDetail} onEdit={openEdit} onDelete={setDeleteTarget} />
       )}
 
-      {/* Detail modal */}
-      <Modal open={!!detailClass} onClose={() => setDetailClass(null)} title="Chi tiết lớp học" width={580}>
+      <Modal open={!!detailClass} onClose={() => setDetail(null)} title="Chi tiết lớp học" width={580}>
         {detailClass && (
           <div>
             <div style={{ padding: 20, background: 'var(--hover-bg)', borderRadius: 14, marginBottom: 20 }}>
@@ -129,29 +132,34 @@ export const Classes: React.FC = () => {
               </div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-              <InfoRow icon="graduation" label="Giáo viên" value={detailClass.teacher || '—'} />
-              <InfoRow icon="calendar" label="Lịch học" value={detailClass.schedule || '—'} />
-              <InfoRow icon="building" label="Phòng" value={detailClass.room || '—'} />
-              <InfoRow icon="wallet" label="Học phí" value={detailClass.fee || 'Miễn phí'} />
-              <InfoRow icon="clock" label="Khai giảng" value={detailClass.startDate || '—'} />
-              <InfoRow icon="clock" label="Bế giảng" value={detailClass.endDate || '—'} />
+              <InfoRow icon="graduation" label="Giáo viên"  value={detailClass.teacher   || '—'} />
+              <InfoRow icon="calendar"   label="Lịch học"   value={detailClass.schedule  || '—'} />
+              <InfoRow icon="building"   label="Phòng"      value={detailClass.room      || '—'} />
+              <InfoRow icon="wallet"     label="Học phí"    value={detailClass.fee       || 'Miễn phí'} />
+              <InfoRow icon="clock"      label="Khai giảng" value={detailClass.startDate || '—'} />
+              <InfoRow icon="clock"      label="Bế giảng"   value={detailClass.endDate   || '—'} />
             </div>
-            <div style={{ display: 'flex', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-              <Button icon="edit" variant="outline" style={{ flex: 1 }} onClick={() => handleEdit(detailClass)}>Chỉnh sửa</Button>
-              <Button icon="trash" variant="danger" style={{ flex: 1 }} onClick={() => setDeleteTarget(detailClass)}>Xoá lớp</Button>
+            <div style={{ display: 'flex', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
+              <Button icon="edit"  variant="outline" onClick={() => openEdit(detailClass)}>Chỉnh sửa</Button>
+              <Button icon="trash" variant="danger"  onClick={() => setDeleteTarget(detailClass)}>Xoá lớp</Button>
             </div>
           </div>
         )}
       </Modal>
 
-      <ClassFormModal open={showForm} onClose={() => { setShowForm(false); setEditClass(null) }} onSuccess={refetch} classData={editClass} />
+      <ClassFormModal
+        open={showForm}
+        onClose={closeForm}
+        onSuccess={refetch}
+        classData={editClass}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
         title="Xoá lớp học"
         message={`Bạn có chắc muốn xoá lớp "${deleteTarget?.name}"?`}
         confirmLabel="Xoá lớp"
-        onConfirm={handleDelete}
+        onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
         onCancel={() => setDeleteTarget(null)}
       />
     </div>

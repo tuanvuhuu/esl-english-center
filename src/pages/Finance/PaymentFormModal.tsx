@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button } from '../../components'
+import { Modal, Input, Select, Button, useToast } from '../../components'
 import { createPayment, getStudents, getClasses } from '../../services'
 import { useQuery } from '../../hooks'
 
@@ -35,6 +35,7 @@ const EMPTY: Form = {
 export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
   open, onClose, onSuccess, studentId, classId,
 }) => {
+  const toast = useToast()
   const [form, setForm] = useState<Form>({ ...EMPTY, studentId: studentId ?? '', classId: classId ?? '' })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -68,10 +69,12 @@ export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
         status: 'paid',
         notes: form.notes || null,
       })
+      toast.success('Tạo phiếu thu thành công')
       onSuccess()
       onClose()
     } catch (e: any) {
       setError(e.message)
+      toast.error(e.message || 'Đã có lỗi xảy ra')
     } finally {
       setSaving(false)
     }
@@ -128,7 +131,7 @@ export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'center' }}>
         <Button variant="secondary" onClick={onClose}>Huỷ</Button>
         <Button icon={saving ? undefined : 'check'} onClick={handleSave} disabled={saving}>
           {saving ? 'Đang lưu...' : 'Tạo phiếu thu'}
