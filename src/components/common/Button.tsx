@@ -9,6 +9,7 @@ interface ButtonProps {
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   style?: React.CSSProperties;
   disabled?: boolean;
+  loading?: boolean;
 }
 
 export const Button: React.FC<ButtonProps> = ({ 
@@ -18,7 +19,8 @@ export const Button: React.FC<ButtonProps> = ({
   icon, 
   onClick, 
   style = {}, 
-  disabled = false 
+  disabled = false,
+  loading = false
 }) => {
   const variants = {
     primary: { bg: 'var(--primary)', color: '#fff', hoverBg: 'var(--primary-dark)', border: 'none' },
@@ -40,8 +42,8 @@ export const Button: React.FC<ButtonProps> = ({
 
   return (
     <button 
-      onClick={onClick} 
-      disabled={disabled} 
+      onClick={!loading ? onClick : undefined} 
+      disabled={disabled || loading} 
       onMouseEnter={() => setHov(true)} 
       onMouseLeave={() => setHov(false)}
       style={{
@@ -56,16 +58,21 @@ export const Button: React.FC<ButtonProps> = ({
         fontFamily: 'var(--font)', 
         borderRadius: 12, 
         border: v.border, 
-        background: disabled ? 'var(--border)' : (hov ? v.hoverBg : v.bg),
-        color: disabled ? 'var(--text-4)' : v.color, 
-        cursor: disabled ? 'not-allowed' : 'pointer',
+        background: (disabled || loading) ? 'var(--border)' : (hov ? v.hoverBg : v.bg),
+        color: (disabled || loading) ? 'var(--text-4)' : v.color, 
+        cursor: (disabled || loading) ? 'not-allowed' : 'pointer',
         transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)', 
         whiteSpace: 'nowrap',
-        transform: hov && !disabled ? 'scale(0.97)' : 'scale(1)', 
+        opacity: loading ? 0.8 : 1,
+        transform: hov && !disabled && !loading ? 'scale(0.97)' : 'scale(1)', 
         ...style
       }}
     >
-      {icon && <Icon name={icon} size={size === 'sm' ? 14 : 16} />}
+      {loading ? (
+        <Icon name="loader" size={size === 'sm' ? 14 : 16} style={{ animation: 'spin 1s linear infinite' }} />
+      ) : (
+        icon && <Icon name={icon} size={size === 'sm' ? 14 : 16} />
+      )}
       {children}
     </button>
   );

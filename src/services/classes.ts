@@ -85,6 +85,21 @@ export async function updateClass(id: string, payload: Partial<DbClass>, assista
   return data as DbClass
 }
 
+export async function getEnrollmentsByClass(classId: string) {
+  const { data, error } = await supabase
+    .from('enrollments')
+    .select(`
+      id, status, enrolled_date,
+      student: students ( id, full_name, level, status )
+    `)
+    .eq('class_id', classId)
+    .eq('is_deleted', false)
+    .order('enrolled_date', { ascending: false })
+
+  if (error) throw error
+  return data ?? []
+}
+
 export async function softDeleteClass(id: string) {
   const { error } = await supabase
     .from('classes')

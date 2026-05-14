@@ -1,83 +1,113 @@
-import React from 'react';
-import { PageHeader, Button, Card, Badge } from '../../components';
+import React, { useState, useCallback, useMemo } from 'react'
+import { PageHeader, Tabs } from '../../components'
+import { useQuery } from '../../hooks/useSupabase'
+import { getTests, createTest } from '../../services/tests'
+import { getClasses } from '../../services/classes'
+import { mapClass } from '../../lib/mappers'
+import type { DbTest } from '../../types/database'
+import { TestsScheduleTab }  from './components/TestsScheduleTab'
+import { TestsResultsTab }   from './components/TestsResultsTab'
+import { TestsAnalyticsTab } from './components/TestsAnalyticsTab'
+import { CreateTestModal }   from './components/CreateTestModal'
+import { QuestionBuilderModal } from './components/QuestionBuilderModal'
 
-interface TestItem {
-  id: number;
-  name: string;
-  className: string;
-  date: string;
-  type: string;
-  status: 'upcoming' | 'completed';
-  students: number;
-  avgScore?: number;
-}
+const TABS = [
+  { id: 'schedule',  label: 'Lịch kiểm tra' },
+  { id: 'results',   label: 'Kết quả' },
+  { id: 'analytics', label: 'Phân tích' },
+]
 
 export const Tests: React.FC = () => {
-  const tests: TestItem[] = [
-    { id: 1, name: 'Mid-term Test', className: 'Kids Elementary A', date: '20/05/2026', type: 'Giữa kỳ', status: 'upcoming', students: 14 },
-    { id: 2, name: 'Unit 5 Quiz', className: 'Teen Pre-Inter A', date: '15/05/2026', type: 'Quiz', status: 'upcoming', students: 15 },
-    { id: 3, name: 'Speaking Test', className: 'Kids Starter A', date: '10/05/2026', type: 'Kỹ năng', status: 'completed', students: 12, avgScore: 82 },
-    { id: 4, name: 'Final Test', className: 'IELTS Prep', date: '05/05/2026', type: 'Cuối kỳ', status: 'completed', students: 6, avgScore: 78 },
-    { id: 5, name: 'Unit 4 Quiz', className: 'Kids Elementary B', date: '01/05/2026', type: 'Quiz', status: 'completed', students: 11, avgScore: 88 },
-  ];
+  const [activeTab,    setActiveTab]    = useState('schedule')
+  const [selectedTest, setSelectedTest] = useState<DbTest | null>(null)
+  const [showCreate,   setShowCreate]   = useState(false)
+  const [creating,     setCreating]     = useState(false)
+  const [questionBuilderTest, setQuestionBuilderTest] = useState<DbTest | null>(null)
+
+  const { data: rawTests, loading: testsLoading, refetch: refetchTests } = useQuery(getTests)
+  const { data: rawClasses } = useQuery(getClasses)
+
+  const tests = useMemo(() => rawTests ?? [], [rawTests])
+
+  const activeClasses = useMemo(
+    () => (rawClasses ?? []).map(mapClass).filter(c => c.status === 'active'),
+    [rawClasses],
+  )
+
+  const handleCreateTest = async (payload: Partial<DbTest>) => {
+    setCreating(true)
+    try {
+      await createTest(payload)
+      await refetchTests()
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleSelectTest = useCallback((test: DbTest) => {
+    setSelectedTest(test)
+    if (activeTab === 'schedule') setActiveTab('results')
+  }, [activeTab])
+
+  const subtitle = testsLoading
+    ? 'Đang tải...'
+    : `${tests.filter(t => t.status === 'upcoming').length} sắp tới · ${tests.filter(t => t.status === 'completed').length} đã hoàn thành`
 
   return (
     <div>
       <PageHeader
         title="Kiểm tra & Thi"
-        subtitle="Quản lý bài kiểm tra và kết quả"
-        actions={<Button icon="plus">Tạo bài kiểm tra</Button>}
+        subtitle={subtitle}
+        actions={
+          <Tabs
+            tabs={TABS}
+            active={activeTab}
+            onChange={setActiveTab}
+          />
+        }
       />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-        {tests.map((t, i) => (
-          <Card key={t.id} hover animate delay={i * 60}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <Badge variant={t.status === 'upcoming' ? 'warning' : 'success'}>
-                {t.status === 'upcoming' ? 'Sắp tới' : 'Hoàn thành'}
-              </Badge>
-              <span style={{ fontSize: 12, color: 'var(--text-4)' }}>{t.date}</span>
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>{t.name}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>
-              {t.className} · {t.type}
-            </div>
-            {t.avgScore && (
-              <div style={{ marginBottom: 8 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 12 }}>
-                  <span style={{ color: 'var(--text-4)' }}>Điểm trung bình</span>
-                  <span style={{ fontWeight: 700, color: t.avgScore >= 80 ? 'var(--success)' : 'var(--warning)' }}>
-                    {t.avgScore}/100
-                  </span>
-                </div>
-                <div style={{ height: 6, background: 'var(--border)', borderRadius: 3, overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${t.avgScore}%`,
-                      background: t.avgScore >= 80 ? 'var(--success)' : 'var(--warning)',
-                      borderRadius: 3,
-                      transition: 'width 0.8s ease',
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                padding: '12px 0 0',
-                borderTop: '1px solid var(--border-light)',
-                fontSize: 13,
-              }}
-            >
-              <span style={{ color: 'var(--text-3)' }}>{t.students} học viên</span>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
 
-export default Tests;
+      {activeTab === 'schedule' && (
+        <TestsScheduleTab
+          tests={tests}
+          loading={testsLoading}
+          onSelectTest={handleSelectTest}
+          onCreate={() => setShowCreate(true)}
+          onBuildQuestions={setQuestionBuilderTest}
+        />
+      )}
+
+      {activeTab === 'results' && (
+        <TestsResultsTab
+          tests={tests}
+          selectedTest={selectedTest}
+          onSelectTest={setSelectedTest}
+        />
+      )}
+
+      {activeTab === 'analytics' && (
+        <TestsAnalyticsTab
+          tests={tests}
+          selectedTest={selectedTest}
+          onSelectTest={setSelectedTest}
+        />
+      )}
+
+      <CreateTestModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        classes={activeClasses}
+        onSave={handleCreateTest}
+        saving={creating}
+      />
+
+      <QuestionBuilderModal
+        open={!!questionBuilderTest}
+        onClose={() => setQuestionBuilderTest(null)}
+        test={questionBuilderTest}
+      />
+    </div>
+  )
+}
+
+export default Tests

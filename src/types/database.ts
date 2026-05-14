@@ -219,6 +219,90 @@ export interface DbNotification {
   updated_by: string | null
 }
 
+export type TestType = 'quiz' | 'unit_test' | 'midterm' | 'final' | 'speaking' | 'placement'
+export type TestStatus = 'upcoming' | 'completed' | 'cancelled'
+
+export interface DbTest {
+  id: string
+  class_id: string
+  name: string
+  type: TestType
+  test_date: string
+  total_score: number
+  pass_threshold: number
+  description: string | null
+  status: TestStatus
+  is_deleted: boolean
+  created_at: string
+  created_by: string | null
+  updated_at: string
+  updated_by: string | null
+  // joins
+  class?: {
+    id: string
+    name: string
+    level: string | null
+    teacher?: { id: string; full_name: string } | null
+  }
+}
+
+export interface DbTestResult {
+  id: string
+  test_id: string
+  student_id: string
+  score_reading: number | null
+  score_listening: number | null
+  score_speaking: number | null
+  score_writing: number | null
+  total_score: number | null
+  is_passed: boolean | null
+  teacher_feedback: string | null
+  ai_feedback: string | null
+  is_deleted: boolean
+  created_at: string
+  created_by: string | null
+  updated_at: string
+  updated_by: string | null
+  // joins
+  student?: {
+    id: string
+    full_name: string
+    level: string | null
+    status: string
+  }
+}
+
+export type QuestionType = 'mcq' | 'true_false' | 'fill_blank' | 'short_answer' | 'essay' | 'speaking_prompt'
+export type QuestionSkill = 'reading' | 'listening' | 'speaking' | 'writing' | 'general'
+
+export interface DbTestQuestion {
+  id: string
+  test_id: string
+  skill: QuestionSkill
+  type: QuestionType
+  question_text: string
+  image_url: string | null
+  audio_url: string | null
+  points: number
+  order_index: number
+  explanation: string | null
+  is_deleted: boolean
+  created_at: string
+  created_by: string | null
+  updated_at: string
+  updated_by: string | null
+  // join
+  options?: DbQuestionOption[]
+}
+
+export interface DbQuestionOption {
+  id: string
+  question_id: string
+  option_text: string
+  is_correct: boolean
+  order_index: number
+}
+
 export interface StudentAcademicRecord {
   id: string
   student_id: string
