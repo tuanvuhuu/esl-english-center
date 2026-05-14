@@ -15,6 +15,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'dashboard', icon: 'dashboard', label: 'Tổng quan', labelEn: 'Dashboard' },
   { section: 'QUẢN LÝ' },
   { id: 'students', icon: 'users', label: 'Học viên', labelEn: 'Students' },
+  { id: 'parents', icon: 'user', label: 'Phụ huynh', labelEn: 'Parents' },
   { id: 'teachers', icon: 'graduation', label: 'Giáo viên', labelEn: 'Teachers' },
   { id: 'classes', icon: 'book', label: 'Lớp học', labelEn: 'Classes' },
   { id: 'rooms', icon: 'building', label: 'Phòng học', labelEn: 'Rooms' },

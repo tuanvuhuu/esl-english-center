@@ -1,4 +1,5 @@
 export * from './students'
+export * from './parents'
 export * from './teachers'
 export * from './classes'
 export * from './payments'

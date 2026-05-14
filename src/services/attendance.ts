@@ -114,6 +114,47 @@ export async function getStudentAttendanceHistory(
 }
 
 /**
+ * Daily attendance breakdown for a class — useful for trend charts.
+ */
+export async function getClassDailyAttendance(
+  classId: string,
+  fromDate: string,
+  toDate: string,
+): Promise<{ date: string; present: number; absent: number; late: number; excused: number; total: number; rate: number }[]> {
+  const { data: enrollments } = await supabase
+    .from('enrollments')
+    .select('id')
+    .eq('class_id', classId)
+    .eq('is_deleted', false)
+
+  const enrollmentIds = (enrollments ?? []).map(e => e.id)
+  if (enrollmentIds.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('attendance')
+    .select('session_date,status')
+    .in('enrollment_id', enrollmentIds)
+    .gte('session_date', fromDate)
+    .lte('session_date', toDate)
+    .eq('is_deleted', false)
+  if (error) throw error
+
+  const byDate: Record<string, { present: number; absent: number; late: number; excused: number }> = {}
+  for (const r of (data ?? []) as { session_date: string; status: AttendanceStatus }[]) {
+    if (!byDate[r.session_date]) byDate[r.session_date] = { present: 0, absent: 0, late: 0, excused: 0 }
+    byDate[r.session_date][r.status]++
+  }
+
+  return Object.entries(byDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, c]) => {
+      const total = c.present + c.absent + c.late + c.excused
+      const rate = total > 0 ? Math.round(((c.present + c.late) / total) * 100) : 0
+      return { date, ...c, total, rate }
+    })
+}
+
+/**
  * Stats cho dashboard / class card: % chuyên cần trong khoảng thời gian.
  */
 export async function getClassAttendanceStats(

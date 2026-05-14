@@ -14,6 +14,7 @@ interface PaymentTableProps {
   subtitle?: string
   onAdd?: () => void
   onRefresh?: () => void
+  onRowClick?: (row: PaymentRow) => void
   loading?: boolean
 }
 
@@ -25,7 +26,7 @@ const METHOD_LABEL: Record<string, string> = {
 }
 
 export const PaymentTable: React.FC<PaymentTableProps> = ({
-  rows, onMarkPaid, markingId, actions, subtitle, onAdd, onRefresh, loading,
+  rows, onMarkPaid, markingId, actions, subtitle, onAdd, onRefresh, onRowClick, loading,
 }) => {
   const columns: DataGridColumn<PaymentRow>[] = [
     {
@@ -118,19 +119,32 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
     {
       key: '_actions',
       title: '',
-      width: 90,
+      width: 130,
       render: r => (
-        r.mapped.status !== 'paid' ? (
-          <button
-            onClick={e => { e.stopPropagation(); onMarkPaid(String(r.mapped.id)) }}
-            disabled={markingId === String(r.mapped.id)}
-            style={{ background: 'rgba(16,185,129,0.1)', border: 'none', cursor: 'pointer', color: '#10b981', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)' }}
-          >
-            {markingId === String(r.mapped.id) ? '...' : 'Đã thu'}
-          </button>
-        ) : (
-          <span style={{ color: '#10b981' }}><Icon name="check" size={14} /></span>
-        )
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'flex-end' }}>
+          {r.mapped.status !== 'paid' && (
+            <button
+              onClick={e => { e.stopPropagation(); onMarkPaid(String(r.mapped.id)) }}
+              disabled={markingId === String(r.mapped.id)}
+              title="Đánh dấu đã thu"
+              style={{ background: 'rgba(16,185,129,0.1)', border: 'none', cursor: 'pointer', color: '#10b981', padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)' }}
+            >
+              {markingId === String(r.mapped.id) ? '...' : 'Đã thu'}
+            </button>
+          )}
+          {r.mapped.status === 'paid' && (
+            <span style={{ color: '#10b981', display: 'flex', alignItems: 'center' }}><Icon name="check" size={14} /></span>
+          )}
+          {onRowClick && (
+            <button
+              onClick={e => { e.stopPropagation(); onRowClick(r) }}
+              title="Chỉnh sửa"
+              style={{ background: 'var(--hover-bg)', border: 'none', cursor: 'pointer', color: 'var(--text-3)', padding: '4px 6px', borderRadius: 6, display: 'flex', alignItems: 'center' }}
+            >
+              <Icon name="edit" size={12} />
+            </button>
+          )}
+        </div>
       ),
     },
   ]
@@ -148,6 +162,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       onAdd={onAdd}
       addLabel="Tạo phiếu thu"
       onRefresh={onRefresh}
+      onRowClick={onRowClick}
       loading={loading}
     />
   )

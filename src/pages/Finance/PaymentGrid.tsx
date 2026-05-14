@@ -7,18 +7,25 @@ interface PaymentGridProps {
   rows: { raw: DbPayment; mapped: Payment }[]
   onMarkPaid: (id: string) => void
   markingId: string | null
+  onCardClick?: (row: { raw: DbPayment; mapped: Payment }) => void
 }
 
 const METHOD_LABEL: Record<string, string> = {
   cash: 'Tiền mặt', bank_transfer: 'Chuyển khoản', momo: 'MoMo', vnpay: 'VNPay',
 }
 
-export const PaymentGrid: React.FC<PaymentGridProps> = ({ rows, onMarkPaid, markingId }) => {
+export const PaymentGrid: React.FC<PaymentGridProps> = ({ rows, onMarkPaid, markingId, onCardClick }) => {
   if (rows.length === 0) return <EmptyState icon="wallet" title="Không có phiếu thu" desc="Nhấn 'Tạo phiếu thu' để bắt đầu" />
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
       {rows.map(({ raw: r, mapped: p }, i) => (
-        <Card key={p.id} animate delay={i * 50} style={{ position: 'relative', overflow: 'hidden' }}>
+        <Card
+          key={p.id}
+          animate delay={i * 50}
+          hover={!!onCardClick}
+          onClick={onCardClick ? () => onCardClick({ raw: r, mapped: p }) : undefined}
+          style={{ position: 'relative', overflow: 'hidden' }}
+        >
           <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, height: 3,
             background: p.status === 'paid' ? '#10B981' : p.status === 'overdue' ? '#EF4444' : '#F59E0B',
@@ -52,7 +59,7 @@ export const PaymentGrid: React.FC<PaymentGridProps> = ({ rows, onMarkPaid, mark
             </div>
             {p.status !== 'paid' && (
               <button
-                onClick={() => onMarkPaid(String(p.id))}
+                onClick={e => { e.stopPropagation(); onMarkPaid(String(p.id)) }}
                 disabled={markingId === String(p.id)}
                 style={{ background: 'rgba(16,185,129,0.1)', border: 'none', cursor: 'pointer', color: '#10b981', padding: '4px 10px', borderRadius: 6, fontSize: 12, fontWeight: 600, fontFamily: 'var(--font)' }}
               >

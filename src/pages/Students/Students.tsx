@@ -1,9 +1,10 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, ConfirmDialog } from '../../components'
 import { StudentTable } from './components/StudentTable'
 import { StudentGrid } from './components/StudentGrid'
 import { StudentDetail } from './components/StudentDetail'
 import { StudentFormModal } from './components/StudentFormModal'
+import { ImportStudentsModal } from './components/ImportStudentsModal'
 import type { Student } from '../../types/data'
 import { useQuery } from '../../hooks'
 import { useCRUDPage, useListFilter, useEntityDelete } from '../../hooks'
@@ -43,6 +44,14 @@ export const Students: React.FC = () => {
 
   const activeCount = students.filter(s => s.status === 'active').length
 
+  const [showImport, setShowImport] = useState(false)
+
+  const importBtn = (
+    <Button size="sm" variant="outline" icon="upload" onClick={() => setShowImport(true)}>
+      Import
+    </Button>
+  )
+
   const viewTabs = (
     <Tabs
       tabs={[
@@ -62,7 +71,10 @@ export const Students: React.FC = () => {
             <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>Quản lý học viên</div>
             <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{`${students.length} học viên · ${activeCount} đang học`}</div>
           </div>
-          <Button icon="plus" onClick={openAdd}>Thêm học viên</Button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button variant="outline" icon="upload" onClick={() => setShowImport(true)}>Import</Button>
+            <Button icon="plus" onClick={openAdd}>Thêm học viên</Button>
+          </div>
         </div>
       )}
 
@@ -105,7 +117,7 @@ export const Students: React.FC = () => {
           onSelectStudent={setDetail}
           onEdit={openEdit}
           onDelete={setDeleteTarget}
-          actions={viewTabs}
+          actions={<>{importBtn}{viewTabs}</>}
           onAdd={openAdd}
           onRefresh={refetch}
           loading={loading}
@@ -132,6 +144,15 @@ export const Students: React.FC = () => {
         confirmLabel="Xoá"
         onConfirm={() => deleteTarget && handleDelete(deleteTarget)}
         onCancel={() => setDeleteTarget(null)}
+      />
+
+      <ImportStudentsModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onSuccess={refetch}
+        existingStudents={raw ?? []}
+        branchId={branchId}
+        yearId={yearId}
       />
     </div>
   )

@@ -1,56 +1,101 @@
-import React from 'react';
-import { PageHeader, Button, Card, Icon, IconName } from '../../components';
+import React, { useState } from 'react'
+import { PageHeader, Card, Icon } from '../../components'
+import { OverviewReport }   from './components/OverviewReport'
+import { StudentReport }    from './components/StudentReport'
+import { FinanceReport }    from './components/FinanceReport'
+import { AttendanceReport } from './components/AttendanceReport'
+import { AcademicReport }   from './components/AcademicReport'
+import { TeacherReport }    from './components/TeacherReport'
+import { RANGE_OPTIONS, type RangePreset } from './components/reportShared'
+import type { IconName } from '../../components'
 
-interface ReportItem {
-  icon: IconName;
-  title: string;
-  desc: string;
-  color: string;
-  bg: string;
+type TabId = 'overview' | 'student' | 'finance' | 'attendance' | 'academic' | 'teacher'
+
+interface TabDef {
+  id: TabId
+  label: string
+  icon: IconName
+  color: string
+  bg: string
 }
 
+const TABS: TabDef[] = [
+  { id: 'overview',   label: 'Tổng hợp',  icon: 'dashboard',  color: '#FF6B35', bg: 'var(--primary-light)' },
+  { id: 'student',    label: 'Học viên',  icon: 'users',      color: '#FF6B35', bg: 'var(--primary-light)' },
+  { id: 'finance',    label: 'Tài chính', icon: 'wallet',     color: '#16a34a', bg: '#dcfce7' },
+  { id: 'attendance', label: 'Điểm danh', icon: 'clipboard',  color: '#2563eb', bg: '#dbeafe' },
+  { id: 'academic',   label: 'Học tập',   icon: 'star',       color: '#8b5cf6', bg: '#ede9fe' },
+  { id: 'teacher',    label: 'Giáo viên', icon: 'graduation', color: '#f59e0b', bg: 'var(--warning-light)' },
+]
+
 export const Reports: React.FC = () => {
-  const reports: ReportItem[] = [
-    { icon: 'users', title: 'Báo cáo học viên', desc: 'Thống kê nhập học, nghỉ học, chuyển lớp', color: '#FF6B35', bg: 'var(--primary-light)' },
-    { icon: 'wallet', title: 'Báo cáo tài chính', desc: 'Doanh thu, chi phí, công nợ theo tháng', color: '#10B981', bg: 'var(--success-light)' },
-    { icon: 'clipboard', title: 'Báo cáo điểm danh', desc: 'Tỷ lệ đi học, vắng mặt theo lớp', color: '#3B82F6', bg: 'var(--info-light)' },
-    { icon: 'star', title: 'Báo cáo học tập', desc: 'Điểm trung bình, tiến bộ học viên', color: '#8B5CF6', bg: '#EDE9FE' },
-    { icon: 'graduation', title: 'Báo cáo giáo viên', desc: 'Giờ dạy, đánh giá, phản hồi', color: '#F59E0B', bg: 'var(--warning-light)' },
-    { icon: 'bar-chart', title: 'Tổng hợp', desc: 'Báo cáo tổng hợp toàn trung tâm', color: '#EC4899', bg: '#FCE7F3' },
-  ];
+  const [activeTab, setActiveTab] = useState<TabId>('overview')
+  const [range, setRange] = useState<RangePreset>('thismonth')
 
   return (
     <div>
       <PageHeader
         title="Báo cáo & Thống kê"
-        subtitle="Xem tổng quan hoạt động trung tâm"
-        actions={<Button icon="download" variant="secondary">Xuất báo cáo</Button>}
-      />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-        {reports.map((r, i) => (
-          <Card key={i} hover animate delay={i * 60} style={{ cursor: 'pointer' }}>
-            <div
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 14,
-                background: r.bg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: r.color,
-                marginBottom: 14,
-              }}
-            >
-              <Icon name={r.icon} size={22} />
+        subtitle="Tổng quan dữ liệu trung tâm theo nhiều góc nhìn"
+        actions={
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '0 4px 0 12px', height: 36, borderRadius: 9, border: '1.5px solid var(--border)', background: 'var(--card)' }}>
+              <Icon name="calendar" size={13} style={{ color: 'var(--text-4)' }} />
+              <select
+                value={range}
+                onChange={e => setRange(e.target.value as RangePreset)}
+                style={{
+                  height: 32, border: 'none', background: 'transparent',
+                  color: 'var(--text-1)', fontSize: 13, fontFamily: 'var(--font)',
+                  outline: 'none', cursor: 'pointer', paddingRight: 8,
+                }}
+              >
+                {RANGE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>{r.title}</div>
-            <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{r.desc}</div>
-          </Card>
-        ))}
-      </div>
-    </div>
-  );
-};
+          </div>
+        }
+      />
 
-export default Reports;
+      {/* Tab strip */}
+      <Card animate style={{ padding: 6, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {TABS.map(t => {
+            const active = activeTab === t.id
+            return (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  padding: '8px 14px', borderRadius: 8,
+                  border: 'none', cursor: 'pointer',
+                  background: active ? t.bg : 'transparent',
+                  color: active ? t.color : 'var(--text-3)',
+                  fontSize: 13, fontWeight: active ? 700 : 500,
+                  fontFamily: 'var(--font)',
+                  transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'var(--hover-bg)' }}
+                onMouseLeave={e => { if (!active) (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+              >
+                <Icon name={t.icon} size={14} />
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+      </Card>
+
+      {/* Active tab content */}
+      {activeTab === 'overview'   && <OverviewReport   range={range} onJump={id => setActiveTab(id as TabId)} />}
+      {activeTab === 'student'    && <StudentReport    range={range} />}
+      {activeTab === 'finance'    && <FinanceReport    range={range} />}
+      {activeTab === 'attendance' && <AttendanceReport range={range} />}
+      {activeTab === 'academic'   && <AcademicReport   range={range} />}
+      {activeTab === 'teacher'    && <TeacherReport    range={range} />}
+    </div>
+  )
+}
+
+export default Reports

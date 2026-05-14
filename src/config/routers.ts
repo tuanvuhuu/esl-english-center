@@ -1,6 +1,7 @@
 import React from 'react';
 import Dashboard from '../pages/Dashboard';
 import Students from '../pages/Students';
+import Parents from '../pages/Parents';
 import Teachers from '../pages/Teachers';
 import Classes from '../pages/Classes';
 import Rooms from '../pages/Rooms';
@@ -17,6 +18,7 @@ import { IconName } from '../components';
 export const pageTitles: Record<string, string> = {
   dashboard: 'Tổng quan',
   students: 'Quản lý học viên',
+  parents: 'Quản lý phụ huynh',
   teachers: 'Quản lý giáo viên',
   classes: 'Quản lý lớp học',
   rooms: 'Quản lý phòng học',
@@ -33,6 +35,7 @@ export const pageTitles: Record<string, string> = {
 export const pageComponents: Record<string, React.ComponentType> = {
   dashboard: Dashboard,
   students: Students,
+  parents: Parents,
   teachers: Teachers,
   classes: Classes,
   rooms: Rooms,
@@ -55,6 +58,7 @@ export interface RouteItem {
 export const routes: RouteItem[] = [
   { id: 'dashboard', label: 'Tổng quan', icon: 'dashboard' },
   { id: 'students', label: 'Học viên', icon: 'users' },
+  { id: 'parents', label: 'Phụ huynh', icon: 'user' },
   { id: 'teachers', label: 'Giáo viên', icon: 'graduation' },
   { id: 'classes', label: 'Lớp học', icon: 'book' },
   { id: 'rooms', label: 'Phòng học', icon: 'building' },

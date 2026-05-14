@@ -2,8 +2,9 @@
 import type { DbStudent, DbTeacher, DbClass, DbPayment, DbRoom, DbNotification } from '../types/database'
 import type { Student, Teacher, Class, Payment, Room, Notification } from '../types/data'
 
-function initials(name: string) {
-  return name.split(' ').slice(-2).map(w => w[0]).join('').toUpperCase()
+export function initials(name: string) {
+  if (!name) return '?'
+  return name.split(' ').filter(Boolean).slice(-2).map(w => w[0]).join('').toUpperCase()
 }
 
 function formatSchedule(schedules: { day_of_week: number; start_time: string; end_time: string }[]): string {

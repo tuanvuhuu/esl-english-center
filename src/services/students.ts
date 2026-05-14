@@ -77,6 +77,40 @@ export async function softDeleteStudent(id: string) {
   if (error) throw error
 }
 
+/**
+ * Liên kết HV với 1 chi nhánh + năm học (bảng student_academic_records).
+ * Cần thiết để HV xuất hiện khi filter theo branch/year ở `getStudents`.
+ * Idempotent: nếu đã tồn tại link thì bỏ qua.
+ */
+export async function linkStudentToAcademicYear(
+  studentId: string,
+  branchId: string,
+  academicYearId: string,
+  level?: string | null,
+): Promise<void> {
+  // Check existing first to keep this idempotent
+  const { data: existing } = await supabase
+    .from('student_academic_records')
+    .select('id')
+    .eq('student_id', studentId)
+    .eq('branch_id', branchId)
+    .eq('academic_year_id', academicYearId)
+    .maybeSingle()
+
+  if (existing) return
+
+  const { error } = await supabase
+    .from('student_academic_records')
+    .insert({
+      student_id: studentId,
+      branch_id: branchId,
+      academic_year_id: academicYearId,
+      level: level ?? null,
+      status: 'enrolled',
+    })
+  if (error) throw error
+}
+
 export async function createStudentWithParent(
   student: Partial<DbStudent>,
   parent: Partial<Parent>,
