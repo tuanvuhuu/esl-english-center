@@ -80,8 +80,16 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       </div>
 
       {question.image_url && (
-        <div style={{ marginBottom: 12, borderRadius: 8, overflow: 'hidden', border: '1px solid var(--border)' }}>
-          <img src={question.image_url} alt="Question" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+        <div style={{ 
+          marginBottom: 12, borderRadius: 8, overflow: 'hidden', 
+          border: '1px solid var(--border)', background: '#fff',
+          display: 'flex', justifyContent: 'center'
+        }}>
+          <img 
+            src={question.image_url} 
+            alt="Question Illustration" 
+            style={{ width: '100%', maxHeight: 200, objectFit: 'contain', display: 'block' }} 
+          />
         </div>
       )}
 

@@ -7,6 +7,7 @@ export interface ParsedQuestion {
   options?: { text: string; isCorrect: boolean }[];
   explanation?: string;
   points: number;
+  image_url?: string;
 }
 
 /**
@@ -47,7 +48,7 @@ export async function geminiParseQuestions(
     Rules:
     1. Fix OCR/spelling errors.
     2. For MCQ, ensure one option is marked isCorrect: true.
-    ${imageFile ? '3. "box_2d" should be the normalized coordinates [0-1000] of the area containing ONLY this specific question on the image.' : ''}
+    ${imageFile ? '3. "box_2d" should be the normalized coordinates [0-1000] of ONLY the ILLUSTRATION or IMAGE associated with this question. Do NOT include the question text in the crop area. If there is no image/illustration, omit "box_2d".' : ''}
     
     ${imageFile ? 'IMAGE PROVIDED. ANALYZE THE IMAGE CONTENT.' : `TEXT TO ANALYZE:\n${text}`}
   `;
@@ -119,11 +120,13 @@ async function autoCropQuestions(file: File, questions: any[]): Promise<ParsedQu
         const x = xmin * img.width / 1000;
         const y = ymin * img.height / 1000;
 
-        canvas.width = w;
-        canvas.height = h;
+        canvas.width = w * 2; // High DPI for printing
+        canvas.height = h * 2;
         if (ctx) {
-          ctx.drawImage(img, x, y, w, h, 0, 0, w, h);
-          q.image_url = canvas.toDataURL('image/jpeg', 0.8);
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, x, y, w, h, 0, 0, w * 2, h * 2);
+          q.image_url = canvas.toDataURL('image/jpeg', 1.0); // Max quality
         }
         
         delete q.box_2d; // cleanup

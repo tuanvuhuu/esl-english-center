@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo } from 'react'
 import { PageHeader, Tabs } from '../../components'
 import { useQuery } from '../../hooks/useSupabase'
-import { getTests, createTest } from '../../services/tests'
+import { getTests, createTest, getTestQuestions } from '../../services/tests'
 import { getClasses } from '../../services/classes'
 import { mapClass } from '../../lib/mappers'
 import type { DbTest } from '../../types/database'
@@ -10,6 +10,7 @@ import { TestsResultsTab }   from './components/TestsResultsTab'
 import { TestsAnalyticsTab } from './components/TestsAnalyticsTab'
 import { CreateTestModal }   from './components/CreateTestModal'
 import { QuestionBuilderModal } from './components/QuestionBuilderModal'
+import { exportTestToPdf } from './testExport'
 
 const TABS = [
   { id: 'schedule',  label: 'Lịch kiểm tra' },
@@ -44,6 +45,16 @@ export const Tests: React.FC = () => {
     }
   }
 
+  const handleExportPdf = async (test: DbTest) => {
+    try {
+      const questions = await getTestQuestions(test.id);
+      await exportTestToPdf({ test, questions: questions as any });
+    } catch (err) {
+      console.error('Export PDF Error:', err);
+      alert('Không thể xuất PDF. Hãy kiểm tra lại dữ liệu câu hỏi.');
+    }
+  };
+
   const handleSelectTest = useCallback((test: DbTest) => {
     setSelectedTest(test)
     if (activeTab === 'schedule') setActiveTab('results')
@@ -53,55 +64,59 @@ export const Tests: React.FC = () => {
     ? 'Đang tải...'
     : `${tests.filter(t => t.status === 'upcoming').length} sắp tới · ${tests.filter(t => t.status === 'completed').length} đã hoàn thành`
 
+  const renderTab = () => {
+    switch (activeTab) {
+      case 'schedule':
+        return (
+          <TestsScheduleTab 
+            tests={tests} 
+            loading={testsLoading} 
+            onSelectTest={handleSelectTest}
+            onBuildQuestions={setQuestionBuilderTest}
+            onExportPdf={handleExportPdf}
+            onCreate={() => setShowCreate(true)} 
+          />
+        )
+      case 'results':
+        return (
+          <TestsResultsTab 
+            test={selectedTest} 
+            tests={tests}
+            onSelectTest={setSelectedTest}
+          />
+        )
+      case 'analytics':
+        return <TestsAnalyticsTab />
+      default:
+        return null
+    }
+  }
+
   return (
     <div>
       <PageHeader
         title="Kiểm tra & Thi"
         subtitle={subtitle}
         actions={
-          <Tabs
-            tabs={TABS}
-            active={activeTab}
-            onChange={setActiveTab}
+          <Tabs 
+            tabs={TABS} 
+            active={activeTab} 
+            onChange={setActiveTab} 
           />
         }
       />
 
-      {activeTab === 'schedule' && (
-        <TestsScheduleTab
-          tests={tests}
-          loading={testsLoading}
-          onSelectTest={handleSelectTest}
-          onCreate={() => setShowCreate(true)}
-          onBuildQuestions={setQuestionBuilderTest}
-        />
-      )}
-
-      {activeTab === 'results' && (
-        <TestsResultsTab
-          tests={tests}
-          selectedTest={selectedTest}
-          onSelectTest={setSelectedTest}
-        />
-      )}
-
-      {activeTab === 'analytics' && (
-        <TestsAnalyticsTab
-          tests={tests}
-          selectedTest={selectedTest}
-          onSelectTest={setSelectedTest}
-        />
-      )}
+      {renderTab()}
 
       <CreateTestModal
         open={showCreate}
         onClose={() => setShowCreate(false)}
+        onSubmit={handleCreateTest}
         classes={activeClasses}
-        onSave={handleCreateTest}
-        saving={creating}
+        loading={creating}
       />
 
-      <QuestionBuilderModal
+      <QuestionBuilderModal 
         open={!!questionBuilderTest}
         onClose={() => setQuestionBuilderTest(null)}
         test={questionBuilderTest}
@@ -109,5 +124,3 @@ export const Tests: React.FC = () => {
     </div>
   )
 }
-
-export default Tests

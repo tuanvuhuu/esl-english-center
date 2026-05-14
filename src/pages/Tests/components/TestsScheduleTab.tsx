@@ -39,11 +39,13 @@ interface TestsScheduleTabProps {
   onSelectTest: (test: DbTest) => void
   onCreate: () => void
   onBuildQuestions?: (test: DbTest) => void
+  onExportPdf?: (test: DbTest) => Promise<void>
 }
 
 export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
-  tests, loading, onSelectTest, onCreate, onBuildQuestions
+  tests, loading, onSelectTest, onCreate, onBuildQuestions, onExportPdf
 }) => {
+  const [exportingId, setExportingId] = useState<string | null>(null);
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -138,10 +140,27 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                icon="plus-circle"
+                icon="list"
                 onClick={e => { e.stopPropagation(); onBuildQuestions(t) }}
+                style={{ color: 'var(--primary)', fontWeight: 700 }}
               >
-                Câu hỏi
+                Danh sách câu hỏi
+              </Button>
+            )}
+            {onExportPdf && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="download"
+                loading={exportingId === t.id}
+                onClick={async (e) => { 
+                  e.stopPropagation(); 
+                  setExportingId(t.id);
+                  await onExportPdf(t);
+                  setExportingId(null);
+                }}
+              >
+                In PDF
               </Button>
             )}
             {t.status === 'completed' && (

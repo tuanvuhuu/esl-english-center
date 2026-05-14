@@ -4,6 +4,7 @@ import { QuestionCard } from './QuestionCard';
 import { AddQuestionModal } from './AddQuestionModal';
 import { AiSuggestPanel } from './AiSuggestPanel';
 import { ImportQuestionModal } from './ImportQuestionModal';
+import { exportTestToPdf } from '../testExport';
 import { 
   getTestQuestions, 
   createTestQuestion, 
@@ -134,7 +135,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
           type: p.type,
           question_text: p.question_text,
           points: p.points,
-          image_url: null,
+          image_url: p.image_url || null,
           audio_url: null,
           order_index: questions.length,
           explanation: p.explanation || null
@@ -184,7 +185,15 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
                 Tổng: {totalPoints} / {test?.total_score || 0} điểm
               </div>
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+             <div style={{ display: 'flex', gap: 8 }}>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                icon="download" 
+                onClick={() => test && exportTestToPdf({ test, questions: questions as any })}
+              >
+                In PDF
+              </Button>
               <Button size="sm" variant="outline" icon="upload" onClick={() => setShowImport(true)}>
                 AI Import
               </Button>

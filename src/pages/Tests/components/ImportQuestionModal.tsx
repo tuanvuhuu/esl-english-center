@@ -219,7 +219,7 @@ export const ImportQuestionModal: React.FC<ImportQuestionModalProps> = ({
               }
               style={{ height: 40, fontWeight: 700, alignSelf: 'center', minWidth: 200 }}
             >
-              Bắt đầu phân tích bằng AI
+              {processing ? 'Đang phân tích...' : 'Bắt đầu phân tích bằng AI'}
             </Button>
           </>
         ) : (
