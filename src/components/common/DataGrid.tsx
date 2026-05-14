@@ -343,6 +343,16 @@ export function DataGrid<T = any>({
 
           {actions}
 
+          <button
+            onClick={handleExport}
+            title="Export CSV"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
+          >
+            <Icon name="download" size={13} />
+          </button>
+
           {onRefresh && (
             <button
               onClick={onRefresh}
@@ -354,16 +364,6 @@ export function DataGrid<T = any>({
               <Icon name="refresh" size={13} />
             </button>
           )}
-
-          <button
-            onClick={handleExport}
-            title="Export CSV"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
-          >
-            <Icon name="download" size={13} />
-          </button>
 
           {onAdd && (
             <button
