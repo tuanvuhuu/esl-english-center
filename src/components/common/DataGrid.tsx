@@ -29,8 +29,8 @@ export interface DataGridColumn<T = any> {
   width?: number
   align?: 'left' | 'center' | 'right'
   noWrap?: boolean
-  sortable?: boolean       // default true
-  pin?: 'left' | 'right'  // sticky column
+  sortable?: boolean
+  pin?: 'left' | 'right'
 }
 
 interface DataGridProps<T = any> {
@@ -47,6 +47,7 @@ interface DataGridProps<T = any> {
   emptyText?: string
   enableRowSelection?: boolean
   onSelectionChange?: (rows: T[]) => void
+  maxHeight?: number | string
 }
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -55,9 +56,13 @@ const PAGE_SIZES = [10, 20, 50, 100]
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-const IndeterminateCheckbox: React.FC<{ checked?: boolean; indeterminate?: boolean; onChange?: React.ChangeEventHandler<HTMLInputElement>; onClick?: React.MouseEventHandler<HTMLInputElement>; disabled?: boolean }> = ({
-  checked, indeterminate, onChange, onClick, disabled,
-}) => {
+const IndeterminateCheckbox: React.FC<{
+  checked?: boolean
+  indeterminate?: boolean
+  onChange?: React.ChangeEventHandler<HTMLInputElement>
+  onClick?: React.MouseEventHandler<HTMLInputElement>
+  disabled?: boolean
+}> = ({ checked, indeterminate, onChange, onClick, disabled }) => {
   const ref = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = Boolean(indeterminate)
@@ -76,41 +81,52 @@ const IndeterminateCheckbox: React.FC<{ checked?: boolean; indeterminate?: boole
 }
 
 const FilterInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <div style={{ position: 'relative' }}>
-    <Icon name="search" size={10} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)', pointerEvents: 'none' }} />
+  <div style={{ position: 'relative', marginTop: 5 }}>
     <input
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder="Lọc..."
       style={{
-        width: '100%', padding: '3px 20px 3px 20px',
-        border: '1px solid var(--border)', borderRadius: 6,
-        fontSize: 11, fontFamily: 'var(--font)',
-        background: 'var(--input-bg)', color: 'var(--text-1)',
-        outline: 'none', boxSizing: 'border-box',
+        width: '100%', height: 24,
+        padding: value ? '0 20px 0 8px' : '0 8px',
+        border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
+        borderRadius: 5, fontSize: 11, fontFamily: 'var(--font)',
+        background: value ? 'var(--primary-light)' : 'var(--input-bg)',
+        color: 'var(--text-1)', outline: 'none', boxSizing: 'border-box',
+        transition: 'border-color 0.15s, background 0.15s',
       }}
       onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
-      onBlur={e => (e.target.style.borderColor = 'var(--border)')}
+      onBlur={e => (e.target.style.borderColor = value ? 'var(--primary)' : 'var(--border)')}
     />
     {value && (
-      <button onClick={() => onChange('')}
-        style={{ position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-4)', padding: 0, lineHeight: 1, fontSize: 13 }}>
-        ×
-      </button>
+      <button
+        onClick={() => onChange('')}
+        style={{
+          position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: 'var(--text-4)', padding: 0, lineHeight: 1, fontSize: 14,
+        }}
+      >×</button>
     )}
   </div>
 )
 
-const FilterSelect: React.FC<{ value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }> = ({ value, onChange, options }) => (
+const FilterSelect: React.FC<{
+  value: string
+  onChange: (v: string) => void
+  options: { value: string; label: string }[]
+}> = ({ value, onChange, options }) => (
   <select
     value={value}
     onChange={e => onChange(e.target.value)}
     style={{
-      width: '100%', padding: '3px 6px',
-      border: '1px solid var(--border)', borderRadius: 6,
-      fontSize: 11, fontFamily: 'var(--font)',
-      background: 'var(--input-bg)', color: 'var(--text-1)',
-      outline: 'none', cursor: 'pointer',
+      width: '100%', height: 24, marginTop: 5,
+      padding: '0 6px',
+      border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
+      borderRadius: 5, fontSize: 11, fontFamily: 'var(--font)',
+      background: value ? 'var(--primary-light)' : 'var(--input-bg)',
+      color: 'var(--text-1)', outline: 'none', cursor: 'pointer',
+      transition: 'border-color 0.15s, background 0.15s',
     }}
   >
     <option value="">Tất cả</option>
@@ -129,6 +145,7 @@ export function DataGrid<T = any>({
   emptyText = 'Không có dữ liệu',
   enableRowSelection = false,
   onSelectionChange,
+  maxHeight = 'calc(100vh - 280px)',
 }: DataGridProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -146,7 +163,6 @@ export function DataGrid<T = any>({
     return { left, right }
   }, [columns, enableRowSelection])
 
-  // Map our column defs → TanStack ColumnDef
   const tanstackColumns = useMemo<ColumnDef<T>[]>(() => {
     const defs: ColumnDef<T>[] = []
 
@@ -257,7 +273,6 @@ export function DataGrid<T = any>({
     a.click()
   }
 
-  // Build page number list with ellipsis
   const totalPages = table.getPageCount()
   const pageNums: (number | '...')[] = []
   if (totalPages <= 7) {
@@ -270,6 +285,7 @@ export function DataGrid<T = any>({
     pageNums.push(totalPages)
   }
 
+  // Sticky styles for pinned columns — header cells need extra top offset for thead sticky
   const getPinnedStyle = (column: any, isHeader = false): React.CSSProperties => {
     const pinned = column.getIsPinned()
     if (!pinned) return {}
@@ -277,7 +293,7 @@ export function DataGrid<T = any>({
       position: 'sticky',
       left: pinned === 'left' ? `${column.getStart('left')}px` : undefined,
       right: pinned === 'right' ? `${column.getAfter('right')}px` : undefined,
-      zIndex: isHeader ? 3 : 1,
+      zIndex: isHeader ? 4 : 1,
       background: 'var(--card)',
       boxShadow: pinned === 'left'
         ? '2px 0 6px -2px rgba(0,0,0,0.08)'
@@ -288,10 +304,10 @@ export function DataGrid<T = any>({
   const headerGroups = table.getHeaderGroups()
 
   return (
-    <div style={{ background: 'var(--card)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)' }}>
+    <div style={{ background: 'var(--card)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)', gap: 12 }}>
+      {/* ── Card Header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)', gap: 12, flexShrink: 0 }}>
         <div style={{ flex: 1 }}>
           {title && <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{title}</div>}
           {subtitle && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{subtitle}</div>}
@@ -322,90 +338,78 @@ export function DataGrid<T = any>({
         </div>
       </div>
 
-      {/* ── Table ── */}
-      <div style={{ overflowX: 'auto' }}>
+      {/* ── Scrollable Table Area ── */}
+      <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight, flexShrink: 1 }}>
         <table style={{ minWidth: '100%', width: table.getTotalSize(), borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             {headerGroups.map(headerGroup => (
-              <React.Fragment key={headerGroup.id}>
-                {/* Column title row (with sort + resize) */}
-                <tr style={{ background: 'var(--table-header)', borderBottom: hasFilterRow ? 'none' : '1px solid var(--border)' }}>
-                  {headerGroup.headers.map(header => {
-                    const colDef = columns.find(c => c.key === header.column.id)
-                    const canSort = header.column.getCanSort()
-                    const sorted = header.column.getIsSorted()
-                    return (
-                      <th
-                        key={header.id}
-                        style={{
-                          width: header.getSize(),
-                          padding: '10px 14px',
-                          textAlign: colDef?.align ?? 'left',
-                          fontWeight: 600, color: 'var(--text-3)', fontSize: 11,
-                          whiteSpace: 'nowrap', userSelect: 'none',
-                          position: 'relative',
-                          cursor: canSort ? 'pointer' : 'default',
-                          ...getPinnedStyle(header.column, true),
-                        }}
+              <tr
+                key={headerGroup.id}
+                style={{ background: 'var(--table-header)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 2 }}
+              >
+                {headerGroup.headers.map(header => {
+                  const colDef = columns.find(c => c.key === header.column.id)
+                  const canSort = header.column.getCanSort()
+                  const sorted = header.column.getIsSorted()
+                  const filterVal = (header.column.getFilterValue() as string) ?? ''
+                  return (
+                    <th
+                      key={header.id}
+                      style={{
+                        width: header.getSize(),
+                        padding: hasFilterRow ? '8px 10px 6px' : '10px 14px',
+                        textAlign: colDef?.align ?? 'left',
+                        fontWeight: 600, color: 'var(--text-3)', fontSize: 11,
+                        whiteSpace: 'nowrap', userSelect: 'none',
+                        position: 'relative',
+                        verticalAlign: 'top',
+                        background: 'var(--table-header)',
+                        ...getPinnedStyle(header.column, true),
+                      }}
+                    >
+                      {/* Title row with sort */}
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: canSort ? 'pointer' : 'default', marginBottom: colDef?.filterable ? 0 : 0 }}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && (
-                            <span style={{ color: sorted ? 'var(--primary)' : 'var(--text-4)', fontSize: 9, lineHeight: 1 }}>
-                              {sorted === 'asc' ? '▲' : sorted === 'desc' ? '▼' : '⇅'}
-                            </span>
-                          )}
-                        </div>
-                        {/* Resize handle */}
-                        {header.column.getCanResize() && (
-                          <div
-                            onMouseDown={header.getResizeHandler()}
-                            onTouchStart={header.getResizeHandler()}
-                            style={{
-                              position: 'absolute', right: 0, top: 0, height: '100%', width: 4,
-                              cursor: 'col-resize', userSelect: 'none', touchAction: 'none',
-                              background: header.column.getIsResizing() ? 'var(--primary)' : 'transparent',
-                            }}
-                          />
+                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                        {canSort && (
+                          <span style={{ color: sorted ? 'var(--primary)' : 'var(--border)', fontSize: 9, lineHeight: 1, flexShrink: 0 }}>
+                            {sorted === 'asc' ? '▲' : sorted === 'desc' ? '▼' : '⇅'}
+                          </span>
                         )}
-                      </th>
-                    )
-                  })}
-                </tr>
-                {/* Filter row */}
-                {hasFilterRow && (
-                  <tr style={{ background: 'var(--table-header)', borderBottom: '1px solid var(--border)' }}>
-                    {headerGroup.headers.map(header => {
-                      const colDef = columns.find(c => c.key === header.column.id)
-                      const filterVal = (header.column.getFilterValue() as string) ?? ''
-                      return (
-                        <th
-                          key={header.id}
+                      </div>
+
+                      {/* Inline filter below title */}
+                      {colDef?.filterable && (
+                        colDef.filterType === 'select' && colDef.filterOptions
+                          ? <FilterSelect
+                              value={filterVal}
+                              onChange={v => { header.column.setFilterValue(v || undefined); table.setPageIndex(0) }}
+                              options={colDef.filterOptions}
+                            />
+                          : <FilterInput
+                              value={filterVal}
+                              onChange={v => { header.column.setFilterValue(v || undefined); table.setPageIndex(0) }}
+                            />
+                      )}
+
+                      {/* Resize handle */}
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
                           style={{
-                            padding: '4px 8px', fontWeight: 'normal',
-                            width: header.getSize(),
-                            ...getPinnedStyle(header.column, true),
+                            position: 'absolute', right: 0, top: 0, height: '100%', width: 4,
+                            cursor: 'col-resize', userSelect: 'none', touchAction: 'none',
+                            background: header.column.getIsResizing() ? 'var(--primary)' : 'transparent',
                           }}
-                        >
-                          {colDef?.filterable && (
-                            colDef.filterType === 'select' && colDef.filterOptions
-                              ? <FilterSelect
-                                  value={filterVal}
-                                  onChange={v => { header.column.setFilterValue(v || undefined); table.setPageIndex(0) }}
-                                  options={colDef.filterOptions}
-                                />
-                              : <FilterInput
-                                  value={filterVal}
-                                  onChange={v => { header.column.setFilterValue(v || undefined); table.setPageIndex(0) }}
-                                />
-                          )}
-                        </th>
-                      )
-                    })}
-                  </tr>
-                )}
-              </React.Fragment>
+                        />
+                      )}
+                    </th>
+                  )
+                })}
+              </tr>
             ))}
           </thead>
           <tbody>
@@ -414,13 +418,13 @@ export function DataGrid<T = any>({
                 <td colSpan={tanstackColumns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
                     <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                    <span style={{ fontSize: 12 }}>Đang tải...</span>
+                    <span>Đang tải...</span>
                   </div>
                 </td>
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={tanstackColumns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>
+                <td colSpan={tanstackColumns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)' }}>
                   {emptyText}
                 </td>
               </tr>
@@ -444,7 +448,7 @@ export function DataGrid<T = any>({
                       <td
                         key={cell.id}
                         style={{
-                          padding: '10px 14px',
+                          padding: '9px 10px',
                           textAlign: colDef?.align ?? 'left',
                           color: 'var(--text-2)',
                           whiteSpace: colDef?.noWrap ? 'nowrap' : undefined,
@@ -465,7 +469,7 @@ export function DataGrid<T = any>({
       </div>
 
       {/* ── Pagination ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderTop: '1px solid var(--border)', gap: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderTop: '1px solid var(--border)', gap: 12, flexWrap: 'wrap', flexShrink: 0 }}>
         <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
           {totalFiltered === 0 ? '0 kết quả' : `${from}–${to} / ${totalFiltered} dòng`}
           {data.length !== totalFiltered && (
