@@ -62,8 +62,8 @@ CREATE TRIGGER trg_test_results_updated_at
 ALTER TABLE tests        ENABLE ROW LEVEL SECURITY;
 ALTER TABLE test_results ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "auth_read_tests"         ON tests        FOR SELECT USING (auth.role() = 'authenticated');
-CREATE POLICY "auth_write_tests"        ON tests        FOR ALL    USING (auth.role() = 'authenticated');
+CREATE POLICY "auth_read_tests"  ON tests FOR SELECT TO authenticated USING (true);
+CREATE POLICY "auth_write_tests" ON tests FOR ALL    TO authenticated USING (true) WITH CHECK (true);
 CREATE POLICY "auth_read_test_results"  ON test_results FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "auth_write_test_results" ON test_results FOR ALL    USING (auth.role() = 'authenticated');
 

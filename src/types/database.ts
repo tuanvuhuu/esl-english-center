@@ -232,6 +232,7 @@ export interface DbTest {
   pass_threshold: number
   description: string | null
   status: TestStatus
+  pdf_url: string | null
   is_deleted: boolean
   created_at: string
   created_by: string | null

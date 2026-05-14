@@ -4,6 +4,7 @@ import { QuestionCard } from './QuestionCard';
 import { AddQuestionModal } from './AddQuestionModal';
 import { AiSuggestPanel } from './AiSuggestPanel';
 import { ImportQuestionModal } from './ImportQuestionModal';
+import { PdfUploadTab } from './PdfUploadTab';
 import { exportTestToPdf } from '../testExport';
 import { 
   getTestQuestions, 
@@ -27,6 +28,8 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
   onClose,
   test
 }) => {
+  const [activeTab, setActiveTab] = useState<'questions' | 'pdf'>('questions');
+  const [currentTest, setCurrentTest] = useState<DbTest | null>(null);
   const [questions, setQuestions] = useState<DbTestQuestion[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
@@ -49,8 +52,10 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
 
   useEffect(() => {
     if (open && test) {
+      setCurrentTest(test);
       loadQuestions();
     }
+    if (!open) setActiveTab('questions');
   }, [open, test]);
 
   const handleSaveQuestion = async (payload: Partial<DbTestQuestion>, options: Partial<DbQuestionOption>[]) => {
@@ -167,38 +172,79 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
       width={1100}
       fullScreen={false}
     >
+      {/* Tab toggle */}
+      <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
+        {([
+          { id: 'questions', label: 'Xây dựng câu hỏi', icon: 'list' },
+          { id: 'pdf',       label: 'File PDF',          icon: 'file-text' },
+        ] as const).map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 14px',
+              fontSize: 13, fontWeight: 600,
+              border: 'none', cursor: 'pointer',
+              borderBottom: activeTab === tab.id ? '2px solid var(--primary)' : '2px solid transparent',
+              color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-3)',
+              background: 'transparent',
+              marginBottom: -1,
+              transition: 'all 0.15s',
+            }}
+          >
+            <Icon name={tab.icon} size={14} />
+            {tab.label}
+            {tab.id === 'pdf' && currentTest?.pdf_url && (
+              <span style={{
+                width: 7, height: 7, borderRadius: '50%',
+                background: 'var(--success)', display: 'inline-block',
+              }} />
+            )}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'pdf' && currentTest ? (
+        <div style={{ height: '70vh' }}>
+          <PdfUploadTab
+            test={currentTest}
+            onUpdate={url => setCurrentTest(prev => prev ? { ...prev, pdf_url: url } : prev)}
+          />
+        </div>
+      ) : (
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, height: '70vh' }}>
         {/* Left: Question List */}
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
-          <div style={{ 
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-            marginBottom: 16, padding: '0 4px' 
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            marginBottom: 16, padding: '0 4px',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)' }}>
                 Danh sách câu hỏi ({questions.length})
               </div>
-              <div style={{ 
-                fontSize: 12, fontWeight: 600, color: 'var(--primary)', 
-                background: 'var(--primary-light)', padding: '2px 8px', borderRadius: 6 
+              <div style={{
+                fontSize: 12, fontWeight: 600, color: 'var(--primary)',
+                background: 'var(--primary-light)', padding: '2px 10px', borderRadius: 20,
               }}>
-                Tổng: {totalPoints} / {test?.total_score || 0} điểm
+                {totalPoints} / {test?.total_score || 0} điểm
               </div>
             </div>
-             <div style={{ display: 'flex', gap: 8 }}>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                icon="download" 
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button
+                size="sm"
+                variant="outline"
+                icon="download"
                 onClick={() => test && exportTestToPdf({ test, questions: questions as any })}
               >
                 In PDF
               </Button>
               <Button size="sm" variant="outline" icon="upload" onClick={() => setShowImport(true)}>
-                AI Import
+                Import
               </Button>
               <Button size="sm" icon="plus" onClick={() => { setEditingQuestion(null); setShowAdd(true); }}>
-                Thêm thủ công
+                Thêm câu hỏi
               </Button>
             </div>
           </div>
@@ -228,12 +274,13 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
 
         {/* Right: AI Panel */}
         <div style={{ borderLeft: '1px solid var(--border)', paddingLeft: 24, overflowY: 'auto' }}>
-          <AiSuggestPanel 
-            level={test?.class?.level || 'A1'} 
-            onAddSelected={handleAddAiQuestions} 
+          <AiSuggestPanel
+            level={test?.class?.level || 'A1'}
+            onAddSelected={handleAddAiQuestions}
           />
         </div>
       </div>
+      )}
 
       <AddQuestionModal 
         open={showAdd}

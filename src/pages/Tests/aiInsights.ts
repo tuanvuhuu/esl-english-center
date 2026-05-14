@@ -118,40 +118,99 @@ export function generateClassInsights(results: DbTestResult[], test: DbTest): st
   return lines.join('\n\n')
 }
 
+const SKILL_ENCOURAGEMENT: Record<string, { great: string; good: string; tryMore: string }> = {
+  'Đọc hiểu': {
+    great:   'Con đọc hiểu rất giỏi, hiểu bài nhanh và chính xác!',
+    good:    'Con đọc hiểu khá tốt, cố gắng thêm một chút nữa là xuất sắc rồi!',
+    tryMore: 'Con cần luyện đọc thêm mỗi ngày nhé, chỉ cần 5–10 phút đọc sách tiếng Anh là con sẽ tiến bộ rất nhanh!',
+  },
+  'Nghe hiểu': {
+    great:   'Khả năng nghe của con rất tốt, con nghe và hiểu tiếng Anh rất nhanh!',
+    good:    'Con nghe khá tốt rồi, tiếp tục nghe nhạc và xem phim hoạt hình tiếng Anh nhé!',
+    tryMore: 'Con hãy nghe tiếng Anh nhiều hơn nhé — nghe nhạc thiếu nhi, xem hoạt hình tiếng Anh mỗi ngày sẽ giúp con tiến bộ rất nhanh!',
+  },
+  'Nói': {
+    great:   'Con nói tiếng Anh rất tự tin và rõ ràng, cô rất tự hào về con!',
+    good:    'Con nói tiếng Anh khá mạnh dạn, hãy tiếp tục mạnh dạn nói nhiều hơn nhé!',
+    tryMore: 'Con hãy mạnh dạn nói tiếng Anh hơn nhé, đừng sợ sai — cứ nói là con sẽ giỏi thôi!',
+  },
+  'Viết': {
+    great:   'Con viết tiếng Anh rất đẹp và chính xác, con học rất chăm chỉ!',
+    good:    'Con viết khá tốt rồi, luyện viết thêm mỗi ngày con sẽ giỏi hơn nữa!',
+    tryMore: 'Con hãy luyện viết thêm nhé — mỗi ngày tập viết vài từ hay một câu ngắn là con sẽ tiến bộ rất nhiều!',
+  },
+}
+
+const pickFirst = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)]
+
+const PRAISE_OPENERS = [
+  'Cô rất vui khi thấy con cố gắng trong bài kiểm tra này!',
+  'Con đã làm bài rất nghiêm túc, cô rất tự hào về con!',
+  'Bài kiểm tra này cho thấy con đã học rất chăm chỉ!',
+]
+
+const CLOSING_ENCOURAGEMENT = [
+  'Cô tin con sẽ ngày càng giỏi hơn nữa! Cố lên nhé! 🌟',
+  'Con học rất ngoan, hãy tiếp tục cố gắng nhé! 💪',
+  'Cô mong con sẽ tiếp tục yêu thích tiếng Anh và học thật vui! ⭐',
+  'Giỏi lắm! Cô chờ xem con tiến bộ thêm trong bài tới nhé! 🎉',
+]
+
 export function generateStudentFeedback(result: DbTestResult, test: DbTest): string {
   const score = result.total_score
-  if (score === null) return 'Chưa có điểm số.'
+  if (score === null) return 'Chưa có điểm số để nhận xét.'
 
   const isPassed = result.is_passed ?? score >= test.pass_threshold
-  const name = result.student?.full_name ?? 'Học viên'
+  const firstName = (result.student?.full_name ?? '').split(' ').pop() || 'con'
 
   const skillRows = SKILL_KEYS
-    .map(k => ({ label: SKILL_LABELS[k], score: result[k] as number | null }))
+    .map(k => ({ key: k, label: SKILL_LABELS[k], score: result[k] as number | null }))
     .filter(s => s.score !== null)
-    .sort((a, b) => (a.score ?? 0) - (b.score ?? 0))
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
 
-  const weakSkills = skillRows.slice(0, 2).filter(s => (s.score ?? 0) < 70)
-  const strongSkills = skillRows.slice(-1).filter(s => (s.score ?? 0) >= 75)
+  const hasSkillData = skillRows.length >= 2
+  const strongest = skillRows[0]
+  const weakest   = skillRows[skillRows.length - 1]
 
-  const parts: string[] = []
+  const lines: string[] = []
 
+  // 1. Mở đầu — khen ngợi chung
+  lines.push(pickFirst(PRAISE_OPENERS))
+
+  // 2. Nhận xét điểm tổng — nhẹ nhàng, tích cực
   if (isPassed) {
-    parts.push(
-      score >= 85
-        ? `${name} đạt kết quả xuất sắc với ${score}/100. Tiếp tục phát huy!`
-        : `${name} đã vượt qua bài kiểm tra với ${score}/100. Tốt lắm!`
-    )
+    if (score >= 90) {
+      lines.push(`**${firstName}** đạt **${score}/100** — xuất sắc! Con làm bài rất tốt, cô rất vui và tự hào về con. 🏆`)
+    } else if (score >= 75) {
+      lines.push(`**${firstName}** đạt **${score}/100** — giỏi lắm! Con đã vượt qua bài kiểm tra một cách tự tin.`)
+    } else {
+      lines.push(`**${firstName}** đạt **${score}/100** — con đã vượt qua bài kiểm tra rồi, cô rất vui! Cố gắng thêm một chút nữa là con sẽ đạt điểm cao hơn thôi.`)
+    }
   } else {
-    parts.push(`${name} đạt ${score}/100, chưa đạt ngưỡng ${test.pass_threshold}. Cần cố gắng thêm.`)
+    if (score >= test.pass_threshold * 0.85) {
+      lines.push(`**${firstName}** đạt **${score}/100** — con đã rất cố gắng rồi! Lần sau con chỉ cần thêm một chút nữa là qua được bài kiểm tra này, cô tin con làm được!`)
+    } else {
+      lines.push(`**${firstName}** đạt **${score}/100** — con đã cố gắng rồi, cô ghi nhận điều đó! Lần tới con ôn bài kỹ hơn một chút, con chắc chắn sẽ làm tốt hơn nhé.`)
+    }
   }
 
-  if (strongSkills.length > 0) {
-    parts.push(`Điểm mạnh: ${strongSkills.map(s => `${s.label} (${round1(s.score)})`).join(', ')}.`)
+  // 3. Khen kỹ năng mạnh nhất
+  if (hasSkillData && strongest.score !== null) {
+    const enc = SKILL_ENCOURAGEMENT[strongest.label]
+    if (enc) {
+      const praise = strongest.score >= 80 ? enc.great : enc.good
+      lines.push(praise)
+    }
   }
 
-  if (weakSkills.length > 0) {
-    parts.push(`Cần cải thiện: ${weakSkills.map(s => `${s.label} (${round1(s.score)})`).join(', ')}.`)
+  // 4. Góp ý nhẹ nhàng cho kỹ năng yếu nhất (chỉ khi chênh lệch rõ hoặc điểm thấp)
+  if (hasSkillData && weakest.score !== null && weakest.score < 70 && weakest.label !== strongest.label) {
+    const enc = SKILL_ENCOURAGEMENT[weakest.label]
+    if (enc) lines.push(enc.tryMore)
   }
 
-  return parts.join(' ')
+  // 5. Lời kết động viên
+  lines.push(pickFirst(CLOSING_ENCOURAGEMENT))
+
+  return lines.join('\n')
 }

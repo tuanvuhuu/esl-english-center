@@ -6,26 +6,20 @@ interface ExportData {
   questions: (TestQuestion & { options: TestQuestionOption[] })[];
 }
 
-export const exportTestToPdf = async (data: ExportData) => {
+const buildPdfDoc = (data: ExportData): jsPDF => {
   const { test, questions } = data;
-  const doc = new jsPDF({
-    orientation: 'p',
-    unit: 'mm',
-    format: 'a4'
-  });
+  const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
   const margin = 20;
   let cursorY = 20;
   const pageWidth = doc.internal.pageSize.getWidth();
 
-  // --- HEADER ---
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.text('ESL ENGLISH CENTER', margin, cursorY);
-  
   doc.setFont('helvetica', 'normal');
   doc.text(`Class: ${test.class?.name || '__________'}`, pageWidth - margin - 40, cursorY);
-  
+
   cursorY += 10;
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
@@ -41,11 +35,9 @@ export const exportTestToPdf = async (data: ExportData) => {
   doc.line(margin, cursorY, pageWidth - margin, cursorY);
   cursorY += 10;
 
-  // --- QUESTIONS ---
   questions.forEach((q, index) => {
-    // Check for page break (estimate block height)
-    let blockHeight = 20; // Question text + spacing
-    if (q.image_url) blockHeight += 35; // Image space
+    let blockHeight = 20;
+    if (q.image_url) blockHeight += 35;
     if (q.options && q.options.length > 0) blockHeight += Math.ceil(q.options.length / 2) * 8;
 
     if (cursorY + blockHeight > 275) {
@@ -55,54 +47,54 @@ export const exportTestToPdf = async (data: ExportData) => {
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    const qLabel = `Question ${index + 1}: `;
-    doc.text(qLabel, margin, cursorY);
-    
+    doc.text(`Question ${index + 1}: `, margin, cursorY);
+
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
-    const qText = q.question_text;
-    const splitText = doc.splitTextToSize(qText, pageWidth - margin * 2 - 25);
+    const splitText = doc.splitTextToSize(q.question_text, pageWidth - margin * 2 - 25);
     doc.text(splitText, margin + 25, cursorY);
-    
     cursorY += (splitText.length * 6) + 4;
 
-    // Image handling (Smaller size to avoid pixelation)
     if (q.image_url) {
       try {
-        // Smaller, centered image
-        const imgWidth = 45; // Reduced from 60
-        const imgHeight = 30; // Reduced from 40
-        const imgX = margin + 25;
-        doc.addImage(q.image_url, 'JPEG', imgX, cursorY, imgWidth, imgHeight);
-        cursorY += imgHeight + 6;
+        doc.addImage(q.image_url, 'JPEG', margin + 25, cursorY, 45, 30);
+        cursorY += 36;
       } catch (e) {
         console.error('PDF Image Error:', e);
       }
     }
 
-    // Options mapping
     if (q.options && q.options.length > 0) {
       doc.setFontSize(10);
       q.options.forEach((opt, optIdx) => {
         const label = String.fromCharCode(65 + optIdx) + '. ';
         const xPos = margin + 25 + (optIdx % 2 === 1 ? 75 : 0);
         const yPos = cursorY + (Math.floor(optIdx / 2) * 8);
-        // Fix: Use option_text instead of text
         const text = (opt as any).option_text || (opt as any).text || '';
         doc.text(label + text, xPos, yPos);
       });
       cursorY += (Math.ceil(q.options.length / 2) * 8) + 10;
     } else {
-      cursorY += 12; // Space for short answers
+      cursorY += 12;
     }
 
-    cursorY += 2; // Extra gap between questions
+    cursorY += 2;
   });
 
-  // Footer
   doc.setFontSize(8);
   doc.setTextColor(150);
   doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber}`, pageWidth / 2, 287, { align: 'center' });
 
-  doc.save(`${test.name.replace(/\s+/g, '_')}_Test.pdf`);
+  return doc;
+};
+
+export const exportTestToPdf = async (data: ExportData): Promise<void> => {
+  const doc = buildPdfDoc(data);
+  doc.save(`${data.test.name.replace(/\s+/g, '_')}_Test.pdf`);
+};
+
+export const generateTestPdfBlobUrl = async (data: ExportData): Promise<string> => {
+  const doc = buildPdfDoc(data);
+  const blob = doc.output('blob');
+  return URL.createObjectURL(blob);
 };

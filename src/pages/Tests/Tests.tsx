@@ -10,6 +10,7 @@ import { TestsResultsTab }   from './components/TestsResultsTab'
 import { TestsAnalyticsTab } from './components/TestsAnalyticsTab'
 import { CreateTestModal }   from './components/CreateTestModal'
 import { QuestionBuilderModal } from './components/QuestionBuilderModal'
+import { PdfViewerModal } from './components/PdfViewerModal'
 import { exportTestToPdf } from './testExport'
 
 const TABS = [
@@ -24,6 +25,7 @@ export const Tests: React.FC = () => {
   const [showCreate,   setShowCreate]   = useState(false)
   const [creating,     setCreating]     = useState(false)
   const [questionBuilderTest, setQuestionBuilderTest] = useState<DbTest | null>(null)
+  const [pdfViewTest, setPdfViewTest] = useState<DbTest | null>(null)
 
   const { data: rawTests, loading: testsLoading, refetch: refetchTests } = useQuery(getTests)
   const { data: rawClasses } = useQuery(getClasses)
@@ -68,25 +70,32 @@ export const Tests: React.FC = () => {
     switch (activeTab) {
       case 'schedule':
         return (
-          <TestsScheduleTab 
-            tests={tests} 
-            loading={testsLoading} 
+          <TestsScheduleTab
+            tests={tests}
+            loading={testsLoading}
             onSelectTest={handleSelectTest}
             onBuildQuestions={setQuestionBuilderTest}
             onExportPdf={handleExportPdf}
-            onCreate={() => setShowCreate(true)} 
+            onViewPdf={setPdfViewTest}
+            onCreate={() => setShowCreate(true)}
           />
         )
       case 'results':
         return (
-          <TestsResultsTab 
-            test={selectedTest} 
+          <TestsResultsTab
+            selectedTest={selectedTest}
             tests={tests}
             onSelectTest={setSelectedTest}
           />
         )
       case 'analytics':
-        return <TestsAnalyticsTab />
+        return (
+          <TestsAnalyticsTab
+            tests={tests}
+            selectedTest={selectedTest}
+            onSelectTest={setSelectedTest}
+          />
+        )
       default:
         return null
     }
@@ -116,10 +125,16 @@ export const Tests: React.FC = () => {
         loading={creating}
       />
 
-      <QuestionBuilderModal 
+      <QuestionBuilderModal
         open={!!questionBuilderTest}
         onClose={() => setQuestionBuilderTest(null)}
         test={questionBuilderTest}
+      />
+
+      <PdfViewerModal
+        open={!!pdfViewTest}
+        onClose={() => setPdfViewTest(null)}
+        test={pdfViewTest}
       />
     </div>
   )

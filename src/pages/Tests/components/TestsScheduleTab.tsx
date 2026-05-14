@@ -40,10 +40,11 @@ interface TestsScheduleTabProps {
   onCreate: () => void
   onBuildQuestions?: (test: DbTest) => void
   onExportPdf?: (test: DbTest) => Promise<void>
+  onViewPdf?: (test: DbTest) => void
 }
 
 export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
-  tests, loading, onSelectTest, onCreate, onBuildQuestions, onExportPdf
+  tests, loading, onSelectTest, onCreate, onBuildQuestions, onExportPdf, onViewPdf
 }) => {
   const [exportingId, setExportingId] = useState<string | null>(null);
   const [search, setSearch] = useState('')
@@ -125,17 +126,20 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
 
         {/* Footer */}
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
           paddingTop: 10,
           borderTop: '1px solid var(--border-light)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
         }}>
+          {/* Row 1: date */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--text-3)' }}>
             <Icon name="calendar" size={14} />
             {fmtDate(t.test_date)}
           </div>
-          <div style={{ display: 'flex', gap: 6 }}>
+
+          {/* Row 2: actions */}
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             {isUpcoming && onBuildQuestions && (
               <Button
                 variant="ghost"
@@ -144,7 +148,17 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
                 onClick={e => { e.stopPropagation(); onBuildQuestions(t) }}
                 style={{ color: 'var(--primary)', fontWeight: 700 }}
               >
-                Danh sách câu hỏi
+                Câu hỏi
+              </Button>
+            )}
+            {onViewPdf && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="eye"
+                onClick={e => { e.stopPropagation(); onViewPdf(t) }}
+              >
+                Xem PDF
               </Button>
             )}
             {onExportPdf && (
@@ -153,8 +167,8 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
                 size="sm"
                 icon="download"
                 loading={exportingId === t.id}
-                onClick={async (e) => { 
-                  e.stopPropagation(); 
+                onClick={async (e) => {
+                  e.stopPropagation();
                   setExportingId(t.id);
                   await onExportPdf(t);
                   setExportingId(null);
@@ -167,10 +181,10 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                icon="eye"
+                icon="bar-chart-2"
                 onClick={e => { e.stopPropagation(); onSelectTest(t) }}
               >
-                Xem kết quả
+                Kết quả
               </Button>
             )}
           </div>

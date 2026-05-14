@@ -90,6 +90,41 @@ export async function softDeleteTest(id: string) {
   if (error) throw error
 }
 
+// ── Test PDF ────────────────────────────────────────────────────
+
+export async function uploadTestPdf(testId: string, file: File): Promise<string> {
+  const BUCKET = 'test-files'
+  const path = `tests/${testId}/test.pdf`
+
+  // Diagnostic: list existing buckets
+  const { data: buckets, error: listErr } = await supabase.storage.listBuckets()
+  console.log('[uploadTestPdf] available buckets:', buckets?.map(b => b.name), listErr)
+
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, { upsert: true, contentType: 'application/pdf' })
+
+  if (uploadError) {
+    console.error('[uploadTestPdf] upload error:', uploadError)
+    const bucketNames = buckets?.map(b => `"${b.name}"`).join(', ') || 'không tìm thấy bucket nào'
+    throw new Error(
+      uploadError.message === 'The resource was not found'
+        ? `Bucket "${BUCKET}" không tồn tại. Buckets hiện có: ${bucketNames}`
+        : uploadError.message
+    )
+  }
+
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  const publicUrl = `${data.publicUrl}?t=${Date.now()}`
+  await updateTest(testId, { pdf_url: publicUrl } as any)
+  return publicUrl
+}
+
+export async function removeTestPdf(testId: string): Promise<void> {
+  await supabase.storage.from('test-files').remove([`tests/${testId}/test.pdf`])
+  await updateTest(testId, { pdf_url: null } as any)
+}
+
 // ── Test Questions ──────────────────────────────────────────────
 
 export async function getTestQuestions(testId: string): Promise<DbTestQuestion[]> {

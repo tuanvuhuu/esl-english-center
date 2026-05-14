@@ -31,7 +31,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const sizes = {
-    sm: { h: 24, p: '0 8px',  fs: 11 },
+    sm: { h: 28, p: '0 10px', fs: 12 },
     md: { h: 30, p: '0 12px', fs: 12 },
     lg: { h: 36, p: '0 16px', fs: 13 }
   };
