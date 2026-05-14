@@ -6,10 +6,11 @@ export async function getClasses(filters?: { branchId?: string; academicYearId?:
     .from('classes')
     .select(`
       *,
-      teacher: teachers ( id, full_name, color ),
+      teacher: teachers!teacher_id ( id, full_name, color ),
       room: rooms ( id, name, floor ),
       class_schedules ( id, day_of_week, start_time, end_time ),
-      enrollments ( id )
+      enrollments ( id ),
+      class_assistants ( teacher_id, teacher: teachers!teacher_id ( id, full_name ) )
     `)
     .eq('is_deleted', false)
 
@@ -43,7 +44,7 @@ export async function getClassById(id: string) {
   return data as DbClass
 }
 
-export async function createClass(payload: Partial<DbClass>) {
+export async function createClass(payload: Partial<DbClass>, assistantIds?: string[]) {
   const { data, error } = await supabase
     .from('classes')
     .insert(payload)
@@ -51,10 +52,19 @@ export async function createClass(payload: Partial<DbClass>) {
     .single()
 
   if (error) throw error
+
+  if (assistantIds?.length) {
+    const { error: syncError } = await supabase.rpc('sync_class_assistants', {
+      p_class_id: data.id,
+      p_teacher_ids: assistantIds,
+    })
+    if (syncError) console.error('Error saving class assistants:', syncError)
+  }
+
   return data as DbClass
 }
 
-export async function updateClass(id: string, payload: Partial<DbClass>) {
+export async function updateClass(id: string, payload: Partial<DbClass>, assistantIds?: string[]) {
   const { data, error } = await supabase
     .from('classes')
     .update(payload)
@@ -63,6 +73,15 @@ export async function updateClass(id: string, payload: Partial<DbClass>) {
     .single()
 
   if (error) throw error
+
+  if (assistantIds !== undefined) {
+    const { error: syncError } = await supabase.rpc('sync_class_assistants', {
+      p_class_id: id,
+      p_teacher_ids: assistantIds,
+    })
+    if (syncError) console.error('Error syncing class assistants:', syncError)
+  }
+
   return data as DbClass
 }
 

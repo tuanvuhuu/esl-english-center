@@ -36,7 +36,10 @@ export interface Class {
   level: string;
   teacherId: string | number;
   teacher: string;
+  assistantIds?: string[];
+  assistantNames?: string[];
   room: string;
+  roomId?: string;
   schedule: string;
   students: number;
   maxStudents: number;
@@ -48,6 +51,7 @@ export interface Class {
   startDate?: string;
   endDate?: string;
   fee?: string;
+  feeRaw?: number | null;
   [key: string]: any;
 }
 

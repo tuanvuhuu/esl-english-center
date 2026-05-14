@@ -31,6 +31,7 @@ export interface DataGridColumn<T = any> {
   noWrap?: boolean
   sortable?: boolean
   pin?: 'left' | 'right'
+  isAllowCopy?: boolean
 }
 
 interface DataGridProps<T = any> {
@@ -154,7 +155,7 @@ export function DataGrid<T = any>({
   emptyText = 'Không có dữ liệu',
   enableRowSelection = false,
   onSelectionChange,
-  maxHeight = 'calc(100vh - 280px)',
+  maxHeight = 'calc(100vh - 210px)',
 }: DataGridProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -499,37 +500,36 @@ export function DataGrid<T = any>({
                           ...getPinnedStyle(cell.column),
                         }}
                       >
-                        <div style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
+                        <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5 }}>
                           <span>{flexRender(cell.column.columnDef.cell, cell.getContext())}</span>
-                          <button
-                            className="copy-button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const val = cell.getValue();
-                              const textToCopy = val != null ? String(val) : '';
-                              navigator.clipboard.writeText(textToCopy);
-                              const btn = e.currentTarget as HTMLButtonElement;
-                              const originalColor = btn.style.color;
-                              btn.style.color = 'var(--primary)';
-                              setTimeout(() => btn.style.color = originalColor, 1000);
-                            }}
-                            title="Copy"
-                            style={{
-                              position: 'absolute',
-                              top: -4,
-                              right: -16,
-                              background: 'none',
-                              border: 'none',
-                              padding: 0,
-                              cursor: 'pointer',
-                              opacity: 0,
-                              pointerEvents: 'none',
-                              color: 'var(--text-4)',
-                              transition: 'opacity 0.2s',
-                            }}
-                          >
-                            <Icon name="copy" size={12} />
-                          </button>
+                          {colDef?.isAllowCopy && (
+                            <button
+                              className="copy-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const val = cell.getValue();
+                                const textToCopy = val != null ? String(val) : '';
+                                navigator.clipboard.writeText(textToCopy);
+                                const btn = e.currentTarget as HTMLButtonElement;
+                                btn.style.color = 'var(--primary)';
+                                setTimeout(() => { btn.style.color = ''; }, 1000);
+                              }}
+                              title="Copy"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                padding: 0,
+                                cursor: 'pointer',
+                                color: 'var(--text-4)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                flexShrink: 0,
+                                marginTop: -2,
+                              }}
+                            >
+                              <Icon name="copy" size={12} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     )

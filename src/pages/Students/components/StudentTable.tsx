@@ -1,5 +1,5 @@
 import React from 'react'
-import { DataGrid, Avatar, Badge, StatusBadge, Icon } from '../../../components'
+import { DataGrid, Avatar, Badge, StatusBadge, Icon, TextWithEllipse } from '../../../components'
 import type { DataGridColumn } from '../../../components'
 import type { Student } from '../../../types/data'
 
@@ -23,15 +23,14 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       key: 'name',
       title: 'Học viên',
       filterable: true,
+      isAllowCopy: true,
       filterValue: s => s.name + ' ' + (s.parent ?? ''),
       render: s => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Avatar initials={s.avatar || s.name[0]} size={32} />
-          <div>
-            <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>{s.name}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
-              {s.enrollDate ? `Nhập học: ${s.enrollDate}` : `#${String(s.id).slice(0, 6)}`}
-            </div>
+          <div style={{ minWidth: 0 }}>
+            <TextWithEllipse text={s.name} style={{ fontWeight: 600, color: 'var(--text-1)' }} />
+            <TextWithEllipse text={s.enrollDate ? `Nhập học: ${s.enrollDate}` : `#${String(s.id).slice(0, 6)}`} style={{ fontSize: 11, color: 'var(--text-4)' }} />
           </div>
         </div>
       ),
@@ -40,11 +39,13 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       key: 'dob',
       title: 'Ngày sinh',
       filterable: true,
+      isAllowCopy: true,
     },
     {
       key: 'level',
       title: 'Trình độ',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterOptions: [
         { value: 'A1', label: 'A1' },
@@ -58,12 +59,15 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       key: 'parent',
       title: 'Phụ huynh',
       filterable: true,
+      isAllowCopy: true,
+      render: s => <TextWithEllipse text={s.parent || '—'} style={{ color: 'var(--text-2)' }} />,
     },
-    { key: 'phone', title: 'SĐT', noWrap: true },
+    { key: 'phone', title: 'SĐT', noWrap: true, isAllowCopy: true },
     {
       key: 'status',
       title: 'Trạng thái',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterOptions: [
         { value: 'active', label: 'Đang học' },

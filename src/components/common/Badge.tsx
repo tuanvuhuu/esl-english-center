@@ -39,22 +39,35 @@ export const Badge: React.FC<BadgeProps> = ({ children, variant = 'default', sty
 
 interface StatusBadgeProps {
   status: string;
+  type?: 'student' | 'teacher' | 'payment' | 'room';
 }
 
-export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  const map: Record<string, { label: string; variant: BadgeVariant }> = {
-    active: { label: 'Đang học', variant: 'success' },
-    trial: { label: 'Học thử', variant: 'info' },
-    paused: { label: 'Tạm nghỉ', variant: 'warning' },
-    inactive: { label: 'Nghỉ học', variant: 'error' },
-    paid: { label: 'Đã thanh toán', variant: 'success' },
-    pending: { label: 'Chờ TT', variant: 'warning' },
-    overdue: { label: 'Quá hạn', variant: 'error' },
-    available: { label: 'Trống', variant: 'success' },
-    'in-use': { label: 'Đang dùng', variant: 'info' },
-    maintenance: { label: 'Bảo trì', variant: 'warning' },
-    'on-leave': { label: 'Nghỉ phép', variant: 'warning' },
+export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, type }) => {
+  const studentMap: Record<string, { label: string; variant: BadgeVariant }> = {
+    active:   { label: 'Đang học',  variant: 'success' },
+    trial:    { label: 'Học thử',   variant: 'info' },
+    paused:   { label: 'Tạm nghỉ', variant: 'warning' },
+    inactive: { label: 'Nghỉ học',  variant: 'error' },
   };
-  const m = map[status] || { label: status, variant: 'default' };
+  const teacherMap: Record<string, { label: string; variant: BadgeVariant }> = {
+    active:     { label: 'Đang dạy', variant: 'success' },
+    'on-leave': { label: 'Nghỉ phép', variant: 'warning' },
+    inactive:   { label: 'Nghỉ việc', variant: 'error' },
+  };
+  const sharedMap: Record<string, { label: string; variant: BadgeVariant }> = {
+    paid:        { label: 'Đã thanh toán', variant: 'success' },
+    pending:     { label: 'Chờ TT',        variant: 'warning' },
+    overdue:     { label: 'Quá hạn',       variant: 'error' },
+    available:   { label: 'Trống',         variant: 'success' },
+    'in-use':    { label: 'Đang dùng',     variant: 'info' },
+    maintenance: { label: 'Bảo trì',       variant: 'warning' },
+  };
+
+  const contextMap =
+    type === 'teacher' ? teacherMap :
+    type === 'student' ? studentMap :
+    { ...studentMap, ...sharedMap }; // fallback: ưu tiên student cho backward compat
+
+  const m = contextMap[status] ?? sharedMap[status] ?? { label: status, variant: 'default' as BadgeVariant };
   return <Badge variant={m.variant}>{m.label}</Badge>;
 };

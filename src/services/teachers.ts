@@ -7,7 +7,7 @@ export async function getTeachers(filters?: { branchId?: string }) {
     .select(`
       *,
       teacher_subjects ( subject: subjects ( id, name ) ),
-      teacher_branches ( branch: branches ( id, name ) ),
+      teacher_branches ( branch_id, branch: branches ( id, name ) ),
       primary_branch: branches!primary_branch_id ( id, name )
     `)
     .eq('is_deleted', false)
@@ -33,6 +33,7 @@ export async function getTeacherById(id: string) {
     .select(`
       *,
       teacher_subjects ( subject: subjects ( id, name ) ),
+      teacher_branches ( branch_id, branch: branches ( id, name ) ),
       primary_branch: branches!primary_branch_id ( id, name, address, phone )
     `)
     .eq('id', id)
@@ -53,8 +54,10 @@ export async function createTeacher(payload: Partial<DbTeacher>, branchIds?: str
   if (error) throw error
   
   if (branchIds?.length) {
-    const branchPayload = branchIds.map(bid => ({ teacher_id: data.id, branch_id: bid }))
-    const { error: branchError } = await supabase.from('teacher_branches').insert(branchPayload)
+    const { error: branchError } = await supabase.rpc('sync_teacher_branches', {
+      p_teacher_id: data.id,
+      p_branch_ids: branchIds,
+    })
     if (branchError) console.error('Error saving teacher branches:', branchError)
   }
 
@@ -72,13 +75,12 @@ export async function updateTeacher(id: string, payload: Partial<DbTeacher>, bra
   if (error) throw error
 
   if (branchIds) {
-    // Sync branches: delete old, insert new
-    await supabase.from('teacher_branches').delete().eq('teacher_id', id)
-    if (branchIds.length) {
-      const branchPayload = branchIds.map(bid => ({ teacher_id: id, branch_id: bid }))
-      const { error: branchError } = await supabase.from('teacher_branches').insert(branchPayload)
-      if (branchError) console.error('Error syncing teacher branches:', branchError)
-    }
+    // Sync branches qua RPC: atomic trong 1 transaction
+    const { error: syncError } = await supabase.rpc('sync_teacher_branches', {
+      p_teacher_id: id,
+      p_branch_ids: branchIds,
+    })
+    if (syncError) console.error('Error syncing teacher branches:', syncError)
   }
 
   return data as DbTeacher

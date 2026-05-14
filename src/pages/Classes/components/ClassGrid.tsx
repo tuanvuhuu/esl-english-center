@@ -39,9 +39,15 @@ export const ClassGrid: React.FC<ClassGridProps> = ({ classes, onSelectClass, on
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12, color: 'var(--text-3)', marginBottom: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Icon name="graduation" size={13} style={{ color: LVL_C[c.level] }} />
+                <Icon name="graduation" size={13} style={{ color: LVL_C[c.level], flexShrink: 0 }} />
                 {c.teacher || 'Chưa phân công'}
               </div>
+              {(c.assistantNames?.length ?? 0) > 0 && (
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                  <Icon name="users" size={13} style={{ flexShrink: 0, marginTop: 2 }} />
+                  <span>{c.assistantNames!.join(', ')}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon name="calendar" size={13} />{c.schedule || 'Chưa có lịch'}
               </div>

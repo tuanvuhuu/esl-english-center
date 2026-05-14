@@ -23,17 +23,20 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       key: 'name',
       title: 'Phòng',
       filterable: true,
+      isAllowCopy: true,
       render: r => <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>{r.name}</span>,
     },
     {
       key: 'floor',
       title: 'Tầng',
+      isAllowCopy: true,
       render: r => <span style={{ color: 'var(--text-2)' }}>Tầng {r.floor || '—'}</span>,
     },
     {
       key: 'type',
       title: 'Loại',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterOptions: [
         { value: 'Kids', label: 'Kids' },
@@ -47,6 +50,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       key: 'capacity',
       title: 'Sức chứa',
       align: 'center',
+      isAllowCopy: true,
       render: r => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: 'var(--text-2)' }}>
           <Icon name="users" size={13} />{r.capacity} chỗ
@@ -57,6 +61,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       key: 'equipment',
       title: 'Trang thiết bị',
       filterable: true,
+      isAllowCopy: true,
       filterValue: r => r.equipment.join(' '),
       render: r => (
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -70,6 +75,7 @@ export const RoomTable: React.FC<RoomTableProps> = ({
       key: 'status',
       title: 'Trạng thái',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterOptions: [
         { value: 'available', label: 'Sẵn sàng' },

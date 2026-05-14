@@ -119,7 +119,7 @@ export interface DbTeacher {
   updated_by: string | null
   // joins
   teacher_subjects?: { subject: { name: string } }[]
-  teacher_branches?: { branch_id: string }[]
+  teacher_branches?: { branch_id: string; branch?: { id: string; name: string } }[]
   primary_branch?: Branch
 }
 
@@ -173,6 +173,7 @@ export interface DbClass {
   room?: DbRoom
   class_schedules?: ClassSchedule[]
   enrollments?: { id: string }[]
+  class_assistants?: { teacher_id: string; teacher?: { id: string; full_name: string } }[]
 }
 
 export interface DbPayment {

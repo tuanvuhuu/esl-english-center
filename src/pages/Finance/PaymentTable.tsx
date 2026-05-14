@@ -32,6 +32,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'student',
       title: 'Học viên',
       filterable: true,
+      isAllowCopy: true,
       filterValue: r => r.mapped.student,
       render: r => <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>{r.mapped.student}</span>,
     },
@@ -39,6 +40,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'class',
       title: 'Lớp',
       filterable: true,
+      isAllowCopy: true,
       filterValue: r => r.raw.class?.name ?? '',
       render: r => <span style={{ color: 'var(--text-3)' }}>{r.raw.class?.name || '—'}</span>,
     },
@@ -46,6 +48,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'amount',
       title: 'Số tiền',
       align: 'right',
+      isAllowCopy: true,
       render: r => (
         <span style={{ fontWeight: 700, color: 'var(--text-1)' }}>
           {typeof r.mapped.amount === 'number' ? r.mapped.amount.toLocaleString('vi-VN') + 'đ' : r.mapped.amount}
@@ -56,6 +59,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'period',
       title: 'Kỳ',
       noWrap: true,
+      isAllowCopy: true,
       filterValue: r => r.raw.period_month ? `T${r.raw.period_month}/${r.raw.period_year}` : r.mapped.date,
       render: r => (
         <span style={{ color: 'var(--text-3)' }}>
@@ -67,6 +71,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'type',
       title: 'Loại',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterValue: r => r.mapped.type,
       filterOptions: [
@@ -81,6 +86,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'method',
       title: 'Phương thức',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterValue: r => r.raw.payment_method ?? '',
       filterOptions: [
@@ -99,6 +105,7 @@ export const PaymentTable: React.FC<PaymentTableProps> = ({
       key: 'status',
       title: 'Trạng thái',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterValue: r => r.mapped.status,
       filterOptions: [

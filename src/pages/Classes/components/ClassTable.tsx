@@ -1,5 +1,5 @@
 import React from 'react'
-import { DataGrid, Badge, StatusBadge, Icon } from '../../../components'
+import { DataGrid, Badge, StatusBadge, Icon, TextWithEllipse } from '../../../components'
 import type { DataGridColumn } from '../../../components'
 import type { Class } from '../../../types/data'
 
@@ -25,12 +25,13 @@ export const ClassTable: React.FC<ClassTableProps> = ({
       key: 'name',
       title: 'Tên lớp',
       filterable: true,
+      isAllowCopy: true,
       render: c => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ width: 4, height: 28, borderRadius: 2, background: LVL_COLOR[c.level] || 'var(--text-4)', flexShrink: 0 }} />
-          <div>
-            <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>{c.name}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-4)' }}>{c.ageGroup ? `${c.ageGroup} tuổi` : ''}</div>
+          <div style={{ minWidth: 0 }}>
+            <TextWithEllipse text={c.name} style={{ fontWeight: 600, color: 'var(--text-1)' }} />
+            {c.ageGroup && <TextWithEllipse text={`${c.ageGroup} tuổi`} style={{ fontSize: 11, color: 'var(--text-4)' }} />}
           </div>
         </div>
       ),
@@ -39,6 +40,7 @@ export const ClassTable: React.FC<ClassTableProps> = ({
       key: 'level',
       title: 'Trình độ',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterOptions: [
         { value: 'A1', label: 'A1' },
@@ -52,13 +54,46 @@ export const ClassTable: React.FC<ClassTableProps> = ({
         </Badge>
       ),
     },
-    { key: 'teacher', title: 'Giáo viên', filterable: true },
-    { key: 'room', title: 'Phòng', filterable: true },
-    { key: 'schedule', title: 'Lịch học', noWrap: true },
+    {
+      key: 'teacher',
+      title: 'Giáo viên',
+      filterable: true,
+      isAllowCopy: true,
+      render: c => <TextWithEllipse text={c.teacher || '—'} style={{ color: 'var(--text-2)' }} />,
+    },
+    {
+      key: 'assistantNames',
+      title: 'Trợ giảng',
+      filterable: true,
+      filterValue: c => (c.assistantNames ?? []).join(' '),
+      render: c => {
+        const names = c.assistantNames ?? []
+        if (names.length === 0) return <span style={{ color: 'var(--text-4)' }}>—</span>
+        return (
+          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+            {names.slice(0, 2).map(n => (
+              <Badge key={n} variant="default" style={{ fontSize: 11 }}>{n}</Badge>
+            ))}
+            {names.length > 2 && (
+              <Badge variant="default" style={{ fontSize: 11 }}>+{names.length - 2}</Badge>
+            )}
+          </div>
+        )
+      },
+    },
+    {
+      key: 'room',
+      title: 'Phòng',
+      filterable: true,
+      isAllowCopy: true,
+      render: c => <TextWithEllipse text={c.room || '—'} style={{ color: 'var(--text-2)' }} />,
+    },
+    { key: 'schedule', title: 'Lịch học', noWrap: true, isAllowCopy: true },
     {
       key: 'students',
       title: 'Sĩ số',
       align: 'center',
+      isAllowCopy: true,
       render: c => {
         const pct = Math.round((c.students / c.maxStudents) * 100)
         return (
@@ -71,11 +106,12 @@ export const ClassTable: React.FC<ClassTableProps> = ({
         )
       },
     },
-    { key: 'fee', title: 'Học phí', noWrap: true },
+    { key: 'fee', title: 'Học phí', noWrap: true, isAllowCopy: true },
     {
       key: 'status',
       title: 'Trạng thái',
       filterable: true,
+      isAllowCopy: true,
       filterType: 'select',
       filterOptions: [
         { value: 'active', label: 'Đang học' },

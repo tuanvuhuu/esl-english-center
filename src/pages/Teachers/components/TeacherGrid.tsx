@@ -23,12 +23,20 @@ export const TeacherGrid: React.FC<TeacherGridProps> = ({ teachers, onSelectTeac
                 <Icon name="map-pin" size={11} />{t.nationality || '—'}
               </div>
             </div>
-            <StatusBadge status={t.status} />
+            <StatusBadge status={t.status} type="teacher" />
           </div>
 
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 12 }}>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8 }}>
             {t.subjects?.map(s => <Badge key={s} variant="info" style={{ fontSize: 11 }}>{s}</Badge>)}
             {(!t.subjects || t.subjects.length === 0) && <span style={{ fontSize: 12, color: 'var(--text-4)' }}>Chưa có môn</span>}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 5, marginBottom: 12, fontSize: 12, color: 'var(--text-3)' }}>
+            <Icon name="map-pin" size={12} style={{ marginTop: 2, flexShrink: 0 }} />
+            {t.branches && t.branches.length > 0
+              ? <span style={{ lineHeight: 1.5 }}>{t.branches.join(' · ')}</span>
+              : <span style={{ color: 'var(--text-4)' }}>Chưa có cơ sở</span>
+            }
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 0 0', borderTop: '1px solid var(--border-light)', fontSize: 12, color: 'var(--text-3)' }}>

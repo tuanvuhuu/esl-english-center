@@ -55,8 +55,8 @@ export function mapTeacher(t: DbTeacher): Teacher {
     classCount: 0, // computed từ classes nếu cần
     bio: t.bio ?? undefined,
     joinDate: t.join_date ? formatDate(t.join_date) : undefined,
-    branchIds: t.teacher_branches?.map(tb => tb.branch_id) ?? [],
-    branches: (t as any).teacher_branches?.map((tb: any) => tb.branch?.name).filter(Boolean) ?? [],
+    branchIds: t.teacher_branches?.map(tb => tb.branch_id ?? tb.branch?.id).filter(Boolean) as string[] ?? [],
+    branches: t.teacher_branches?.map(tb => tb.branch?.name).filter(Boolean) as string[] ?? [],
   }
 }
 
@@ -69,16 +69,20 @@ export function mapClass(c: DbClass): Class {
     teacher: c.teacher?.full_name ?? '',
     teacherId: c.teacher_id ?? '',
     room: c.room?.name ?? '',
+    roomId: c.room_id ?? '',
     schedule: formatSchedule(c.class_schedules ?? []),
     days: c.class_schedules?.map(s => s.day_of_week) ?? [],
     time: c.class_schedules?.[0]?.start_time?.slice(0, 5) ?? '',
     endTime: c.class_schedules?.[0]?.end_time?.slice(0, 5) ?? '',
+    assistantIds: c.class_assistants?.map(ca => ca.teacher_id) ?? [],
+    assistantNames: c.class_assistants?.map(ca => ca.teacher?.full_name).filter(Boolean) as string[] ?? [],
     students: c.enrollments?.length ?? 0,
     maxStudents: c.max_students,
     status: (c.status === 'active' ? 'active' : c.status === 'inactive' ? 'paused' : 'inactive') as Class['status'],
     startDate: c.start_date ? formatDate(c.start_date) : undefined,
     endDate: c.end_date ? formatDate(c.end_date) : undefined,
     fee: c.fee_per_month ? c.fee_per_month.toLocaleString('vi-VN') + 'đ/tháng' : '',
+    feeRaw: c.fee_per_month ?? null,
   }
 }
 

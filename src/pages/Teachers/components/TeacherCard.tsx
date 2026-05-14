@@ -32,7 +32,7 @@ export const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, onEdit, onDel
               {teacher.nationality}
             </div>
           </div>
-          <StatusBadge status={teacher.status} />
+          <StatusBadge status={teacher.status} type="teacher" />
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
           {teacher.subjects?.map((s: string) => (
@@ -70,7 +70,7 @@ export const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, onEdit, onDel
               <div style={{ fontSize: 13, color: 'var(--text-3)' }}>{teacher.nationality}</div>
               {teacher.bio && <div style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 4 }}>{teacher.bio}</div>}
             </div>
-            <StatusBadge status={teacher.status} />
+            <StatusBadge status={teacher.status} type="teacher" />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
@@ -78,6 +78,7 @@ export const TeacherCard: React.FC<TeacherCardProps> = ({ teacher, onEdit, onDel
             <InfoRow icon="mail" label="Email" value={teacher.email || '—'} />
             <InfoRow icon="calendar" label="Ngày vào" value={teacher.joinDate || '—'} />
             <InfoRow icon="award" label="Chuyên môn" value={teacher.subjects?.join(', ') || '—'} />
+            <InfoRow icon="building" label="Cơ sở" value={teacher.branches?.join(', ') || '—'} />
           </div>
 
           <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
