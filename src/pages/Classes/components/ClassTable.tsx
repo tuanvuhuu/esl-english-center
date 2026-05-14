@@ -12,12 +12,13 @@ interface ClassTableProps {
   subtitle?: string
   onAdd?: () => void
   onRefresh?: () => void
+  loading?: boolean
 }
 
 const LVL_COLOR: Record<string, string> = { A1: '#FF6B35', A2: '#3B82F6', B1: '#10B981', B2: '#8B5CF6' }
 
 export const ClassTable: React.FC<ClassTableProps> = ({
-  classes, onSelectClass, onEdit, onDelete, actions, subtitle, onAdd, onRefresh,
+  classes, onSelectClass, onEdit, onDelete, actions, subtitle, onAdd, onRefresh, loading,
 }) => {
   const columns: DataGridColumn<Class>[] = [
     {
@@ -125,6 +126,7 @@ export const ClassTable: React.FC<ClassTableProps> = ({
       onAdd={onAdd}
       addLabel="Mở lớp mới"
       onRefresh={onRefresh}
+      loading={loading}
     />
   )
 }

@@ -17,7 +17,7 @@ export async function getClasses(filters?: { branchId?: string; academicYearId?:
   if (filters?.academicYearId) query = query.eq('academic_year_id', filters.academicYearId)
   if (filters?.status)         query = query.eq('status', filters.status)
 
-  const { data, error } = await query.order('name')
+  const { data, error } = await query.order('created_at', { ascending: false })
   if (error) throw error
   return data as DbClass[]
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button } from '../../components'
+import { Modal, Input, Select, Button, useToast } from '../../components'
 import { createRoom, updateRoom, getBranches } from '../../services'
 import { useQuery } from '../../hooks'
 import type { Room } from '../../types/data'
@@ -28,6 +28,7 @@ const EMPTY: Form = {
 
 export const RoomFormModal: React.FC<RoomFormModalProps> = ({ open, onClose, onSuccess, room }) => {
   const isEdit = !!room
+  const toast = useToast()
   const [form, setForm] = useState<Form>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,10 +78,12 @@ export const RoomFormModal: React.FC<RoomFormModalProps> = ({ open, onClose, onS
       } else {
         await createRoom(payload)
       }
+      toast.success(isEdit ? 'Cập nhật phòng học thành công' : 'Thêm phòng học thành công')
       onSuccess()
       onClose()
     } catch (e: any) {
       setError(e.message)
+      toast.error(e.message || 'Đã có lỗi xảy ra')
     } finally {
       setSaving(false)
     }
@@ -128,7 +131,7 @@ export const RoomFormModal: React.FC<RoomFormModalProps> = ({ open, onClose, onS
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'center' }}>
         <Button variant="secondary" onClick={onClose}>Huỷ</Button>
         <Button icon={saving ? undefined : 'check'} onClick={handleSave} disabled={saving}>
           {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Thêm phòng'}

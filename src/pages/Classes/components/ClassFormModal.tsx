@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button } from '../../../components'
+import { Modal, Input, Select, Button, useToast } from '../../../components'
 import { createClass, updateClass, getTeachers, getRooms, getBranches, getAcademicYears } from '../../../services'
 import { useQuery } from '../../../hooks'
 import { supabase } from '../../../lib/supabase'
@@ -41,6 +41,7 @@ const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 
 export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, onSuccess, classData }) => {
   const isEdit = !!classData
+  const toast = useToast()
   const [form, setForm] = useState<Form>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -128,10 +129,12 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
         }
       }
 
+      toast.success(isEdit ? 'Cập nhật lớp học thành công' : 'Mở lớp học thành công')
       onSuccess()
       onClose()
     } catch (e: any) {
       setError(e.message)
+      toast.error(e.message || 'Đã có lỗi xảy ra')
     } finally {
       setSaving(false)
     }
@@ -216,7 +219,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'flex-end' }}>
+      <div style={{ display: 'flex', gap: 10, marginTop: 24, justifyContent: 'center' }}>
         <Button variant="secondary" onClick={onClose}>Huỷ</Button>
         <Button icon={saving ? undefined : 'check'} onClick={handleSave} disabled={saving}>
           {saving ? 'Đang lưu...' : isEdit ? 'Cập nhật' : 'Mở lớp'}

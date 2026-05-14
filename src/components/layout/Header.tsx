@@ -5,6 +5,7 @@ import { Badge } from '../common/Badge';
 import { useTheme } from '../../hooks/useTheme';
 import { NOTIFICATIONS_DATA } from '../../data';
 import { useAuth } from '../../context/AuthContext';
+import { useAppContext } from '../../context/AppContext';
 
 interface HeaderProps {
   title: string;
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { mode, toggle: toggleTheme } = useTheme();
   const { profile, user, logout } = useAuth();
+  const { branches, years, selectedBranch, selectedYear, setSelectedBranchId, setSelectedYearId } = useAppContext();
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
 
@@ -73,6 +75,68 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
       <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', margin: 0, whiteSpace: 'nowrap' }}>
         {title}
       </h1>
+
+      {/* Branch + Year selectors */}
+      {!isMobile && branches.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginLeft: 8 }}>
+          {/* Branch */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 6,
+            padding: '0 10px 0 10px', height: 36, borderRadius: 10,
+            border: '1.5px solid var(--border)', background: 'var(--hover-bg)',
+            transition: 'border-color 0.15s',
+          }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+          >
+            <Icon name="map-pin" size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <select
+              value={selectedBranch?.id ?? ''}
+              onChange={e => setSelectedBranchId(e.target.value)}
+              style={{
+                background: 'none', border: 'none', outline: 'none',
+                fontSize: 12, fontWeight: 600, color: 'var(--text-1)',
+                cursor: 'pointer', fontFamily: 'var(--font)',
+                maxWidth: 160,
+              }}
+            >
+              {branches.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Academic Year */}
+          {years.length > 0 && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '0 10px 0 10px', height: 36, borderRadius: 10,
+              border: '1.5px solid var(--border)', background: 'var(--hover-bg)',
+              transition: 'border-color 0.15s',
+            }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--primary)')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+            >
+              <Icon name="calendar" size={13} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+              <select
+                value={selectedYear?.id ?? ''}
+                onChange={e => setSelectedYearId(e.target.value)}
+                style={{
+                  background: 'none', border: 'none', outline: 'none',
+                  fontSize: 12, fontWeight: 600, color: 'var(--text-1)',
+                  cursor: 'pointer', fontFamily: 'var(--font)',
+                  maxWidth: 130,
+                }}
+              >
+                {years.map(y => (
+                  <option key={y.id} value={y.id}>{y.name}{y.is_current ? ' ✓' : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ flex: 1 }} />
 
       {/* Search */}

@@ -12,10 +12,11 @@ interface TeacherTableProps {
   subtitle?: string
   onAdd?: () => void
   onRefresh?: () => void
+  loading?: boolean
 }
 
 export const TeacherTable: React.FC<TeacherTableProps> = ({
-  teachers, onSelectTeacher, onEdit, onDelete, actions, subtitle, onAdd, onRefresh,
+  teachers, onSelectTeacher, onEdit, onDelete, actions, subtitle, onAdd, onRefresh, loading,
 }) => {
   const columns: DataGridColumn<Teacher>[] = [
     {
@@ -106,6 +107,7 @@ export const TeacherTable: React.FC<TeacherTableProps> = ({
       onAdd={onAdd}
       addLabel="Thêm giáo viên"
       onRefresh={onRefresh}
+      loading={loading}
     />
   )
 }

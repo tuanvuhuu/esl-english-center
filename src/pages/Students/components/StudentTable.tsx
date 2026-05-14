@@ -12,10 +12,11 @@ interface StudentTableProps {
   subtitle?: string
   onAdd?: () => void
   onRefresh?: () => void
+  loading?: boolean
 }
 
 export const StudentTable: React.FC<StudentTableProps> = ({
-  students, onSelectStudent, onEdit, onDelete, actions, subtitle, onAdd, onRefresh,
+  students, onSelectStudent, onEdit, onDelete, actions, subtitle, onAdd, onRefresh, loading,
 }) => {
   const columns: DataGridColumn<Student>[] = [
     {
@@ -114,6 +115,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       onAdd={onAdd}
       addLabel="Thêm học viên"
       onRefresh={onRefresh}
+      loading={loading}
     />
   )
 }

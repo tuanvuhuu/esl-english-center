@@ -9,14 +9,16 @@ interface SidebarProps {
   collapsed: boolean;
   onToggle: (collapsed: boolean) => void;
   isMobile: boolean;
+  counts?: Record<string, number>;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ 
-  activePage, 
-  onNavigate, 
-  collapsed, 
-  onToggle, 
-  isMobile 
+export const Sidebar: React.FC<SidebarProps> = ({
+  activePage,
+  onNavigate,
+  collapsed,
+  onToggle,
+  isMobile,
+  counts = {},
 }) => {
   const sidebarRef = useRef<HTMLElement>(null);
 
@@ -55,6 +57,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
     const isActive = activePage === item.id;
     const showLabel = !collapsed || isMobile;
+    const badge = item.id && counts[item.id] != null ? counts[item.id] : item.badge;
 
     return (
       <button
@@ -78,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           cursor: 'pointer',
           background: isActive ? 'var(--primary-15)' : 'transparent',
           color: isActive ? 'var(--primary)' : 'var(--sidebar-text)',
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: isActive ? 700 : 500,
           fontFamily: 'var(--font)',
           transition: 'all 0.2s cubic-bezier(0.16,1,0.3,1)',
@@ -95,7 +98,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <Icon name={item.icon || 'book'} size={20} />
         {showLabel && <span style={{ flex: 1 }}>{item.label}</span>}
-        {showLabel && item.badge && (
+        {showLabel && badge != null && (
           <span
             style={{
               background: 'var(--primary)',
@@ -108,10 +111,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               textAlign: 'center',
             }}
           >
-            {item.badge}
+            {badge}
           </span>
         )}
-        {!showLabel && item.badge && (
+        {!showLabel && badge != null && (
           <span
             style={{
               position: 'absolute',
@@ -147,6 +150,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           width: isMobile ? 280 : collapsed ? 72 : 260,
           height: '100vh',
           background: 'var(--sidebar)',
+          borderRight: '1px solid var(--sidebar-border)',
           display: 'flex',
           flexDirection: 'column',
           transition: isMobile ? 'transform 0.35s cubic-bezier(.4,0,.2,1)' : 'width 0.3s cubic-bezier(.4,0,.2,1), background 0.35s',
@@ -190,8 +194,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
           {(!collapsed || isMobile) && (
             <div style={{ animation: 'fadeIn 0.2s ease' }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>ESL English</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 500 }}>Center Management</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--sidebar-text)', lineHeight: 1.2 }}>ESL English</div>
+              <div style={{ fontSize: 11, color: 'var(--sidebar-text-sub)', fontWeight: 500 }}>Center Management</div>
             </div>
           )}
         </div>
@@ -220,10 +224,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Avatar initials="AD" size={36} color="var(--primary)" />
           {(!collapsed || isMobile) && (
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--sidebar-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 Admin
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>Quản trị viên</div>
+              <div style={{ fontSize: 11, color: 'var(--sidebar-text-sub)' }}>Quản trị viên</div>
             </div>
           )}
         </div>

@@ -9,7 +9,7 @@ export async function getRooms(branchId?: string) {
 
   if (branchId) query = query.eq('branch_id', branchId)
 
-  const { data, error } = await query.order('name')
+  const { data, error } = await query.order('created_at', { ascending: false })
   if (error) throw error
   return data as DbRoom[]
 }

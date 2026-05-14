@@ -21,7 +21,7 @@ export const Select: React.FC<SelectProps> = ({ label, value, onChange, options,
       onChange={e => onChange(e.target.value)}
       style={{
         width: '100%', 
-        padding: '10px 14px', 
+        padding: '7px 14px',
         border: '1.5px solid var(--border)', 
         borderRadius: 10,
         fontSize: 14, 

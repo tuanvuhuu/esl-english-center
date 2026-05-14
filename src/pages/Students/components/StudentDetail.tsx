@@ -5,9 +5,11 @@ import { Student } from '../../../types/data';
 interface StudentDetailProps {
   student: Student | null;
   onClose: () => void;
+  onEdit?: (student: Student) => void;
+  onDelete?: (student: Student) => void;
 }
 
-export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose }) => {
+export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, onEdit, onDelete }) => {
   return (
     <Modal open={!!student} onClose={onClose} title="Thông tin học viên" width={560}>
       {student && (
@@ -65,16 +67,10 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose }
             <InfoRow icon="calendar" label="Ngày nhập học" value={student.enrollDate} />
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-            <Button icon="edit" variant="outline" style={{ flex: 1 }}>
-              Chỉnh sửa
-            </Button>
-            <Button icon="message" variant="secondary" style={{ flex: 1 }}>
-              Nhắn tin
-            </Button>
-            <Button icon="trash" variant="danger">
-              Xoá
-            </Button>
+          <div style={{ display: 'flex', gap: 10, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
+            <Button icon="edit"    variant="outline"    onClick={() => { onEdit?.(student); onClose(); }}>Chỉnh sửa</Button>
+            <Button icon="message" variant="secondary"  >Nhắn tin</Button>
+            <Button icon="trash"   variant="danger"     onClick={() => { onDelete?.(student); onClose(); }}>Xoá</Button>
           </div>
         </div>
       )}

@@ -1,30 +1,45 @@
 import React, { useState } from 'react'
-import { Card, Button, PageHeader, Input, Select, Tabs, LoadingSpinner, EmptyState } from '../../components'
-import { useQuery } from '../../hooks'
+import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, useToast } from '../../components'
+import { useQuery, useCRUDPage, useListFilter } from '../../hooks'
 import { getPayments, updatePayment } from '../../services'
+import { useAppContext } from '../../context/AppContext'
 import { mapPayment } from '../../lib/mappers'
 import { PaymentTable } from './PaymentTable'
 import { PaymentGrid } from './PaymentGrid'
 import { PaymentFormModal } from './PaymentFormModal'
+import type { DbPayment } from '../../types/database'
+import type { Payment } from '../../types/data'
+
+type PaymentRow = { raw: DbPayment; mapped: Payment }
 
 export const Finance: React.FC = () => {
-  const { data: raw, loading, error, refetch } = useQuery(getPayments)
+  const toast = useToast()
+  const { selectedBranch, selectedYear } = useAppContext()
+  const branchId = selectedBranch?.id
+  const yearId = selectedYear?.id
+  const { data: raw, loading, error, refetch } = useQuery(
+    () => getPayments({ branchId, academicYearId: yearId }),
+    [branchId, yearId]
+  )
+  const rows: PaymentRow[] = (raw ?? []).map(r => ({ raw: r, mapped: mapPayment(r) }))
 
-  const rows = (raw ?? []).map(r => ({ raw: r, mapped: mapPayment(r) }))
+  const {
+    state: { search, filters, viewMode, showForm },
+    setSearch, setFilter, setViewMode,
+    openAdd, closeForm,
+  } = useCRUDPage<PaymentRow>({ status: 'all', type: 'all' })
 
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterType, setFilterType] = useState('all')
-  const [viewMode, setViewMode] = useState('table')
-  const [showForm, setShowForm] = useState(false)
   const [markingId, setMarkingId] = useState<string | null>(null)
 
-  const filtered = rows.filter(({ raw: r, mapped: p }) => {
-    const ms = p.student.toLowerCase().includes(search.toLowerCase()) ||
-               r.class?.name?.toLowerCase().includes(search.toLowerCase())
-    const mf = filterStatus === 'all' || p.status === filterStatus
-    const mt = filterType === 'all' || r.type === filterType
-    return ms && mf && mt
+  const filtered = useListFilter(rows, search, filters, {
+    searchKeys: [
+      r => r.mapped.student,
+      r => r.raw.class?.name ?? '',
+    ],
+    filterMap: {
+      status: r => r.mapped.status,
+      type:   r => r.raw.type ?? '',
+    },
   })
 
   const paid    = rows.filter(r => r.mapped.status === 'paid')
@@ -42,24 +57,28 @@ export const Finance: React.FC = () => {
     setMarkingId(id)
     try {
       await updatePayment(id, { status: 'paid', payment_date: new Date().toISOString().split('T')[0] })
+      toast.success('Đã đánh dấu đã thu')
       refetch()
+    } catch (e: any) {
+      toast.error(e.message || 'Cập nhật thất bại')
     } finally {
       setMarkingId(null)
     }
   }
 
   const viewTabs = (
-    <Tabs tabs={[{ id: 'table', label: '☰' }, { id: 'grid', label: '⊞' }]} active={viewMode} onChange={setViewMode} />
+    <Tabs
+      tabs={[
+        { id: 'table', label: '☰', tooltip: 'Dạng bảng' },
+        { id: 'grid',  label: '⊞', tooltip: 'Dạng lưới' },
+      ]}
+      active={viewMode}
+      onChange={v => setViewMode(v as 'table' | 'grid')}
+    />
   )
 
   return (
     <div>
-      <PageHeader
-        title="Quản lý tài chính"
-        subtitle={`${rows.length} phiếu thu`}
-        actions={viewMode === 'grid' ? <Button icon="plus" onClick={() => setShowForm(true)}>Tạo phiếu thu</Button> : undefined}
-      />
-
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         {stats.map((s, i) => (
           <Card key={i} animate delay={i * 70} style={{ borderLeft: `4px solid ${s.color}` }}>
@@ -71,14 +90,22 @@ export const Finance: React.FC = () => {
       </div>
 
       {viewMode === 'grid' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>Quản lý tài chính</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{`${rows.length} phiếu thu`}</div>
+          </div>
+          <Button icon="plus" onClick={openAdd}>Tạo phiếu thu</Button>
+        </div>
+      )}
+
+      {viewMode === 'grid' && (
         <Card animate style={{ marginBottom: 20, padding: 16 }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <div style={{ flex: 1, minWidth: 200 }}>
               <Input placeholder="Tìm theo học viên, lớp..." value={search} onChange={setSearch} icon="search" />
             </div>
-            <Select
-              value={filterStatus}
-              onChange={setFilterStatus}
+            <Select value={filters.status} onChange={v => setFilter('status', v)}
               options={[
                 { value: 'all', label: 'Tất cả trạng thái' },
                 { value: 'paid', label: 'Đã thu' },
@@ -87,9 +114,7 @@ export const Finance: React.FC = () => {
               ]}
               style={{ minWidth: 140 }}
             />
-            <Select
-              value={filterType}
-              onChange={setFilterType}
+            <Select value={filters.type} onChange={v => setFilter('type', v)}
               options={[
                 { value: 'all', label: 'Tất cả loại' },
                 { value: 'tuition', label: 'Học phí' },
@@ -104,9 +129,7 @@ export const Finance: React.FC = () => {
         </Card>
       )}
 
-      {loading ? (
-        <LoadingSpinner />
-      ) : error ? (
+      {error ? (
         <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
       ) : viewMode === 'table' ? (
         <PaymentTable
@@ -115,14 +138,17 @@ export const Finance: React.FC = () => {
           onMarkPaid={handleMarkPaid}
           markingId={markingId}
           actions={viewTabs}
-          onAdd={() => setShowForm(true)}
+          onAdd={openAdd}
           onRefresh={refetch}
+          loading={loading}
         />
+      ) : loading ? (
+        <LoadingSpinner />
       ) : (
         <PaymentGrid rows={filtered} onMarkPaid={handleMarkPaid} markingId={markingId} />
       )}
 
-      <PaymentFormModal open={showForm} onClose={() => setShowForm(false)} onSuccess={refetch} />
+      <PaymentFormModal open={showForm} onClose={closeForm} onSuccess={refetch} />
     </div>
   )
 }

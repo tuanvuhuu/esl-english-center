@@ -1,8 +1,8 @@
 import { supabase } from '../lib/supabase'
 import type { DbTeacher } from '../types/database'
 
-export async function getTeachers() {
-  const { data, error } = await supabase
+export async function getTeachers(filters?: { branchId?: string }) {
+  let query = supabase
     .from('teachers')
     .select(`
       *,
@@ -12,8 +12,10 @@ export async function getTeachers() {
       primary_branch: branches!primary_branch_id ( id, name )
     `)
     .eq('is_deleted', false)
-    .order('full_name')
 
+  if (filters?.branchId) query = query.eq('primary_branch_id', filters.branchId)
+
+  const { data, error } = await query.order('created_at', { ascending: false })
   if (error) throw error
   return data as DbTeacher[]
 }
