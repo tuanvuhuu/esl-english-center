@@ -7,7 +7,7 @@ export type IconName =
   | 'chevron-right' | 'chevron-left' | 'menu' | 'x' | 'phone' | 'mail' 
   | 'clock' | 'trending-up' | 'trending-down' | 'more-v' | 'filter' 
   | 'download' | 'log-out' | 'user' | 'star' | 'check' | 'alert' 
-  | 'dollar' | 'map-pin' | 'award' | 'message' | 'refresh' | 'sun' | 'moon' | 'arrow-up';
+  | 'dollar' | 'map-pin' | 'award' | 'message' | 'refresh' | 'sun' | 'moon' | 'arrow-up' | 'chevron-up';
 
 const ICON_PATHS: Record<string, React.ReactNode> = {
   'dashboard': <><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></>,
@@ -30,6 +30,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   'chevron-down': <><path d="m6 9 6 6 6-6"/></>,
   'chevron-right': <><path d="m9 18 6-6-6-6"/></>,
   'chevron-left': <><path d="m15 18-6-6 6-6"/></>,
+  'chevron-up': <><path d="m18 15-6-6-6 6"/></>,
   'menu': <><path d="M4 12h16M4 6h16M4 18h16"/></>,
   'x': <><path d="M18 6 6 18M6 6l12 12"/></>,
   'phone': <><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></>,
@@ -58,17 +59,18 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
 interface IconProps {
   name: IconName;
   size?: number;
+  color?: string;
   className?: string;
   style?: React.CSSProperties;
 }
 
-export const Icon: React.FC<IconProps> = ({ name, size = 20, className = '', style = {} }) => (
+export const Icon: React.FC<IconProps> = ({ name, size = 20, color, className = '', style = {} }) => (
   <svg
     width={size}
     height={size}
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
+    stroke={color || 'currentColor'}
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"

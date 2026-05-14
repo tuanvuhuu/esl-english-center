@@ -119,6 +119,7 @@ export interface DbTeacher {
   updated_by: string | null
   // joins
   teacher_subjects?: { subject: { name: string } }[]
+  teacher_branches?: { branch_id: string }[]
   primary_branch?: Branch
 }
 

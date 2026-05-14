@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button, useToast } from '../../../components'
+import { Modal, Input, Select, Button, useToast, SelectBoxMultiple, ColorPicker } from '../../../components'
 import { createTeacher, updateTeacher } from '../../../services'
 import type { Teacher } from '../../../types/data'
+import { useAppContext } from '../../../context/AppContext'
 
 interface TeacherFormModalProps {
   open: boolean
@@ -18,11 +19,12 @@ interface Form {
   status: string
   color: string
   bio: string
+  branchIds: string[]
 }
 
 const EMPTY: Form = {
   name: '', nationality: 'Việt Nam', phone: '', email: '',
-  status: 'active', color: '#6366f1', bio: '',
+  status: 'active', color: '#6366f1', bio: '', branchIds: [],
 }
 
 const COLORS = ['#6366f1', '#FF6B35', '#10B981', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6', '#EF4444']
@@ -30,6 +32,7 @@ const COLORS = ['#6366f1', '#FF6B35', '#10B981', '#3B82F6', '#F59E0B', '#EC4899'
 export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClose, onSuccess, teacher }) => {
   const isEdit = !!teacher
   const toast = useToast()
+  const { branches } = useAppContext()
   const [form, setForm] = useState<Form>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,6 +47,7 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
         status: teacher.status ?? 'active',
         color: teacher.color ?? '#6366f1',
         bio: teacher.bio ?? '',
+        branchIds: teacher.branchIds ?? [],
       })
     } else {
       setForm(EMPTY)
@@ -55,6 +59,7 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
 
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Vui lòng nhập họ tên giáo viên'); return }
+    if (form.branchIds.length === 0) { setError('Vui lòng chọn ít nhất một cơ sở công tác'); return }
     setSaving(true)
     setError(null)
     try {
@@ -66,11 +71,12 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
         status: form.status as any,
         color: form.color,
         bio: form.bio || null,
+        primary_branch_id: form.branchIds[0], // Dùng branch đầu tiên làm primary cho tương thích các module khác
       }
       if (isEdit && teacher) {
-        await updateTeacher(String(teacher.id), payload)
+        await updateTeacher(String(teacher.id), payload, form.branchIds)
       } else {
-        await createTeacher(payload)
+        await createTeacher(payload, form.branchIds)
       }
       toast.success(isEdit ? 'Cập nhật giáo viên thành công' : 'Thêm giáo viên thành công')
       onSuccess()
@@ -87,7 +93,7 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
     <Modal open={open} onClose={onClose} title={isEdit ? 'Chỉnh sửa giáo viên' : 'Thêm giáo viên mới'} width={520}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
         <div style={{ gridColumn: '1/-1' }}>
-          <Input label="Họ tên giáo viên *" value={form.name} onChange={v => set('name', v)} placeholder="Nguyễn Thị B" />
+          <Input label="Họ tên giáo viên" value={form.name} onChange={v => set('name', v)} placeholder="Nguyễn Thị B" required />
         </div>
         <Input label="Quốc tịch" value={form.nationality} onChange={v => set('nationality', v)} placeholder="Việt Nam" />
         <Select label="Trạng thái" value={form.status} onChange={v => set('status', v)}
@@ -98,19 +104,24 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
           ]} />
         <Input label="Số điện thoại" value={form.phone} onChange={v => set('phone', v)} placeholder="0912 345 678" />
         <Input label="Email" value={form.email} onChange={v => set('email', v)} placeholder="teacher@esl.edu.vn" />
+        
         <div style={{ gridColumn: '1/-1' }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8 }}>Màu sắc</div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {COLORS.map(c => (
-              <button key={c} onClick={() => set('color', c)}
-                style={{
-                  width: 32, height: 32, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer',
-                  outline: form.color === c ? `3px solid ${c}` : 'none',
-                  outlineOffset: 2, transition: 'all 0.15s',
-                  transform: form.color === c ? 'scale(1.15)' : 'scale(1)',
-                }} />
-            ))}
-          </div>
+          <SelectBoxMultiple
+            label="Cơ sở công tác"
+            options={branches.map(b => ({ value: b.id, label: b.name }))}
+            value={form.branchIds}
+            onChange={v => setForm(f => ({ ...f, branchIds: v }))}
+            placeholder="Chọn cơ sở..."
+            required
+          />
+        </div>
+        <div style={{ gridColumn: '1/-1' }}>
+          <ColorPicker 
+            label="Màu sắc" 
+            colors={COLORS} 
+            value={form.color} 
+            onChange={c => set('color', c)} 
+          />
         </div>
         <div style={{ gridColumn: '1/-1' }}>
           <Input label="Giới thiệu" value={form.bio} onChange={v => set('bio', v)} placeholder="Giáo viên IELTS, 5 năm kinh nghiệm..." />

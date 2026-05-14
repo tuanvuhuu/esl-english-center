@@ -158,8 +158,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           top: 0,
           zIndex: 999,
           transform: isMobile ? (collapsed ? 'translateX(-100%)' : 'translateX(0)') : 'none',
-          overflow: 'hidden',
+          overflowX: 'hidden',
+          overflowY: 'hidden',
           flexShrink: 0,
+          backdropFilter: 'var(--glass-filter)',
+          WebkitBackdropFilter: 'var(--glass-filter)',
         }}
       >
         {/* Logo */}
@@ -168,60 +171,94 @@ export const Sidebar: React.FC<SidebarProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            padding: collapsed && !isMobile ? '20px 0' : '20px 20px',
-            justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+            padding: collapsed && !isMobile ? '12px 0' : '12px 20px',
+            justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
             borderBottom: '1px solid var(--sidebar-border)',
-            minHeight: 72,
+            minHeight: 56,
           }}
         >
-          <div
-            style={{
-              width: 38,
-              height: 38,
-              borderRadius: 12,
-              background: 'linear-gradient(135deg, #FF6B35, #FF8F65)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 16,
-              fontWeight: 800,
-              color: '#fff',
-              flexShrink: 0,
-              boxShadow: '0 4px 12px rgba(255,107,53,0.3)',
-            }}
-          >
-            E
-          </div>
-          {(!collapsed || isMobile) && (
-            <div style={{ animation: 'fadeIn 0.2s ease' }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--sidebar-text)', lineHeight: 1.2 }}>ESL English</div>
-              <div style={{ fontSize: 11, color: 'var(--sidebar-text-sub)', fontWeight: 500 }}>Center Management</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 10,
+                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 14,
+                fontWeight: 800,
+                color: '#fff',
+                flexShrink: 0,
+                boxShadow: '0 4px 12px var(--primary-15)',
+              }}
+            >
+              E
             </div>
+            {(!collapsed || isMobile) && (
+              <div style={{ animation: 'fadeIn 0.2s ease', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--sidebar-text)', lineHeight: 1.2 }}>ESL English</div>
+                <div style={{ fontSize: 10, color: 'var(--sidebar-text-sub)', fontWeight: 500 }}>Management</div>
+              </div>
+            )}
+          </div>
+          
+          {!isMobile && (
+            <button
+              onClick={() => onToggle(!collapsed)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 4,
+                cursor: 'pointer',
+                color: 'var(--sidebar-text-sub)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s',
+                transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = 'var(--primary)'}
+              onMouseLeave={e => e.currentTarget.style.color = 'var(--sidebar-text-sub)'}
+            >
+              <Icon name="chevron-left" size={18} />
+            </button>
           )}
         </div>
 
         {/* Navigation */}
-        <nav style={{ flex: 1, overflowY: 'auto', padding: collapsed && !isMobile ? '8px 0' : '8px 12px' }}>
+        <nav style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          overflowX: 'hidden',
+          padding: collapsed && !isMobile ? '8px 0' : '8px 12px' 
+        }}>
           {NAV_ITEMS.map(renderNavItem)}
         </nav>
 
         {/* Bottom Navigation */}
-        <div style={{ padding: collapsed && !isMobile ? '8px 0' : '8px 12px', borderTop: '1px solid var(--sidebar-border)' }}>
+        <div style={{ 
+          padding: collapsed && !isMobile ? '8px 0' : '8px 12px', 
+          borderTop: '1px solid var(--sidebar-border)',
+          overflow: 'hidden'
+        }}>
           {BOTTOM_NAV.map(renderNavItem)}
         </div>
 
         {/* User Profile */}
         <div
           style={{
-            padding: collapsed && !isMobile ? '16px 0' : '16px 20px',
+            padding: collapsed && !isMobile ? '12px 0' : '12px 16px',
             borderTop: '1px solid var(--sidebar-border)',
             display: 'flex',
             alignItems: 'center',
             gap: 12,
             justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
+            overflow: 'hidden'
           }}
         >
-          <Avatar initials="AD" size={36} color="var(--primary)" />
+          <Avatar initials="AD" size={28} color="var(--primary)" />
           {(!collapsed || isMobile) && (
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--sidebar-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

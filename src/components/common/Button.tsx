@@ -29,9 +29,9 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const sizes = {
-    sm: { p: '4px 8px',  fs: 11 },
-    md: { p: '6px 12px', fs: 12 },
-    lg: { p: '8px 16px', fs: 13 }
+    sm: { h: 24, p: '0 8px',  fs: 11 },
+    md: { h: 30, p: '0 12px', fs: 12 },
+    lg: { h: 36, p: '0 16px', fs: 13 }
   };
 
   const v = variants[variant];
@@ -47,7 +47,9 @@ export const Button: React.FC<ButtonProps> = ({
       style={{
         display: 'inline-flex', 
         alignItems: 'center', 
+        justifyContent: 'center',
         gap: 8, 
+        height: s.h,
         padding: s.p, 
         fontSize: s.fs, 
         fontWeight: 600,

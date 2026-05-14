@@ -7,6 +7,7 @@ export { Card } from './Card';
 export { Input } from './Input';
 export { Modal } from './Modal';
 export { Select } from './Select';
+export { ColorPicker } from './ColorPicker';
 export { Tabs } from './Tabs';
 export { FadeIn } from './FadeIn';
 export { EmptyState } from './EmptyState';

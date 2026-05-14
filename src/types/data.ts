@@ -25,6 +25,8 @@ export interface Teacher {
   status: 'active' | 'on-leave' | 'inactive';
   avatar?: string;
   color?: string;
+  branchIds?: string[];
+  branches?: string[];
   [key: string]: any;
 }
 

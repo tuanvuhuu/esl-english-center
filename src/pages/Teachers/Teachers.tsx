@@ -125,6 +125,9 @@ export const Teachers: React.FC = () => {
               <InfoRow icon="mail"     label="Email"      value={detailTeacher.email    || '—'} />
               <InfoRow icon="calendar" label="Ngày vào"   value={detailTeacher.joinDate || '—'} />
               <InfoRow icon="award"    label="Chuyên môn" value={detailTeacher.subjects?.join(', ') || '—'} />
+              <div style={{ gridColumn: '1/-1' }}>
+                <InfoRow icon="building" label="Cơ sở"      value={detailTeacher.branches?.join(', ') || '—'} />
+              </div>
             </div>
             <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
               <Button icon="edit"  variant="outline" onClick={() => openEdit(detailTeacher)}>Chỉnh sửa</Button>

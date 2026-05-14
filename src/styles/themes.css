@@ -66,3 +66,24 @@
 
   --activity-warm: #291C15;
 }
+
+/* Glassmorphism support when background image is present */
+:root[data-has-bg="true"] {
+  --glass-filter: blur(20px) saturate(180%);
+}
+
+:root[data-has-bg="true"][data-theme="light"] {
+  --header: rgba(255, 255, 255, 0.6);
+  --sidebar: rgba(255, 255, 255, 0.6);
+  --card: rgba(255, 255, 255, 0.6);
+  --input-bg: rgba(255, 255, 255, 0.45);
+  --bg: transparent;
+}
+
+:root[data-has-bg="true"][data-theme="dark"] {
+  --header: rgba(28, 25, 23, 0.6);
+  --sidebar: rgba(22, 18, 15, 0.6);
+  --card: rgba(28, 25, 23, 0.6);
+  --input-bg: rgba(41, 37, 32, 0.45);
+  --bg: transparent;
+}

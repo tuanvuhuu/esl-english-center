@@ -24,6 +24,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+[style*="background: var(--card)"],
+.card {
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+}
+
 #root {
   width: 100%;
   height: 100%;
@@ -68,6 +74,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 input[type="number"] {
   -moz-appearance: textfield;
+}
+
+/* DataGrid Copy Feature */
+.grid-cell:hover .copy-button {
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 /* Responsive */

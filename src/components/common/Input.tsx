@@ -8,6 +8,7 @@ interface InputProps {
   placeholder?: string;
   type?: string;
   icon?: IconName;
+  required?: boolean;
   style?: React.CSSProperties;
 }
 
@@ -18,10 +19,16 @@ export const Input: React.FC<InputProps> = ({
   placeholder, 
   type = 'text', 
   icon, 
+  required,
   style = {} 
 }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
-    {label && <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>{label}</label>}
+    {label && (
+      <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
+        {label}
+        {required && <span style={{ color: '#ef4444', marginLeft: 4 }}>*</span>}
+      </label>
+    )}
     <div style={{ position: 'relative' }}>
       {icon && (
         <div style={{ 
@@ -41,14 +48,15 @@ export const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         style={{
           width: '100%', 
-          padding: icon ? '7px 14px 7px 38px' : '7px 14px',
+          height: 30,
+          padding: icon ? '0 10px 0 32px' : '0 10px',
           border: '1.5px solid var(--border)',
-          borderRadius: 10, 
-          fontSize: 14, 
+          borderRadius: 8, 
+          fontSize: 13, 
           fontFamily: 'var(--font)', 
           color: 'var(--text-1)', 
           outline: 'none',
-          transition: 'border-color 0.2s, box-shadow 0.2s', 
+          transition: 'all 0.2s ease', 
           background: 'var(--input-bg)', 
           boxSizing: 'border-box'
         }}

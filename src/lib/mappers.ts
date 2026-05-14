@@ -55,6 +55,8 @@ export function mapTeacher(t: DbTeacher): Teacher {
     classCount: 0, // computed từ classes nếu cần
     bio: t.bio ?? undefined,
     joinDate: t.join_date ? formatDate(t.join_date) : undefined,
+    branchIds: t.teacher_branches?.map(tb => tb.branch_id) ?? [],
+    branches: (t as any).teacher_branches?.map((tb: any) => tb.branch?.name).filter(Boolean) ?? [],
   }
 }
 

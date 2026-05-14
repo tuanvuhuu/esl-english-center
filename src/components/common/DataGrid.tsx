@@ -487,6 +487,7 @@ export function DataGrid<T = any>({
                     return (
                       <td
                         key={cell.id}
+                        className="grid-cell"
                         style={{
                           padding: '9px 10px',
                           textAlign: colDef?.align ?? 'left',
@@ -494,10 +495,42 @@ export function DataGrid<T = any>({
                           whiteSpace: colDef?.noWrap ? 'nowrap' : undefined,
                           verticalAlign: 'middle',
                           width: cell.column.getSize(),
+                          position: 'relative',
                           ...getPinnedStyle(cell.column),
                         }}
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        <div style={{ display: 'inline-flex', alignItems: 'center', position: 'relative' }}>
+                          <span>{flexRender(cell.column.columnDef.cell, cell.getContext())}</span>
+                          <button
+                            className="copy-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const val = cell.getValue();
+                              const textToCopy = val != null ? String(val) : '';
+                              navigator.clipboard.writeText(textToCopy);
+                              const btn = e.currentTarget as HTMLButtonElement;
+                              const originalColor = btn.style.color;
+                              btn.style.color = 'var(--primary)';
+                              setTimeout(() => btn.style.color = originalColor, 1000);
+                            }}
+                            title="Copy"
+                            style={{
+                              position: 'absolute',
+                              top: -4,
+                              right: -16,
+                              background: 'none',
+                              border: 'none',
+                              padding: 0,
+                              cursor: 'pointer',
+                              opacity: 0,
+                              pointerEvents: 'none',
+                              color: 'var(--text-4)',
+                              transition: 'opacity 0.2s',
+                            }}
+                          >
+                            <Icon name="copy" size={12} />
+                          </button>
+                        </div>
                       </td>
                     )
                   })}

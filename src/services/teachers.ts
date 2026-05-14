@@ -6,14 +6,21 @@ export async function getTeachers(filters?: { branchId?: string }) {
     .from('teachers')
     .select(`
       *,
-      teacher_subjects (
-        subject: subjects ( id, name )
-      ),
+      teacher_subjects ( subject: subjects ( id, name ) ),
+      teacher_branches ( branch: branches ( id, name ) ),
       primary_branch: branches!primary_branch_id ( id, name )
     `)
     .eq('is_deleted', false)
 
-  if (filters?.branchId) query = query.eq('primary_branch_id', filters.branchId)
+  if (filters?.branchId) {
+    // Nếu lọc theo branch, ta có thể lọc theo primary_branch_id 
+    // HOẶC lọc những GV có trong teacher_branches. 
+    // Ở đây ta ưu tiên lọc theo teacher_branches nếu GV có thể ở nhiều nơi.
+    // Tuy nhiên, Supabase .eq() trên nested join hơi phức tạp nếu không dùng .rpc().
+    // Tạm thời lọc theo primary_branch_id để tương thích code cũ, 
+    // hoặc chuyển sang lọc client-side nếu danh sách không quá lớn.
+    query = query.eq('primary_branch_id', filters.branchId)
+  }
 
   const { data, error } = await query.order('created_at', { ascending: false })
   if (error) throw error
@@ -36,7 +43,7 @@ export async function getTeacherById(id: string) {
   return data as DbTeacher
 }
 
-export async function createTeacher(payload: Partial<DbTeacher>) {
+export async function createTeacher(payload: Partial<DbTeacher>, branchIds?: string[]) {
   const { data, error } = await supabase
     .from('teachers')
     .insert(payload)
@@ -44,10 +51,17 @@ export async function createTeacher(payload: Partial<DbTeacher>) {
     .single()
 
   if (error) throw error
+  
+  if (branchIds?.length) {
+    const branchPayload = branchIds.map(bid => ({ teacher_id: data.id, branch_id: bid }))
+    const { error: branchError } = await supabase.from('teacher_branches').insert(branchPayload)
+    if (branchError) console.error('Error saving teacher branches:', branchError)
+  }
+
   return data as DbTeacher
 }
 
-export async function updateTeacher(id: string, payload: Partial<DbTeacher>) {
+export async function updateTeacher(id: string, payload: Partial<DbTeacher>, branchIds?: string[]) {
   const { data, error } = await supabase
     .from('teachers')
     .update(payload)
@@ -56,6 +70,17 @@ export async function updateTeacher(id: string, payload: Partial<DbTeacher>) {
     .single()
 
   if (error) throw error
+
+  if (branchIds) {
+    // Sync branches: delete old, insert new
+    await supabase.from('teacher_branches').delete().eq('teacher_id', id)
+    if (branchIds.length) {
+      const branchPayload = branchIds.map(bid => ({ teacher_id: id, branch_id: bid }))
+      const { error: branchError } = await supabase.from('teacher_branches').insert(branchPayload)
+      if (branchError) console.error('Error syncing teacher branches:', branchError)
+    }
+  }
+
   return data as DbTeacher
 }
 
