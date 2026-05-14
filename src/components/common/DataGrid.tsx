@@ -82,13 +82,18 @@ const IndeterminateCheckbox: React.FC<{
 
 const FilterInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
   <div style={{ position: 'relative', marginTop: 5 }}>
+    <Icon
+      name="filter"
+      size={10}
+      style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', color: value ? 'var(--primary)' : 'var(--text-4)', pointerEvents: 'none' }}
+    />
     <input
       value={value}
       onChange={e => onChange(e.target.value)}
-      placeholder="Lọc..."
+      placeholder=""
       style={{
         width: '100%', height: 24,
-        padding: value ? '0 20px 0 8px' : '0 8px',
+        padding: value ? '0 20px 0 22px' : '0 8px 0 22px',
         border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
         borderRadius: 5, fontSize: 11, fontFamily: 'var(--font)',
         background: value ? 'var(--primary-light)' : 'var(--input-bg)',
