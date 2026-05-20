@@ -2,12 +2,6 @@ import React from 'react';
 import { Card, FadeIn } from '../../../components';
 import { MiniDonutChart } from './MiniDonutChart';
 
-interface DistributionSegment {
-  label: string;
-  value: number;
-  color: string;
-}
-
 interface StudentDistributionProps {
   data?: { label: string; value: number; color: string }[];
 }

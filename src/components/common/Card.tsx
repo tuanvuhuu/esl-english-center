@@ -6,6 +6,8 @@ interface CardProps {
   style?: React.CSSProperties;
   className?: string;
   onClick?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
   hover?: boolean;
   animate?: boolean;
   delay?: number;
@@ -16,6 +18,8 @@ export const Card: React.FC<CardProps> = ({
   style = {}, 
   className = '', 
   onClick, 
+  onMouseEnter,
+  onMouseLeave,
   hover = false, 
   animate = false, 
   delay = 0 
@@ -28,8 +32,14 @@ export const Card: React.FC<CardProps> = ({
       ref={animate ? (ref as React.RefObject<HTMLDivElement>) : undefined} 
       onClick={onClick} 
       className={className}
-      onMouseEnter={() => { if(hover) setHov(true); }}
-      onMouseLeave={() => { if(hover) setHov(false); }}
+      onMouseEnter={() => { 
+        if(hover) setHov(true); 
+        onMouseEnter?.();
+      }}
+      onMouseLeave={() => { 
+        if(hover) setHov(false); 
+        onMouseLeave?.();
+      }}
       style={{
         background: 'var(--card)', 
         borderRadius: 16, 

@@ -10,6 +10,11 @@ export default function App() {
   const { session, loading: authLoading } = useAuth();
   const navCounts = useNavCounts();
   const [page, setPage] = useState('dashboard');
+  const [pageParams, setPageParams] = useState<any>(null);
+  const navigateTo = (targetPage: string, params?: any) => {
+    setPage(targetPage);
+    setPageParams(params || null);
+  };
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
@@ -58,27 +63,61 @@ export default function App() {
         background: 'var(--bg)',
         fontFamily: 'var(--font)',
         transition: 'background 0.35s',
+        position: 'relative',
+        overflow: 'hidden',
       }}
     >
+      {/* Ambient background glow blobs */}
+      <div
+        className="glow-blob"
+        style={{
+          top: '-150px',
+          right: '-100px',
+          width: '500px',
+          height: '500px',
+          background: 'var(--gradient-glow-1)',
+        }}
+      />
+      <div
+        className="glow-blob"
+        style={{
+          bottom: '-150px',
+          left: '-50px',
+          width: '600px',
+          height: '600px',
+          background: 'var(--gradient-glow-2)',
+        }}
+      />
+
       <Sidebar
         activePage={page}
-        onNavigate={setPage}
+        onNavigate={navigateTo}
         collapsed={isMobile ? !mobileSidebarOpen : sidebarCollapsed}
         onToggle={isMobile ? (v: boolean) => setMobileSidebarOpen(v) : (v: boolean) => setSidebarCollapsed(v)}
         isMobile={isMobile}
-        counts={navCounts}
+        counts={navCounts as Record<string, number>}
       />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, height: '100vh', position: 'relative', zIndex: 1 }}>
         <Header
           title={pageTitles[page] || 'ESL English Center'}
           isMobile={isMobile}
           onMenuClick={() => setMobileSidebarOpen(false)}
+          onNavigate={navigateTo}
         />
         <main style={{ flex: 1, overflow: 'auto', padding: isMobile ? 16 : 24 }}>
           {(() => {
+            if (page === 'dashboard') {
+              const DashboardComponent = pageComponents.dashboard as React.ComponentType<{ onNavigate: (page: string, params?: any) => void }>;
+              return <DashboardComponent onNavigate={navigateTo} />;
+            }
             const PageComponent = pageComponents[page];
-            return PageComponent ? <PageComponent /> : <pageComponents.dashboard />;
+            if (PageComponent) {
+              const ComponentWithProps = PageComponent as React.ComponentType<{ params?: any; onNavigate?: (page: string, params?: any) => void }>;
+              return <ComponentWithProps params={pageParams} onNavigate={navigateTo} />;
+            }
+            const DefaultDashboard = pageComponents.dashboard as React.ComponentType<{ onNavigate: (page: string, params?: any) => void }>;
+            return <DefaultDashboard onNavigate={navigateTo} />;
           })()}
         </main>
       </div>

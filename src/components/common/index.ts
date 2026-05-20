@@ -20,3 +20,4 @@ export type { DataGridColumn } from './DataGrid';
 export { ToastProvider, useToast } from './Toast'
 export { ConfirmProvider, useConfirm } from './ConfirmProvider'
 export { TextWithEllipse } from './TextWithEllipse';
+export { EntityHistoryTimeline } from './EntityHistoryTimeline';

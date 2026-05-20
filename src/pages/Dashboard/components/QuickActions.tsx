@@ -6,14 +6,19 @@ interface ActionItem {
   label: string;
   color: string;
   bg: string;
+  page: string;
 }
 
-export const QuickActions: React.FC = () => {
+interface QuickActionsProps {
+  onNavigate?: (page: string) => void;
+}
+
+export const QuickActions: React.FC<QuickActionsProps> = ({ onNavigate }) => {
   const actions: ActionItem[] = [
-    { icon: 'plus', label: 'Thêm học viên', color: '#FF6B35', bg: 'var(--primary-light)' },
-    { icon: 'book', label: 'Mở lớp mới', color: '#3B82F6', bg: 'var(--info-light)' },
-    { icon: 'clipboard', label: 'Điểm danh', color: '#10B981', bg: 'var(--success-light)' },
-    { icon: 'wallet', label: 'Thu học phí', color: '#8B5CF6', bg: '#EDE9FE' },
+    { icon: 'plus', label: 'Thêm học viên', color: '#FF6B35', bg: 'var(--primary-light)', page: 'students' },
+    { icon: 'book', label: 'Mở lớp mới', color: '#3B82F6', bg: 'var(--info-light)', page: 'classes' },
+    { icon: 'clipboard', label: 'Điểm danh', color: '#10B981', bg: 'var(--success-light)', page: 'attendance' },
+    { icon: 'wallet', label: 'Thu học phí', color: '#8B5CF6', bg: '#EDE9FE', page: 'finance' },
   ];
 
   return (
@@ -23,6 +28,7 @@ export const QuickActions: React.FC = () => {
         {actions.map((a, i) => (
           <FadeIn key={i} delay={i * 60}>
             <button
+              onClick={() => onNavigate?.(a.page)}
               style={{
                 display: 'flex',
                 alignItems: 'center',

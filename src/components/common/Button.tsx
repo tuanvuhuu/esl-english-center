@@ -10,6 +10,7 @@ interface ButtonProps {
   style?: React.CSSProperties;
   disabled?: boolean;
   loading?: boolean;
+  title?: string;
 }
 
 export const Button: React.FC<ButtonProps> = ({ 
@@ -20,7 +21,8 @@ export const Button: React.FC<ButtonProps> = ({
   onClick, 
   style = {}, 
   disabled = false,
-  loading = false
+  loading = false,
+  title
 }) => {
   const variants = {
     primary: { bg: 'var(--primary)', color: '#fff', hoverBg: 'var(--primary-dark)', border: 'none' },
@@ -46,6 +48,7 @@ export const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading} 
       onMouseEnter={() => setHov(true)} 
       onMouseLeave={() => setHov(false)}
+      title={title}
       style={{
         display: 'inline-flex', 
         alignItems: 'center', 

@@ -41,7 +41,7 @@ export function useBulkActions<T extends { id: string }>(
   const runBulk = useCallback(
     async (
       operation: (ids: string[]) => Promise<void>,
-      label: string,
+      _label: string,
       batchSize = 100
     ) => {
       if (selectedIds.size === 0) return

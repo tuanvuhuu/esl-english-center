@@ -10,6 +10,7 @@ interface InputProps {
   icon?: IconName;
   required?: boolean;
   style?: React.CSSProperties;
+  list?: string;
 }
 
 export const Input: React.FC<InputProps> = ({ 
@@ -20,7 +21,8 @@ export const Input: React.FC<InputProps> = ({
   type = 'text', 
   icon, 
   required,
-  style = {} 
+  style = {},
+  list
 }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
     {label && (
@@ -46,6 +48,7 @@ export const Input: React.FC<InputProps> = ({
         value={value} 
         onChange={e => onChange(e.target.value)} 
         placeholder={placeholder}
+        list={list}
         style={{
           width: '100%', 
           height: 30,

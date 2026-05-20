@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Input, Select, Button, useToast } from '../../../components'
-import { createStudentWithParent, updateStudent } from '../../../services'
+import { createStudentWithParent, updateStudent, updateStudentWithParent } from '../../../services/students'
+import { getClasses } from '../../../services/classes'
+import { getParents } from '../../../services/parents'
 import { useQuery } from '../../../hooks'
-import { getClasses } from '../../../services'
 import type { Student } from '../../../types/data'
 import type { StudentParent } from '../../../types/database'
 
@@ -19,6 +20,7 @@ interface Form {
   gender: string
   level: string
   status: string
+  parentId: string
   parentName: string
   parentPhone: string
   parentEmail: string
@@ -28,7 +30,7 @@ interface Form {
 
 const EMPTY: Form = {
   name: '', dob: '', gender: '', level: 'A1', status: 'active',
-  parentName: '', parentPhone: '', parentEmail: '', parentRelation: 'mother', classId: '',
+  parentId: '', parentName: '', parentPhone: '', parentEmail: '', parentRelation: 'mother', classId: '',
 }
 
 export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClose, onSuccess, student }) => {
@@ -39,6 +41,7 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
   const [error, setError] = useState<string | null>(null)
 
   const { data: classesRaw } = useQuery(getClasses)
+  const { data: parentsRaw } = useQuery(getParents)
 
   useEffect(() => {
     if (student) {
@@ -48,6 +51,7 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
         gender: student.gender ?? '',
         level: student.level ?? 'A1',
         status: student.status ?? 'active',
+        parentId: student.parentId ?? '',
         parentName: student.parent ?? '',
         parentPhone: student.phone ?? '',
         parentEmail: student.parentEmail ?? '',
@@ -62,35 +66,44 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
 
   const set = (k: keyof Form, v: string) => setForm(f => ({ ...f, [k]: v }))
 
+  const handleParentNameChange = (name: string) => {
+    const existing = parentsRaw?.find(p => p.full_name === name)
+    if (existing) {
+      setForm(f => ({ 
+        ...f, 
+        parentId: existing.id, 
+        parentName: name, 
+        parentPhone: existing.phone || '', 
+        parentEmail: existing.email || '' 
+      }))
+    } else {
+      setForm(f => ({ ...f, parentId: '', parentName: name }))
+    }
+  }
+
   const handleSave = async () => {
     if (!form.name.trim()) { setError('Vui lòng nhập họ tên học viên'); return }
     setSaving(true)
     setError(null)
     try {
+      const studentData = {
+        full_name: form.name,
+        dob: form.dob || null,
+        gender: (form.gender as 'M' | 'F') || null,
+        level: form.level,
+        status: form.status as any,
+      }
+      const parentData = {
+        id: form.parentId || undefined,
+        full_name: form.parentName || form.name + ' (PH)',
+        phone: form.parentPhone || '0000000000',
+        email: form.parentEmail || null,
+      }
+
       if (isEdit && student) {
-        await updateStudent(String(student.id), {
-          full_name: form.name,
-          dob: form.dob || null,
-          gender: (form.gender as 'M' | 'F') || null,
-          level: form.level,
-          status: form.status as any,
-        })
+        await updateStudentWithParent(String(student.id), studentData, parentData, form.parentRelation)
       } else {
-        await createStudentWithParent(
-          {
-            full_name: form.name,
-            dob: form.dob || null,
-            gender: (form.gender as 'M' | 'F') || null,
-            level: form.level,
-            status: form.status as any,
-          },
-          {
-            full_name: form.parentName || form.name + ' (PH)',
-            phone: form.parentPhone || '0000000000',
-            email: form.parentEmail || null,
-          },
-          form.parentRelation,
-        )
+        await createStudentWithParent(studentData, parentData, form.parentRelation)
       }
       toast.success(isEdit ? 'Cập nhật học viên thành công' : 'Thêm học viên thành công')
       onSuccess()
@@ -128,25 +141,30 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
             { value: 'paused', label: 'Tạm nghỉ' }, { value: 'inactive', label: 'Đã nghỉ' },
           ]} />
 
-        {!isEdit && (
-          <>
-            <div style={{ gridColumn: '1/-1', borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 4 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 12 }}>Thông tin phụ huynh</div>
-            </div>
-            <div style={{ gridColumn: '1/-1' }}>
-              <Input label="Họ tên phụ huynh" value={form.parentName} onChange={v => set('parentName', v)} placeholder="Nguyễn Văn B" />
-            </div>
-            <Input label="Số điện thoại" value={form.parentPhone} onChange={v => set('parentPhone', v)} placeholder="0912 345 678" />
-            <Input label="Email phụ huynh" value={form.parentEmail} onChange={v => set('parentEmail', v)} placeholder="email@gmail.com" />
-            <Select label="Quan hệ" value={form.parentRelation} onChange={v => set('parentRelation', v as StudentParent['relation'])}
-              options={[
-                { value: 'mother', label: 'Mẹ' }, { value: 'father', label: 'Bố' },
-                { value: 'grandfather', label: 'Ông' }, { value: 'grandmother', label: 'Bà' },
-                { value: 'guardian', label: 'Người giám hộ' }, { value: 'other', label: 'Khác' },
-              ]} />
+        <>
+          <div style={{ gridColumn: '1/-1', borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 4 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 12 }}>Thông tin phụ huynh</div>
+          </div>
+          <div style={{ gridColumn: '1/-1' }}>
+            <Input label="Họ tên phụ huynh" value={form.parentName} onChange={handleParentNameChange} placeholder="Nhập hoặc chọn phụ huynh..." list="parents-list" />
+            <datalist id="parents-list">
+              {parentsRaw?.map(p => (
+                <option key={p.id} value={p.full_name}>{p.phone}</option>
+              ))}
+            </datalist>
+          </div>
+          <Input label="Số điện thoại" value={form.parentPhone} onChange={v => set('parentPhone', v)} placeholder="0912 345 678" />
+          <Input label="Email phụ huynh" value={form.parentEmail} onChange={v => set('parentEmail', v)} placeholder="email@gmail.com" />
+          <Select label="Quan hệ" value={form.parentRelation} onChange={v => set('parentRelation', v as StudentParent['relation'])}
+            options={[
+              { value: 'mother', label: 'Mẹ' }, { value: 'father', label: 'Bố' },
+              { value: 'grandfather', label: 'Ông' }, { value: 'grandmother', label: 'Bà' },
+              { value: 'guardian', label: 'Người giám hộ' }, { value: 'other', label: 'Khác' },
+            ]} />
+          {!isEdit && (
             <Select label="Lớp học" value={form.classId} onChange={v => set('classId', v)} options={classOptions} />
-          </>
-        )}
+          )}
+        </>
       </div>
 
       {error && (

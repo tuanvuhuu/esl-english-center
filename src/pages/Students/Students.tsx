@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, ConfirmDialog } from '../../components'
+import React, { useState, useEffect } from 'react'
+import { Button, Tabs, LoadingSpinner, EmptyState, ConfirmDialog } from '../../components'
 import { StudentTable } from './components/StudentTable'
 import { StudentGrid } from './components/StudentGrid'
 import { StudentDetail } from './components/StudentDetail'
@@ -12,7 +12,16 @@ import { getStudents, softDeleteStudent, bulkSoftDeleteStudents } from '../../se
 import { mapStudent } from '../../lib/mappers'
 import { useAppContext } from '../../context/AppContext'
 
-export const Students: React.FC = () => {
+interface StudentsProps {
+  params?: {
+    search?: string;
+    studentId?: string;
+    tab?: 'info' | 'history';
+  };
+  onNavigate?: (page: string, params?: any) => void;
+}
+
+export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
   const { selectedBranch, selectedYear } = useAppContext()
   const branchId = selectedBranch?.id
   const yearId = selectedYear?.id
@@ -29,6 +38,22 @@ export const Students: React.FC = () => {
     setDetail, setDeleteTarget,
   } = useCRUDPage<Student>({ status: 'all', level: 'all' })
 
+  useEffect(() => {
+    if (params?.search) {
+      setSearch(params.search)
+    }
+  }, [params?.search, setSearch])
+
+  useEffect(() => {
+    if ((params?.studentId || params?.search) && students.length) {
+      const match = students.find(s => String(s.id) === String(params.studentId)) ||
+                    students.find(s => s.name.toLowerCase() === String(params.search || '').toLowerCase());
+      if (match) {
+        setDetail(match)
+      }
+    }
+  }, [params?.studentId, params?.search, students, setDetail])
+
   const filtered = useListFilter(students, search, filters, {
     searchKeys: ['name', (s: Student) => s.parent ?? ''],
     filterMap: { status: 'status', level: 'level' },
@@ -42,16 +67,14 @@ export const Students: React.FC = () => {
     onSuccess: () => setDeleteTarget(null),
   })
 
-  const activeCount = students.filter(s => s.status === 'active').length
-
+  const statusCounts = {
+    active: students.filter(s => s.status === 'active').length,
+    trial: students.filter(s => s.status === 'trial').length,
+    paused: students.filter(s => s.status === 'paused').length,
+    inactive: students.filter(s => s.status === 'inactive').length,
+  };
   const [showImport, setShowImport] = useState(false)
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([])
-
-  const importBtn = (
-    <Button size="sm" variant="outline" icon="upload" onClick={() => setShowImport(true)}>
-      Import
-    </Button>
-  )
 
   const viewTabs = (
     <Tabs
@@ -64,78 +87,170 @@ export const Students: React.FC = () => {
     />
   )
 
-  const tableActions = selectedStudents.length > 0 ? (
+  const statusSummary = (
+    <div style={{ display: 'flex', alignItems: 'center', background: 'var(--hover-bg)', padding: '2px', borderRadius: 8, border: '1px solid var(--border)', gap: 2 }}>
+      <button
+        onClick={() => setFilter('status', 'all')}
+        style={{
+          border: 'none',
+          background: filters.status === 'all' ? 'var(--card)' : 'transparent',
+          color: filters.status === 'all' ? 'var(--primary)' : 'var(--text-2)',
+          fontWeight: filters.status === 'all' ? 700 : 500,
+          fontSize: 11,
+          padding: '4px 10px',
+          borderRadius: 6,
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+          boxShadow: filters.status === 'all' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+        }}
+      >
+        Tất cả ({students.length})
+      </button>
+      <button
+        onClick={() => setFilter('status', 'active')}
+        style={{
+          border: 'none',
+          background: filters.status === 'active' ? 'var(--card)' : 'transparent',
+          color: filters.status === 'active' ? '#10B981' : 'var(--text-2)',
+          fontWeight: filters.status === 'active' ? 700 : 500,
+          fontSize: 11,
+          padding: '4px 10px',
+          borderRadius: 6,
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+          boxShadow: filters.status === 'active' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+        }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+        Đang học ({statusCounts.active})
+      </button>
+      <button
+        onClick={() => setFilter('status', 'trial')}
+        style={{
+          border: 'none',
+          background: filters.status === 'trial' ? 'var(--card)' : 'transparent',
+          color: filters.status === 'trial' ? '#3B82F6' : 'var(--text-2)',
+          fontWeight: filters.status === 'trial' ? 700 : 500,
+          fontSize: 11,
+          padding: '4px 10px',
+          borderRadius: 6,
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+          boxShadow: filters.status === 'trial' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+        }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6' }} />
+        Học thử ({statusCounts.trial})
+      </button>
+      <button
+        onClick={() => setFilter('status', 'paused')}
+        style={{
+          border: 'none',
+          background: filters.status === 'paused' ? 'var(--card)' : 'transparent',
+          color: filters.status === 'paused' ? '#F59E0B' : 'var(--text-2)',
+          fontWeight: filters.status === 'paused' ? 700 : 500,
+          fontSize: 11,
+          padding: '4px 10px',
+          borderRadius: 6,
+          cursor: 'pointer',
+          transition: 'all 0.15s',
+          boxShadow: filters.status === 'paused' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 5,
+        }}
+      >
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }} />
+        Tạm nghỉ ({statusCounts.paused})
+      </button>
+      {statusCounts.inactive > 0 && (
+        <button
+          onClick={() => setFilter('status', 'inactive')}
+          style={{
+            border: 'none',
+            background: filters.status === 'inactive' ? 'var(--card)' : 'transparent',
+            color: filters.status === 'inactive' ? '#EF4444' : 'var(--text-2)',
+            fontWeight: filters.status === 'inactive' ? 700 : 500,
+            fontSize: 11,
+            padding: '4px 10px',
+            borderRadius: 6,
+            cursor: 'pointer',
+            transition: 'all 0.15s',
+            boxShadow: filters.status === 'inactive' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+          }}
+        >
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }} />
+          Nghỉ học ({statusCounts.inactive})
+        </button>
+      )}
+    </div>
+  )
+
+  const renderTableActions = () => (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      {selectedStudents.length > 0 && (
+        <Button
+          size="sm"
+          variant="outline"
+          icon="trash"
+          onClick={() => {
+            if (confirm(`Xoá ${selectedStudents.length} học viên?`)) {
+              bulkSoftDeleteStudents(selectedStudents.map(s => String(s.id)))
+                .then(() => {
+                  setSelectedStudents([])
+                  refetch()
+                })
+                .catch((err) => {
+                  console.error('Bulk delete failed:', err)
+                })
+            }
+          }}
+        >
+          Xoá
+        </Button>
+      )}
+      {statusSummary}
+      <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
+      {viewTabs}
+      <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
       <Button
         size="sm"
         variant="outline"
-        icon="trash"
-        onClick={() => {
-          if (confirm(`Xoá ${selectedStudents.length} học viên?`)) {
-            bulkSoftDeleteStudents(selectedStudents.map(s => s.id))
-              .then(() => {
-                setSelectedStudents([])
-                refetch()
-              })
-              .catch((err) => {
-                console.error('Bulk delete failed:', err)
-              })
-          }
-        }}
+        icon="upload"
+        onClick={() => setShowImport(true)}
       >
-        Xoá
+        Import
       </Button>
-      {viewTabs}
-    </div>
-  ) : (
-    <div style={{ display: 'flex', gap: 8 }}>
-      {viewTabs}
     </div>
   )
 
   return (
     <div>
+      {/* Grid view only header, in table view DataGrid's own card header is used */}
       {viewMode === 'grid' && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 16 }}>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-1)' }}>Quản lý học viên</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>{`${students.length} học viên · ${activeCount} đang học`}</div>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', margin: 0 }}>Quản lý học viên</h1>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', margin: '4px 0 0' }}>{`${students.length} học viên · ${statusCounts.active} đang học`}</p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button variant="outline" icon="upload" onClick={() => setShowImport(true)}>Import</Button>
-            <Button icon="plus" onClick={openAdd}>Thêm học viên</Button>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {statusSummary}
+            <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+            {viewTabs}
+            <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 4px' }} />
+            <Button variant="outline" icon="upload" onClick={() => setShowImport(true)} style={{ height: 32 }}>Import</Button>
+            <Button icon="plus" onClick={openAdd} style={{ height: 32 }}>Thêm học viên</Button>
           </div>
         </div>
-      )}
-
-      {viewMode === 'grid' && (
-        <Card animate style={{ marginBottom: 20, padding: 16 }}>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <Input placeholder="Tìm theo tên học viên, phụ huynh..." value={search} onChange={setSearch} icon="search" />
-            </div>
-            <Select value={filters.level} onChange={v => setFilter('level', v)}
-              options={[
-                { value: 'all', label: 'Tất cả trình độ' },
-                { value: 'A1', label: 'A1 · Starter' },
-                { value: 'A2', label: 'A2 · Elementary' },
-                { value: 'B1', label: 'B1 · Pre-Inter' },
-                { value: 'B2', label: 'B2 · Intermediate' },
-              ]}
-              style={{ minWidth: 160 }}
-            />
-            <Select value={filters.status} onChange={v => setFilter('status', v)}
-              options={[
-                { value: 'all', label: 'Tất cả trạng thái' },
-                { value: 'active', label: 'Đang học' },
-                { value: 'trial', label: 'Học thử' },
-                { value: 'paused', label: 'Tạm nghỉ' },
-              ]}
-              style={{ minWidth: 160 }}
-            />
-            {viewTabs}
-          </div>
-        </Card>
       )}
 
       {error ? (
@@ -143,14 +258,15 @@ export const Students: React.FC = () => {
       ) : viewMode === 'table' ? (
         <div style={{ position: 'relative' }}>
           <StudentTable
-            students={students}
-            subtitle={`${students.length} học viên · ${activeCount} đang học`}
+            title="Quản lý học viên"
+            subtitle={`${students.length} học viên · ${statusCounts.active} đang học`}
+            students={filtered}
             onSelectStudent={setDetail}
             onEdit={openEdit}
             onDelete={setDeleteTarget}
             enableRowSelection={true}
             onSelectionChange={setSelectedStudents}
-            actions={tableActions}
+            actions={renderTableActions()}
             onAdd={openAdd}
             onRefresh={refetch}
             loading={loading}
@@ -159,10 +275,10 @@ export const Students: React.FC = () => {
       ) : loading ? (
         <LoadingSpinner />
       ) : (
-        <StudentGrid students={filtered} onSelectStudent={setDetail} />
+        <StudentGrid students={filtered} onSelectStudent={setDetail} onEdit={openEdit} onDelete={setDeleteTarget} />
       )}
 
-      <StudentDetail student={selectedStudent} onClose={() => setDetail(null)} onEdit={openEdit} onDelete={setDeleteTarget} />
+      <StudentDetail student={selectedStudent} onClose={() => { setDetail(null); onNavigate?.('students', null); }} onEdit={openEdit} onDelete={setDeleteTarget} defaultTab={params?.tab} />
 
       <StudentFormModal
         open={showForm}

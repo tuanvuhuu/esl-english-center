@@ -35,6 +35,7 @@ export function mapStudent(s: DbStudent): Student {
     enrollDate: s.enroll_date ? formatDate(s.enroll_date) : undefined,
     // phụ huynh
     parent: primaryParent?.parent?.full_name ?? '',
+    parentId: primaryParent?.parent?.id ?? undefined,
     phone: primaryParent?.parent?.phone ?? '',
     parentEmail: primaryParent?.parent?.email ?? undefined,
     parentAddress: primaryParent?.parent?.address ?? undefined,

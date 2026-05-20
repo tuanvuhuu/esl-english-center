@@ -379,7 +379,7 @@ export const OnlineTestModal: React.FC<Props> = ({ open, onClose, test }) => {
                         onClick={() => setCurrentIdx(i)}
                         style={{
                           width: 32, height: 32, borderRadius: 8,
-                          border: 'none', cursor: 'pointer',
+                          cursor: 'pointer',
                           fontWeight: 700, fontSize: 12,
                           background: isCurrent ? 'var(--primary)' : isAnswered ? 'var(--success)' : 'var(--card)',
                           color: isCurrent || isAnswered ? '#fff' : 'var(--text-3)',

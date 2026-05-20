@@ -138,7 +138,7 @@ export const StudentProgressModal: React.FC<Props> = ({ open, onClose, studentId
 
               {/* Skill lines */}
               {skillSeries.map(s => {
-                const validPts = s.pts.map((p, i) => p ? `${p.x},${p.y}` : null).filter(Boolean).join(' ')
+                const validPts = s.pts.map((p) => p ? `${p.x},${p.y}` : null).filter(Boolean).join(' ')
                 return (
                   <g key={s.skill}>
                     <polyline

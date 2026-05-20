@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, Input, Select, Button, Icon, Badge } from '../../../components';
 import { generateQuestions, GeneratedQuestion } from '../questionGenerator';
 import { generateQuestionsWithAi } from '../aiQuestionGenerator';
-import { searchQuestionsOnline, WebSearchedQuestion } from '../webSearchQuestions';
+import { searchQuestionsOnline } from '../webSearchQuestions';
 import { getActiveProvider, hasAi } from '../../../lib/ai';
 import { hasGeminiKey } from '../../../lib/gemini';
 import { QuestionSkill } from '../../../types/database';
@@ -222,7 +222,7 @@ export const AiSuggestPanel: React.FC<AiSuggestPanelProps> = ({ level, onAddSele
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
-                  <Badge variant="outline" size="sm">{(q.skill || 'general').toUpperCase()}</Badge>
+                  <Badge variant="info" style={{ fontSize: 10, padding: '2px 6px' }}>{(q.skill || 'general').toUpperCase()}</Badge>
                   <span style={{ fontSize: 10, color: 'var(--text-4)', fontWeight: 600 }}>{(q.type || 'mcq').toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-1)', paddingRight: 24, lineHeight: 1.4 }}>

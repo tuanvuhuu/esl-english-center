@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Input, Select, Button, Icon } from '../../../components';
+import { Modal, Input, Select, Button } from '../../../components';
 import type { DbTestQuestion, DbQuestionOption, QuestionType, QuestionSkill } from '../../../types/database';
 
 interface AddQuestionModalProps {

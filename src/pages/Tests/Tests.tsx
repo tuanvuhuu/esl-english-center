@@ -124,9 +124,9 @@ export const Tests: React.FC = () => {
       <CreateTestModal
         open={showCreate}
         onClose={() => setShowCreate(false)}
-        onSubmit={handleCreateTest}
+        onSave={handleCreateTest}
         classes={activeClasses}
-        loading={creating}
+        saving={creating}
       />
 
       <QuestionBuilderModal

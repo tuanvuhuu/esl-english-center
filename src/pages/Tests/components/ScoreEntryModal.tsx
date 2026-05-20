@@ -100,7 +100,7 @@ export const ScoreEntryModal: React.FC<ScoreEntryModalProps> = ({
       updated_at: '',
       updated_by: null,
       student: { id: '', full_name: studentName, level: null, status: 'active' },
-    }
+    } as any
     setAiPreview(generateStudentFeedback(mockResult, test))
   }
 

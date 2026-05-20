@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react'
-import { PageHeader, Button, Card, Tabs, Icon, Modal, InfoRow, Badge, StatusBadge } from '../../components'
+import { PageHeader, Button, Card, Tabs, Icon, Modal, InfoRow, StatusBadge } from '../../components'
 import { getClasses, getEnrollmentsByClass, getTeachers } from '../../services'
 import { useQuery } from '../../hooks'
 import { mapClass, mapTeacher } from '../../lib/mappers'

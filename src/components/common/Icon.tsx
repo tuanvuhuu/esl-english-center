@@ -5,12 +5,14 @@ export type IconName =
   | 'clipboard' | 'file-edit' | 'wallet' | 'bar-chart' | 'bar-chart-2' | 'bell' | 'settings'
   | 'search' | 'plus' | 'edit' | 'trash' | 'eye' | 'chevron-down'
   | 'chevron-right' | 'chevron-left' | 'menu' | 'x' | 'phone' | 'mail'
-  | 'clock' | 'trending-up' | 'trending-down' | 'more-v' | 'filter'
+  | 'clock' | 'trending-up' | 'trending-down' | 'more-v' | 'more-horizontal' | 'filter'
   | 'download' | 'upload' | 'log-out' | 'user' | 'star' | 'check' | 'alert' | 'alert-circle'
   | 'dollar' | 'map-pin' | 'award' | 'message' | 'refresh' | 'sun' | 'moon' | 'arrow-up' | 'chevron-up' | 'copy'
-  | 'list' | 'zap' | 'loader' | 'plus-circle' | 'file-text' | 'image';
+  | 'list' | 'zap' | 'loader' | 'plus-circle' | 'file-text' | 'image' | 'tag' | 'key';
 
 const ICON_PATHS: Record<string, React.ReactNode> = {
+  'key': <><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></>,
+  'tag': <><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></>,
   'list': <><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></>,
   'zap': <><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>,
   'loader': <><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></>,
@@ -46,6 +48,7 @@ const ICON_PATHS: Record<string, React.ReactNode> = {
   'trending-up': <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></>,
   'trending-down': <><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></>,
   'more-v': <><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></>,
+  'more-horizontal': <><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></>,
   'filter': <><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></>,
   'download': <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
   'log-out': <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></>,

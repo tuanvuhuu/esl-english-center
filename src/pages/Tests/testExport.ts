@@ -1,9 +1,9 @@
 import jsPDF from 'jspdf';
-import { Test, TestQuestion, TestQuestionOption } from '../../types/database';
+import { DbTest, DbTestQuestion, DbQuestionOption } from '../../types/database';
 
 interface ExportData {
-  test: Test;
-  questions: (TestQuestion & { options: TestQuestionOption[] })[];
+  test: DbTest;
+  questions: (DbTestQuestion & { options: DbQuestionOption[] })[];
 }
 
 const buildPdfDoc = (data: ExportData): jsPDF => {
@@ -83,7 +83,7 @@ const buildPdfDoc = (data: ExportData): jsPDF => {
 
   doc.setFontSize(8);
   doc.setTextColor(150);
-  doc.text(`Page ${doc.internal.getCurrentPageInfo().pageNumber}`, pageWidth / 2, 287, { align: 'center' });
+  doc.text(`Page ${(doc as any).internal.getCurrentPageInfo().pageNumber}`, pageWidth / 2, 287, { align: 'center' });
 
   return doc;
 };

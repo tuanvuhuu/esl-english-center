@@ -167,7 +167,11 @@ const Row: React.FC<RowProps> = ({ index, enrollment: e, status, notes, saving, 
 }
 
 /* ─── Main ───────────────────────────────────────────────── */
-export const Attendance: React.FC = () => {
+interface AttendanceProps {
+  params?: { classId?: string }
+}
+
+export const Attendance: React.FC<AttendanceProps> = ({ params }) => {
   const confirm  = useConfirm()
   const toast    = useToast()
 
@@ -187,8 +191,12 @@ export const Attendance: React.FC = () => {
 
   const { data: classes } = useQuery(() => getClasses({ status: 'active' }))
   useEffect(() => {
-    if (!selClassId && classes?.length) setSelClassId((classes[0] as any).id)
-  }, [classes, selClassId])
+    if (params?.classId) {
+      setSelClassId(params.classId)
+    } else if (!selClassId && classes?.length) {
+      setSelClassId((classes[0] as any).id)
+    }
+  }, [classes, selClassId, params])
 
   const fetchEnrollments = useCallback(
     () => selClassId ? getEnrollmentsByClass(selClassId) : Promise.resolve([]),

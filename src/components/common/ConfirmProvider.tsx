@@ -62,7 +62,7 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({ child
           <Button variant="secondary" onClick={() => handleClose(false)}>
             {state.cancelLabel ?? 'Hủy'}
           </Button>
-          <Button variant={variant} onClick={() => handleClose(true)}>
+          <Button variant={variant === 'warning' ? 'primary' : variant} onClick={() => handleClose(true)}>
             {state.confirmLabel ?? 'Xác nhận'}
           </Button>
         </div>

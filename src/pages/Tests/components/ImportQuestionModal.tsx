@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Button, Icon, LoadingSpinner } from '../../../components';
+import { Modal, Button, Icon } from '../../../components';
 import { smartParseQuestions, geminiParseQuestions, fetchUrlContent, readPdfText, readImageText, ParsedQuestion } from '../smartParser';
 
 interface ImportQuestionModalProps {

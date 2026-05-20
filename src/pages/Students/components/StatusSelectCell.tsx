@@ -29,13 +29,13 @@ export const StatusSelectCell: React.FC<StatusSelectCellProps> = ({
     const newStatus = e.target.value
     const prevStatus = status
 
-    setStatus(newStatus)
+    setStatus(newStatus as Student['status'])
     setIsPending(true)
     setError(null)
 
     try {
-      await updateStudentStatus(student.id, newStatus)
-      onStatusChange?.(student.id, newStatus)
+      await updateStudentStatus(String(student.id), newStatus as any)
+      onStatusChange?.(String(student.id), newStatus)
     } catch (err) {
       setStatus(prevStatus)
       setError(err instanceof Error ? err.message : 'Failed to update status')

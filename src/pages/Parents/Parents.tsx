@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useEffect } from 'react'
 import { DataGrid, Avatar, Icon, ConfirmDialog, useToast } from '../../components'
 import type { DataGridColumn } from '../../components'
 import { useQuery, useCRUDPage } from '../../hooks'
@@ -17,7 +17,15 @@ const RELATION_COLOR: Record<string, string> = {
   grandmother: '#d946ef', guardian: '#16a34a', other: '#6b7280',
 }
 
-export const Parents: React.FC = () => {
+interface ParentsProps {
+  params?: {
+    search?: string;
+    tab?: 'info' | 'history';
+  };
+  onNavigate?: (page: string, params?: any) => void;
+}
+
+export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
   const toast = useToast()
   const { data: parents, loading, refetch } = useQuery(getParents)
 
@@ -27,7 +35,29 @@ export const Parents: React.FC = () => {
     setDetail, setDeleteTarget,
   } = useCRUDPage<DbParent>()
 
-  const all = useMemo(() => (parents ?? []), [parents])
+  useEffect(() => {
+    if (params?.search && parents && parents.length > 0) {
+      const q = params.search.toLowerCase()
+      const match = parents.find(p => p.full_name.toLowerCase() === q) || 
+                    parents.find(p => p.full_name.toLowerCase().includes(q))
+      if (match) {
+        setDetail(match)
+      }
+    }
+  }, [params?.search, parents, setDetail])
+
+  const all = useMemo(() => {
+    let list = parents ?? []
+    if (params?.search) {
+      const q = params.search.toLowerCase()
+      list = list.filter(
+        p =>
+          p.full_name.toLowerCase().includes(q) ||
+          (p.student_parents ?? []).some(sp => sp.student?.full_name?.toLowerCase().includes(q))
+      )
+    }
+    return list
+  }, [parents, params])
 
   /* Aggregate stats */
   const totalLinks = useMemo(() => all.reduce((s, p) => s + (p.student_parents?.length ?? 0), 0), [all])
@@ -196,9 +226,10 @@ export const Parents: React.FC = () => {
 
       <ParentDetail
         parent={detailItem}
-        onClose={() => setDetail(null)}
+        onClose={() => { setDetail(null); onNavigate?.('parents', null); }}
         onEdit={openEdit}
         onDelete={setDeleteTarget}
+        defaultTab={params?.tab}
       />
 
       <ParentFormModal

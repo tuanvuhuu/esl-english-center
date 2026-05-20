@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card, Badge } from '../../../components';
-import { REVENUE_MONTHLY } from '../../../data';
 import { MiniAreaChart } from './MiniAreaChart';
 import { MiniBarChart } from './MiniBarChart';
 
@@ -12,18 +11,21 @@ interface AttendDataPoint {
 
 interface RevenueChartProps {
   data?: { month: string; value: number }[];
+  attendanceData?: AttendDataPoint[];
 }
 
-export const RevenueChart: React.FC<RevenueChartProps> = ({ data = [] }) => {
-  const attendData: AttendDataPoint[] = [
-    { label: 'T2', value: 42, highlight: false },
-    { label: 'T3', value: 38, highlight: false },
-    { label: 'T4', value: 45, highlight: false },
-    { label: 'T5', value: 40, highlight: false },
-    { label: 'T6', value: 44, highlight: true },
-    { label: 'T7', value: 52, highlight: true },
-    { label: 'CN', value: 24, highlight: false },
+export const RevenueChart: React.FC<RevenueChartProps> = ({ data = [], attendanceData = [] }) => {
+  const defaultAttendData: AttendDataPoint[] = [
+    { label: 'T2', value: 0, highlight: false },
+    { label: 'T3', value: 0, highlight: false },
+    { label: 'T4', value: 0, highlight: false },
+    { label: 'T5', value: 0, highlight: false },
+    { label: 'T6', value: 0, highlight: false },
+    { label: 'T7', value: 0, highlight: false },
+    { label: 'CN', value: 0, highlight: false },
   ];
+
+  const chartAttendData = attendanceData && attendanceData.length > 0 ? attendanceData : defaultAttendData;
 
   return (
     <Card animate delay={80} style={{ flex: 1 }}>
@@ -42,7 +44,7 @@ export const RevenueChart: React.FC<RevenueChartProps> = ({ data = [] }) => {
       </div>
       <div style={{ marginTop: 20, borderTop: '1px solid var(--border-light)', paddingTop: 16 }}>
         <div style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)', marginBottom: 12 }}>Lượt học theo ngày</div>
-        <MiniBarChart data={attendData} width={420} height={80} />
+        <MiniBarChart data={chartAttendData} width={420} height={80} />
       </div>
     </Card>
   );

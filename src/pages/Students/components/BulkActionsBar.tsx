@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Select, Toast } from '../../../components'
+import { Button, Select } from '../../../components'
 import type { Student } from '../../../types/data'
 import { bulkSoftDeleteStudents, bulkUpdateStudentStatus } from '../../../services/students'
 
@@ -22,7 +22,7 @@ const STATUS_OPTIONS = [
 
 export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   selectedIds,
-  students,
+  students: _students,
   onClearSelection,
   onRefresh,
   isPending,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon } from '../../../components/common/Icon';
+import { Icon, IconName } from '../../../components/common/Icon';
 import { Button } from '../../../components/common/Button';
 import type { DbTestQuestion } from '../../../types/database';
 
@@ -18,13 +18,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onDelete,
   onSaveToBank,
 }) => {
-  const getSkillIcon = (skill: string) => {
+  const getSkillIcon = (skill: string): IconName => {
     switch (skill) {
-      case 'reading': return 'book-open';
-      case 'listening': return 'headphones';
-      case 'speaking': return 'mic';
-      case 'writing': return 'edit-3';
-      default: return 'help-circle';
+      case 'reading': return 'book';
+      case 'listening': return 'bell';
+      case 'speaking': return 'message';
+      case 'writing': return 'edit';
+      default: return 'alert-circle';
     }
   };
 

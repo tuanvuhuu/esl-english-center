@@ -1,5 +1,5 @@
-import React from 'react';
-import { Modal, Avatar, StatusBadge, InfoRow, Button } from '../../../components';
+import React, { useState, useEffect } from 'react';
+import { Modal, Avatar, StatusBadge, InfoRow, Button, Tabs, EntityHistoryTimeline } from '../../../components';
 import { Student } from '../../../types/data';
 
 interface StudentDetailProps {
@@ -7,9 +7,18 @@ interface StudentDetailProps {
   onClose: () => void;
   onEdit?: (student: Student) => void;
   onDelete?: (student: Student) => void;
+  defaultTab?: 'info' | 'history';
 }
 
-export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, onEdit, onDelete }) => {
+export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, onEdit, onDelete, defaultTab = 'info' }) => {
+  const [activeTab, setActiveTab] = useState<'info' | 'history'>('info');
+
+  useEffect(() => {
+    if (student) {
+      setActiveTab(defaultTab);
+    }
+  }, [student, defaultTab]);
+
   return (
     <Modal open={!!student} onClose={onClose} title="Thông tin học viên" width={560}>
       {student && (
@@ -19,7 +28,7 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, 
               display: 'flex',
               alignItems: 'center',
               gap: 16,
-              marginBottom: 24,
+              marginBottom: 20,
               padding: 20,
               background: 'var(--hover-bg)',
               borderRadius: 14,
@@ -36,42 +45,61 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, 
             <StatusBadge status={student.status} />
           </div>
 
-          <div style={{ marginBottom: 20, padding: 16, background: 'var(--hover-bg)', borderRadius: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>Tiến độ khoá học</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>68%</span>
-            </div>
-            <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
-              <div
-                style={{
-                  height: '100%',
-                  width: '68%',
-                  background: 'linear-gradient(90deg, var(--primary), #FF8F65)',
-                  borderRadius: 4,
-                  transition: 'width 0.8s ease',
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: 'var(--text-4)' }}>
-              <span>Bắt đầu: {student.enrollDate}</span>
-              <span>Dự kiến: 30/06/2026</span>
-            </div>
+          <div style={{ marginBottom: 20 }}>
+            <Tabs
+              tabs={[
+                { id: 'info', label: 'Thông tin chung', tooltip: 'Chi tiết hồ sơ học viên' },
+                { id: 'history', label: 'Lịch sử hoạt động', tooltip: 'Nhật ký học tập, đóng phí & thi cử' },
+              ]}
+              active={activeTab}
+              onChange={(t) => setActiveTab(t as 'info' | 'history')}
+            />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <InfoRow icon="book" label="Lớp" value={student.className} />
-            <InfoRow icon="award" label="Trình độ" value={student.level} />
-            <InfoRow icon="user" label="Phụ huynh" value={student.parent} />
-            <InfoRow icon="phone" label="Điện thoại" value={student.phone} />
-            <InfoRow icon="mail" label="Email" value={student.email} />
-            <InfoRow icon="calendar" label="Ngày nhập học" value={student.enrollDate} />
-          </div>
+          {activeTab === 'info' ? (
+            <div>
+              <div style={{ marginBottom: 20, padding: 16, background: 'var(--hover-bg)', borderRadius: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>Tiến độ khoá học</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>68%</span>
+                </div>
+                <div style={{ height: 8, background: 'var(--border)', borderRadius: 4, overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      height: '100%',
+                      width: '68%',
+                      background: 'linear-gradient(90deg, var(--primary), #FF8F65)',
+                      borderRadius: 4,
+                      transition: 'width 0.8s ease',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, fontSize: 11, color: 'var(--text-4)' }}>
+                  <span>Bắt đầu: {student.enrollDate}</span>
+                  <span>Dự kiến: 30/06/2026</span>
+                </div>
+              </div>
 
-          <div style={{ display: 'flex', gap: 10, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
-            <Button icon="edit"    variant="outline"    onClick={() => { onEdit?.(student); onClose(); }}>Chỉnh sửa</Button>
-            <Button icon="message" variant="secondary"  >Nhắn tin</Button>
-            <Button icon="trash"   variant="danger"     onClick={() => { onDelete?.(student); onClose(); }}>Xoá</Button>
-          </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <InfoRow icon="book" label="Lớp" value={student.className} />
+                <InfoRow icon="award" label="Trình độ" value={student.level} />
+                <InfoRow icon="user" label="Phụ huynh" value={student.parent} />
+                <InfoRow icon="phone" label="Điện thoại" value={student.phone} />
+                <InfoRow icon="mail" label="Email" value={student.email} />
+                <InfoRow icon="calendar" label="Ngày nhập học" value={student.enrollDate} />
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
+                <Button icon="edit"    variant="outline"    onClick={() => { onEdit?.(student); onClose(); }}>Chỉnh sửa</Button>
+                <Button icon="message" variant="secondary"  >Nhắn tin</Button>
+                <Button icon="trash"   variant="danger"     onClick={() => { onDelete?.(student); onClose(); }}>Xoá</Button>
+              </div>
+            </div>
+          ) : (
+            <div style={{ maxHeight: 400, overflowY: 'auto', paddingRight: 4 }}>
+              <EntityHistoryTimeline type="student" id={String(student.id)} />
+            </div>
+          )}
         </div>
       )}
     </Modal>

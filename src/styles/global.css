@@ -48,8 +48,8 @@ body {
 
 /* Scrollbar Styling */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -58,12 +58,12 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border);
-  border-radius: 4px;
+  border-radius: 99px;
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-4);
+  background: var(--text-3);
 }
 
 /* Form Elements */
@@ -75,6 +75,22 @@ textarea,
 select {
   font-family: inherit;
   font-size: inherit;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text-1);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-15);
 }
 
 input[type="number"]::-webkit-outer-spin-button,
@@ -91,6 +107,17 @@ input[type="number"] {
 .grid-cell:hover .copy-button {
   opacity: 1 !important;
   pointer-events: auto !important;
+}
+
+/* Glassmorphic Ambient Glow Elements */
+.glow-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 0.5s ease;
 }
 
 /* Responsive */

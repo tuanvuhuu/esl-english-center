@@ -167,3 +167,45 @@ export async function createStudentWithParent(
 
   return newStudent as DbStudent
 }
+
+export async function updateStudentWithParent(
+  studentId: string,
+  studentUpdates: Partial<DbStudent>,
+  parentInfo: Partial<Parent>,
+  relation: StudentParent['relation'] = 'mother'
+) {
+  // Update student
+  const { error: sErr } = await supabase.from('students').update(studentUpdates).eq('id', studentId)
+  if (sErr) throw sErr
+
+  // Find existing parent link
+  const { data: link } = await supabase.from('student_parents').select('id, parent_id').eq('student_id', studentId).eq('is_primary', true).maybeSingle()
+
+  if (parentInfo.id) {
+    // If user selected an existing parent
+    if (link && String(link.parent_id) !== String(parentInfo.id)) {
+      // Remove old link
+      await supabase.from('student_parents').delete().eq('id', link.id)
+      // Create new link
+      await supabase.from('student_parents').insert({ student_id: studentId, parent_id: parentInfo.id, relation, is_primary: true, is_emergency: true })
+    } else if (!link) {
+      await supabase.from('student_parents').insert({ student_id: studentId, parent_id: parentInfo.id, relation, is_primary: true, is_emergency: true })
+    } else {
+      // Link exists and points to the same parent, just update relation
+      await supabase.from('student_parents').update({ relation }).eq('id', link.id)
+      // And update parent info (in case they modified phone/email of existing parent)
+      await supabase.from('parents').update(parentInfo).eq('id', parentInfo.id)
+    }
+  } else {
+    // No parentId provided -> user typed a new name or modified an existing parent's name
+    if (link) {
+      await supabase.from('parents').update(parentInfo).eq('id', link.parent_id)
+      await supabase.from('student_parents').update({ relation }).eq('id', link.id)
+    } else {
+      // Create new parent
+      const { data: newParent, error: pErr } = await supabase.from('parents').insert(parentInfo).select().single()
+      if (pErr) throw pErr
+      await supabase.from('student_parents').insert({ student_id: studentId, parent_id: newParent.id, relation, is_primary: true, is_emergency: true })
+    }
+  }
+}

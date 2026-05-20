@@ -13,9 +13,10 @@ interface HeaderProps {
   title: string;
   onMenuClick?: () => void;
   isMobile: boolean;
+  onNavigate?: (page: string, params?: any) => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) => {
+export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, onNavigate }) => {
   const [searchVal, setSearchVal] = useState('');
   const [showNotif, setShowNotif] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -78,7 +79,10 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
       }}
     >
       {isMobile && (
-        <Button variant="ghost" icon="menu" onClick={onMenuClick} style={{ padding: 4 }} children="" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Button variant="ghost" icon="menu" onClick={onMenuClick} style={{ padding: 4 }} children="" />
+          <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)' }}>{title}</span>
+        </div>
       )}
 
       {/* Search */}
@@ -109,6 +113,10 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
                     <div style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-4)', textTransform: 'uppercase' }}>Giáo viên</div>
                     {results.map(t => (
                       <div key={t.id} style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }} 
+                           onClick={() => {
+                             setSearchVal('');
+                             onNavigate?.('teachers', { teacherId: t.id, search: t.name, tab: 'history' });
+                           }}
                            onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                         <Avatar initials={t.avatar} size={24} color={t.color} />
@@ -131,6 +139,10 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
                     <div style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-4)', textTransform: 'uppercase' }}>Học sinh</div>
                     {results.map(s => (
                       <div key={s.id} style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+                           onClick={() => {
+                             setSearchVal('');
+                             onNavigate?.('students', { studentId: s.id, search: s.name, tab: 'history' });
+                           }}
                            onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                         <Avatar initials={s.avatar} size={24} color="var(--primary)" />
@@ -153,6 +165,10 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
                     <div style={{ padding: '8px 12px', fontSize: 11, fontWeight: 700, color: 'var(--text-4)', textTransform: 'uppercase' }}>Phụ huynh</div>
                     {results.map(s => (
                       <div key={`p-${s.id}`} style={{ padding: '8px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10 }}
+                           onClick={() => {
+                             setSearchVal('');
+                             onNavigate?.('parents', { search: s.parent, tab: 'history' });
+                           }}
                            onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'}
                            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                         <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--hover-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf'
-import type { AttendanceStatus } from '../../services/attendance'
 
 interface ReportRow {
   studentName: string

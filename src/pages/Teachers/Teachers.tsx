@@ -1,5 +1,5 @@
-import React from 'react'
-import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, Modal, InfoRow, Avatar, StatusBadge, ConfirmDialog } from '../../components'
+import React, { useEffect, useState } from 'react'
+import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, Modal, InfoRow, Avatar, StatusBadge, ConfirmDialog, EntityHistoryTimeline } from '../../components'
 import { TeacherTable } from './components/TeacherTable'
 import { TeacherGrid } from './components/TeacherGrid'
 import { TeacherFormModal } from './components/TeacherFormModal'
@@ -9,7 +9,16 @@ import { mapTeacher } from '../../lib/mappers'
 import type { Teacher } from '../../types/data'
 import { useAppContext } from '../../context/AppContext'
 
-export const Teachers: React.FC = () => {
+interface TeachersProps {
+  params?: {
+    search?: string;
+    teacherId?: string;
+    tab?: 'info' | 'history';
+  };
+  onNavigate?: (page: string, params?: any) => void;
+}
+
+export const Teachers: React.FC<TeachersProps> = ({ params, onNavigate }) => {
   const { selectedBranch } = useAppContext()
   const branchId = selectedBranch?.id
   const { data: raw, loading, error, refetch } = useQuery(
@@ -24,6 +33,30 @@ export const Teachers: React.FC = () => {
     openAdd, openEdit, closeForm,
     setDetail, setDeleteTarget,
   } = useCRUDPage<Teacher>({ status: 'all' })
+
+  const [activeTab, setActiveTab] = useState<'info' | 'history'>('info')
+
+  useEffect(() => {
+    if (detailTeacher) {
+      setActiveTab(params?.tab || 'info')
+    }
+  }, [detailTeacher, params?.tab])
+
+  useEffect(() => {
+    if (params?.search) {
+      setSearch(params.search)
+    }
+  }, [params?.search, setSearch])
+
+  useEffect(() => {
+    if ((params?.teacherId || params?.search) && teachers.length) {
+      const match = teachers.find(t => String(t.id) === String(params.teacherId)) ||
+                    teachers.find(t => t.name.toLowerCase() === String(params.search || '').toLowerCase());
+      if (match) {
+        setDetail(match)
+      }
+    }
+  }, [params?.teacherId, params?.search, teachers, setDetail])
 
   const filtered = useListFilter(teachers, search, filters, {
     searchKeys: ['name', (t: Teacher) => t.email ?? '', (t: Teacher) => t.phone ?? ''],
@@ -108,10 +141,10 @@ export const Teachers: React.FC = () => {
         />
       )}
 
-      <Modal open={!!detailTeacher} onClose={() => setDetail(null)} title="Thông tin giáo viên" width={520}>
+      <Modal open={!!detailTeacher} onClose={() => { setDetail(null); onNavigate?.('teachers', null); }} title="Thông tin giáo viên" width={520}>
         {detailTeacher && (
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, padding: 20, background: 'var(--hover-bg)', borderRadius: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20, padding: 20, background: 'var(--hover-bg)', borderRadius: 14 }}>
               <Avatar initials={detailTeacher.avatar || detailTeacher.name[0]} size={56} color={detailTeacher.color} />
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-1)' }}>{detailTeacher.name}</div>
@@ -120,19 +153,39 @@ export const Teachers: React.FC = () => {
               </div>
               <StatusBadge status={detailTeacher.status} />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-              <InfoRow icon="phone"    label="Điện thoại" value={detailTeacher.phone    || '—'} />
-              <InfoRow icon="mail"     label="Email"      value={detailTeacher.email    || '—'} />
-              <InfoRow icon="calendar" label="Ngày vào"   value={detailTeacher.joinDate || '—'} />
-              <InfoRow icon="award"    label="Chuyên môn" value={detailTeacher.subjects?.join(', ') || '—'} />
-              <div style={{ gridColumn: '1/-1' }}>
-                <InfoRow icon="building" label="Cơ sở"      value={detailTeacher.branches?.join(', ') || '—'} />
+
+            <div style={{ marginBottom: 20 }}>
+              <Tabs
+                tabs={[
+                  { id: 'info', label: 'Thông tin chung', tooltip: 'Chi tiết hồ sơ giáo viên' },
+                  { id: 'history', label: 'Lịch sử giảng dạy', tooltip: 'Nhật ký phân lớp & giảng dạy' },
+                ]}
+                active={activeTab}
+                onChange={(t) => setActiveTab(t as 'info' | 'history')}
+              />
+            </div>
+
+            {activeTab === 'info' ? (
+              <div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                  <InfoRow icon="phone"    label="Điện thoại" value={detailTeacher.phone    || '—'} />
+                  <InfoRow icon="mail"     label="Email"      value={detailTeacher.email    || '—'} />
+                  <InfoRow icon="calendar" label="Ngày vào"   value={detailTeacher.joinDate || '—'} />
+                  <InfoRow icon="award"    label="Chuyên môn" value={detailTeacher.subjects?.join(', ') || '—'} />
+                  <div style={{ gridColumn: '1/-1' }}>
+                    <InfoRow icon="building" label="Cơ sở"      value={detailTeacher.branches?.join(', ') || '—'} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
+                  <Button icon="edit"  variant="outline" onClick={() => openEdit(detailTeacher)}>Chỉnh sửa</Button>
+                  <Button icon="trash" variant="danger"  onClick={() => setDeleteTarget(detailTeacher)}>Xoá</Button>
+                </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
-              <Button icon="edit"  variant="outline" onClick={() => openEdit(detailTeacher)}>Chỉnh sửa</Button>
-              <Button icon="trash" variant="danger"  onClick={() => setDeleteTarget(detailTeacher)}>Xoá</Button>
-            </div>
+            ) : (
+              <div style={{ maxHeight: 360, overflowY: 'auto', paddingRight: 4 }}>
+                <EntityHistoryTimeline type="teacher" id={String(detailTeacher.id)} />
+              </div>
+            )}
           </div>
         )}
       </Modal>

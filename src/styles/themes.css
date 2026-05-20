@@ -1,70 +1,70 @@
 /* Light Theme (default) */
 :root[data-theme="light"],
 :root:not([data-theme]) {
-  --bg: #FAFAF9;
+  --bg: #F8F9FA;
   --card: #FFFFFF;
-  --text-1: #1C1917;
-  --text-2: #44403C;
-  --text-3: #78716C;
-  --text-4: #A8A29E;
+  --text-1: #0F172A;
+  --text-2: #334155;
+  --text-3: #64748B;
+  --text-4: #94A3B8;
 
   --header: #FFFFFF;
-  --header-border: #E7E5E4;
+  --header-border: #F1F5F9;
   --sidebar: #FFFFFF;
-  --sidebar-text: #1C1917;
-  --sidebar-text-sub: #78716C;
-  --sidebar-hover: rgba(255, 107, 53, 0.08);
-  --sidebar-border: #E7E5E4;
+  --sidebar-text: #0F172A;
+  --sidebar-text-sub: #64748B;
+  --sidebar-hover: rgba(255, 107, 53, 0.06);
+  --sidebar-border: #F1F5F9;
 
   --input-bg: #FFFFFF;
-  --input-bg-subtle: #F5F5F4;
+  --input-bg-subtle: #F8FAFC;
 
-  --border: #D6D3D1;
-  --border-light: #E7E5E4;
+  --border: #E2E8F0;
+  --border-light: #F1F5F9;
 
-  --table-header: #F5F5F4;
-  --table-row-hover: #F5F5F4;
+  --table-header: #F8FAFC;
+  --table-row-hover: #F1F5F9;
 
-  --hover-bg: #F5F5F4;
+  --hover-bg: #F1F5F9;
 
-  --badge-bg: #EBE9E7;
-  --badge-color: #5F5D5B;
+  --badge-bg: #E2E8F0;
+  --badge-color: #475569;
 
-  --activity-warm: #FFFBF0;
+  --activity-warm: #FFFBEB;
 }
 
 /* Dark Theme */
 :root[data-theme="dark"] {
-  --bg: #0C0B0A;
-  --card: #1C1917;
-  --text-1: #FAFAF9;
-  --text-2: #D6D3D1;
-  --text-3: #A8A29E;
-  --text-4: #78716C;
+  --bg: #09090B;
+  --card: #18181B;
+  --text-1: #F4F4F5;
+  --text-2: #D4D4D8;
+  --text-3: #A1A1AA;
+  --text-4: #71717A;
 
-  --header: #1C1917;
-  --header-border: #292520;
-  --sidebar: #16120F;
-  --sidebar-text: #FAFAF9;
-  --sidebar-text-sub: rgba(255, 255, 255, 0.4);
-  --sidebar-hover: rgba(255, 107, 53, 0.15);
-  --sidebar-border: rgba(255, 255, 255, 0.05);
+  --header: #18181B;
+  --header-border: #27272A;
+  --sidebar: #0E0E11;
+  --sidebar-text: #F4F4F5;
+  --sidebar-text-sub: rgba(244, 244, 245, 0.45);
+  --sidebar-hover: rgba(255, 107, 53, 0.12);
+  --sidebar-border: rgba(255, 255, 255, 0.04);
 
-  --input-bg: #292520;
-  --input-bg-subtle: #44403C;
+  --input-bg: #27272A;
+  --input-bg-subtle: #3F3F46;
 
-  --border: #44403C;
-  --border-light: #3F3C3A;
+  --border: #3F3F46;
+  --border-light: #27272A;
 
-  --table-header: #292520;
-  --table-row-hover: #292520;
+  --table-header: #27272A;
+  --table-row-hover: #27272A;
 
-  --hover-bg: #292520;
+  --hover-bg: #27272A;
 
-  --badge-bg: #44403C;
-  --badge-color: #D6D3D1;
+  --badge-bg: #3F3F46;
+  --badge-color: #E4E4E7;
 
-  --activity-warm: #291C15;
+  --activity-warm: #2E1A11;
 }
 
 /* Glassmorphism support when background image is present */

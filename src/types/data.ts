@@ -2,6 +2,7 @@ export interface Student {
   id: string | number;
   name: string;
   parent: string;
+  parentId?: string;
   phone: string;
   level: string;
   status: 'active' | 'trial' | 'paused' | 'inactive';

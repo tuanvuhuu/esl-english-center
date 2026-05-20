@@ -115,7 +115,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
           audio_url: null,
           order_index: questions.length,
           explanation: g.explanation || null
-        });
+        } as any);
 
         if (g.options && g.options.length > 0) {
           await upsertQuestionOptions(q.id, g.options.map((o, idx) => ({
@@ -148,7 +148,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
           audio_url: null,
           order_index: questions.length,
           explanation: p.explanation || null
-        });
+        } as any);
 
         if (p.options && p.options.length > 0) {
           await upsertQuestionOptions(q.id, p.options.map((o, idx) => ({
@@ -174,7 +174,6 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
       onClose={onClose}
       title={test ? `Quản lý câu hỏi: ${test.name}` : "Quản lý câu hỏi"}
       width={1100}
-      fullScreen={false}
     >
       {/* Tab toggle */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
@@ -263,7 +262,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
               <EmptyState 
                 title="Chưa có câu hỏi nào" 
                 desc="Hãy bắt đầu bằng cách thêm câu hỏi thủ công hoặc sử dụng gợi ý từ AI."
-                icon="help-circle"
+                icon="alert-circle"
               />
             ) : (
               questions.map((q, i) => (

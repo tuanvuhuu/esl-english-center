@@ -12,9 +12,10 @@ interface SelectProps {
   options: (string | Option)[];
   required?: boolean;
   style?: React.CSSProperties;
+  disabled?: boolean;
 }
 
-export const Select: React.FC<SelectProps> = ({ label, value, onChange, options, required, style = {} }) => (
+export const Select: React.FC<SelectProps> = ({ label, value, onChange, options, required, style = {}, disabled }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
     {label && (
       <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)' }}>
@@ -25,6 +26,7 @@ export const Select: React.FC<SelectProps> = ({ label, value, onChange, options,
     <select 
       value={value} 
       onChange={e => onChange(e.target.value)}
+      disabled={disabled}
       style={{
         width: '100%', 
         height: 30,

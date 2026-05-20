@@ -93,7 +93,7 @@ export const ImportScoresModal: React.FC<Props> = ({ open, onClose, test, rows, 
           speaking:  speakingKey  ? parseNum(row[speakingKey])  : null,
           writing:   writingKey   ? parseNum(row[writingKey])   : null,
           matchedStudentId: matchedId,
-          status: matchedId ? 'matched' : 'no-match',
+          status: (matchedId ? 'matched' : 'no-match') as 'matched' | 'no-match',
         }
       }).filter(r => r.name)
 

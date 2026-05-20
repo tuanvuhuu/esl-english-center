@@ -43,9 +43,7 @@ export const SelectBoxMultiple: React.FC<SelectBoxMultipleProps> = ({
     onChange(newValue);
   };
 
-  const selectedLabels = options
-    .filter((o) => value.includes(o.value))
-    .map((o) => o.label);
+
 
   return (
     <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: 6, position: 'relative', ...style }}>

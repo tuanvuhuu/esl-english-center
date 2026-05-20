@@ -72,15 +72,72 @@ const IndeterminateCheckbox: React.FC<{
     if (ref.current) ref.current.indeterminate = Boolean(indeterminate)
   }, [indeterminate])
   return (
-    <input
-      ref={ref}
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      onClick={onClick}
-      disabled={disabled}
-      style={{ cursor: disabled ? 'not-allowed' : 'pointer', accentColor: 'var(--primary)', width: 14, height: 14 }}
-    />
+    <div style={{
+      position: 'relative',
+      width: 16,
+      height: 16,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: disabled ? 'not-allowed' : 'pointer',
+    }}>
+      <input
+        ref={ref}
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        onClick={onClick}
+        disabled={disabled}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          opacity: 0,
+          cursor: 'inherit',
+          margin: 0,
+          zIndex: 2,
+        }}
+      />
+      <div style={{
+        width: 16,
+        height: 16,
+        borderRadius: 4,
+        border: `1.5px solid ${checked || indeterminate ? 'var(--primary)' : 'var(--border)'}`,
+        background: checked || indeterminate ? 'var(--primary)' : 'transparent',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        transition: 'all 0.15s ease',
+        boxSizing: 'border-box',
+        color: '#ffffff',
+        opacity: disabled ? 0.5 : 1,
+        zIndex: 1,
+      }}>
+        {checked && !indeterminate && (
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ width: 10, height: 10 }}
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+        )}
+        {indeterminate && (
+          <div style={{
+            width: 8,
+            height: 2,
+            background: '#ffffff',
+            borderRadius: 1,
+          }} />
+        )}
+      </div>
+    </div>
   )
 }
 
