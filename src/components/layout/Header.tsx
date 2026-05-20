@@ -242,7 +242,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
                       background: bg ? `url(${bg}) center/cover` : 'var(--hover-bg)',
                       border: bgImage === bg ? '2px solid var(--primary)' : '1px solid var(--border)',
                       transition: 'all 0.15s',
-                      boxShadow: bgImage === bg ? '0 0 0 2px rgba(255,107,53,0.1)' : 'none',
+                      boxShadow: bgImage === bg ? `0 0 0 2px var(--primary-15)` : 'none',
                     }}
                   />
                 ))}
@@ -259,10 +259,11 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile }) 
                     style={{
                       width: 26, height: 26, borderRadius: 6, cursor: 'pointer',
                       background: c,
-                      border: primaryColor === c ? '2px solid #fff' : 'none',
+                      border: primaryColor === c ? '2px solid var(--card)' : 'none',
                       outline: primaryColor === c ? `2px solid ${c}` : 'none',
                       transition: 'all 0.15s',
                       transform: primaryColor === c ? 'scale(1.1)' : 'scale(1)',
+                      boxShadow: primaryColor === c ? `0 0 0 1px var(--border)` : 'none',
                     }}
                   />
                 ))}

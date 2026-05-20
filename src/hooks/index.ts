@@ -9,3 +9,4 @@ export type { CRUDState, CRUDAction } from './useCRUDPage';
 export { useListFilter } from './useListFilter';
 export type { ListFilterConfig } from './useListFilter';
 export { useEntityDelete } from './useEntityDelete';
+export { useBulkActions } from './useBulkActions';

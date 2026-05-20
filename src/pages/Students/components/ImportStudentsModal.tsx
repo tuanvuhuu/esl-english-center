@@ -38,6 +38,7 @@ interface ParsedRow {
   rowStatus: RowStatus
   duplicateOf: { id?: string; name: string } | null
   selected: boolean
+  forceImport: boolean
 }
 
 /* ─── Helpers ─── */
@@ -138,6 +139,7 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<{ ok: number; failed: number }>({ ok: 0, failed: 0 })
   const [dragOver, setDragOver] = useState(false)
+  const [filterTab, setFilterTab] = useState<'all' | 'valid' | 'errors' | 'duplicates'>('all')
   const inputRef = useRef<HTMLInputElement>(null)
 
   /* DB duplicate maps */
@@ -287,6 +289,7 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
           parent_name, parent_phone, parent_email, parent_relation, parent_address,
           errors, rowStatus, duplicateOf,
           selected: rowStatus === 'ok',
+          forceImport: false,
         }
       })
 
@@ -328,7 +331,7 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
   }
 
   const handleImport = async () => {
-    const toImport = rows.filter(r => r.selected && r.rowStatus === 'ok')
+    const toImport = rows.filter(r => r.selected && (r.rowStatus === 'ok' || (r.rowStatus === 'duplicate-db' && r.forceImport)))
     if (toImport.length === 0) { setError('Không có dòng nào được chọn để import'); return }
 
     setImporting(true)
@@ -395,6 +398,15 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
   const errorCount    = rows.filter(r => r.rowStatus === 'error').length
   const selectedCount = rows.filter(r => r.selected).length
   const withParentCount = rows.filter(r => r.selected && r.parent_name && r.parent_phone).length
+
+  /* Filtered rows for display */
+  const displayedRows = rows.filter(r => {
+    if (filterTab === 'all') return true
+    if (filterTab === 'valid') return r.rowStatus === 'ok'
+    if (filterTab === 'errors') return r.rowStatus === 'error'
+    if (filterTab === 'duplicates') return r.rowStatus === 'duplicate-db' || r.rowStatus === 'duplicate-file'
+    return true
+  })
 
   /* ─── Render ─── */
   return (
@@ -508,14 +520,47 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
             {withParentCount > 0 && <Badge variant="info">{withParentCount} có PH</Badge>}
           </div>
 
+          <div style={{ display: 'flex', gap: 4, marginBottom: 12, borderBottom: '1px solid var(--border)' }}>
+            {(['all', 'valid', 'errors', 'duplicates'] as const).map(tab => {
+              let count = 0
+              if (tab === 'all') count = rows.length
+              else if (tab === 'valid') count = validCount
+              else if (tab === 'errors') count = errorCount
+              else if (tab === 'duplicates') count = dupDbCount + dupFileCount
+              const isActive = filterTab === tab
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setFilterTab(tab)}
+                  style={{
+                    padding: '8px 12px', fontSize: 12, border: 'none',
+                    background: 'transparent', cursor: 'pointer',
+                    color: isActive ? 'var(--primary)' : 'var(--text-3)',
+                    fontWeight: isActive ? 600 : 400,
+                    borderBottom: isActive ? '2px solid var(--primary)' : 'none',
+                    marginBottom: -1,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {tab === 'all' && `Tất cả (${count})`}
+                  {tab === 'valid' && `Hợp lệ (${count})`}
+                  {tab === 'errors' && `Lỗi (${count})`}
+                  {tab === 'duplicates' && `Trùng lặp (${count})`}
+                </button>
+              )
+            })}
+          </div>
+
           <div style={{ maxHeight: 400, overflow: 'auto', border: '1px solid var(--border)', borderRadius: 9 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead style={{ position: 'sticky', top: 0, background: 'var(--hover-bg)', zIndex: 1 }}>
                 <tr>
                   <th style={th(36)}>
                     <input type="checkbox"
-                      checked={rows.length > 0 && rows.every(r => r.selected || r.rowStatus !== 'ok')}
-                      onChange={e => setRows(rs => rs.map(r => ({ ...r, selected: e.target.checked && r.rowStatus === 'ok' })))}
+                      checked={displayedRows.length > 0 && displayedRows.every(r => r.selected || (r.rowStatus !== 'ok' && !(r.rowStatus === 'duplicate-db' && r.forceImport)))}
+                      onChange={e => setRows(rs => rs.map(r =>
+                        displayedRows.includes(r) ? { ...r, selected: e.target.checked && (r.rowStatus === 'ok' || (r.rowStatus === 'duplicate-db' && r.forceImport)) } : r
+                      ))}
                     />
                   </th>
                   <th style={th(40)}>#</th>
@@ -526,20 +571,23 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
                   <th style={th(180)}>Phụ huynh</th>
                   <th style={th(110)}>SĐT PH</th>
                   <th style={th(70)}>Quan hệ</th>
+                  <th style={th(80)}>Ghi đè</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => {
+                {displayedRows.map((r, i) => {
+                  const rowIndex = rows.indexOf(r)
                   const bg = r.rowStatus === 'error' ? 'rgba(239,68,68,0.06)'
                     : r.rowStatus === 'duplicate-db'   ? 'rgba(245,158,11,0.06)'
                     : r.rowStatus === 'duplicate-file' ? 'rgba(245,158,11,0.04)'
                     : 'transparent'
+                  const canSelect = r.rowStatus === 'ok' || (r.rowStatus === 'duplicate-db' && r.forceImport)
                   return (
                     <tr key={i} style={{ background: bg, borderBottom: '1px solid var(--border-light)' }}>
                       <td style={td()}>
-                        <input type="checkbox" checked={r.selected} disabled={r.rowStatus !== 'ok'}
-                          onChange={e => setRows(rs => rs.map((x, idx) => idx === i ? { ...x, selected: e.target.checked } : x))}
-                          title={r.rowStatus !== 'ok' ? 'Dòng không hợp lệ, không thể import' : undefined}
+                        <input type="checkbox" checked={r.selected} disabled={!canSelect}
+                          onChange={e => setRows(rs => rs.map((x, idx) => idx === rowIndex ? { ...x, selected: e.target.checked } : x))}
+                          title={!canSelect ? 'Dòng không hợp lệ hoặc chưa ghi đè duplicate' : undefined}
                         />
                       </td>
                       <td style={{ ...td(), color: 'var(--text-4)' }}>{r.rowIdx}</td>
@@ -595,6 +643,18 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
                       <td style={td()}>
                         {r.parent_name ? (
                           <Badge style={{ fontSize: 10, padding: '1px 7px' }}>{RELATION_LABEL[r.parent_relation]}</Badge>
+                        ) : '—'}
+                      </td>
+                      <td style={td()}>
+                        {r.rowStatus === 'duplicate-db' ? (
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                            <input
+                              type="checkbox"
+                              checked={r.forceImport}
+                              onChange={e => setRows(rs => rs.map((x, idx) => idx === rowIndex ? { ...x, forceImport: e.target.checked, selected: e.target.checked ? true : r.selected } : x))}
+                            />
+                            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>Ghi đè</span>
+                          </label>
                         ) : '—'}
                       </td>
                     </tr>

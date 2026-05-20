@@ -77,6 +77,38 @@ export async function softDeleteStudent(id: string) {
   if (error) throw error
 }
 
+export async function updateStudentStatus(id: string, status: DbStudent['status']) {
+  const { data, error } = await supabase
+    .from('students')
+    .update({ status })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as DbStudent
+}
+
+export async function bulkSoftDeleteStudents(ids: string[]) {
+  if (ids.length === 0) return
+  const { error } = await supabase
+    .from('students')
+    .update({ is_deleted: true })
+    .in('id', ids)
+
+  if (error) throw error
+}
+
+export async function bulkUpdateStudentStatus(ids: string[], status: DbStudent['status']) {
+  if (ids.length === 0) return
+  const { error } = await supabase
+    .from('students')
+    .update({ status })
+    .in('id', ids)
+
+  if (error) throw error
+}
+
 /**
  * Liên kết HV với 1 chi nhánh + năm học (bảng student_academic_records).
  * Cần thiết để HV xuất hiện khi filter theo branch/year ở `getStudents`.

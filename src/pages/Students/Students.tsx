@@ -8,7 +8,7 @@ import { ImportStudentsModal } from './components/ImportStudentsModal'
 import type { Student } from '../../types/data'
 import { useQuery } from '../../hooks'
 import { useCRUDPage, useListFilter, useEntityDelete } from '../../hooks'
-import { getStudents, softDeleteStudent } from '../../services'
+import { getStudents, softDeleteStudent, bulkSoftDeleteStudents } from '../../services'
 import { mapStudent } from '../../lib/mappers'
 import { useAppContext } from '../../context/AppContext'
 
@@ -45,6 +45,7 @@ export const Students: React.FC = () => {
   const activeCount = students.filter(s => s.status === 'active').length
 
   const [showImport, setShowImport] = useState(false)
+  const [selectedStudents, setSelectedStudents] = useState<Student[]>([])
 
   const importBtn = (
     <Button size="sm" variant="outline" icon="upload" onClick={() => setShowImport(true)}>
@@ -61,6 +62,35 @@ export const Students: React.FC = () => {
       active={viewMode}
       onChange={v => setViewMode(v as 'table' | 'grid')}
     />
+  )
+
+  const tableActions = selectedStudents.length > 0 ? (
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+      <Button
+        size="sm"
+        variant="outline"
+        icon="trash"
+        onClick={() => {
+          if (confirm(`Xoá ${selectedStudents.length} học viên?`)) {
+            bulkSoftDeleteStudents(selectedStudents.map(s => s.id))
+              .then(() => {
+                setSelectedStudents([])
+                refetch()
+              })
+              .catch((err) => {
+                console.error('Bulk delete failed:', err)
+              })
+          }
+        }}
+      >
+        Xoá
+      </Button>
+      {viewTabs}
+    </div>
+  ) : (
+    <div style={{ display: 'flex', gap: 8 }}>
+      {viewTabs}
+    </div>
   )
 
   return (
@@ -111,17 +141,21 @@ export const Students: React.FC = () => {
       {error ? (
         <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
       ) : viewMode === 'table' ? (
-        <StudentTable
-          students={students}
-          subtitle={`${students.length} học viên · ${activeCount} đang học`}
-          onSelectStudent={setDetail}
-          onEdit={openEdit}
-          onDelete={setDeleteTarget}
-          actions={<>{importBtn}{viewTabs}</>}
-          onAdd={openAdd}
-          onRefresh={refetch}
-          loading={loading}
-        />
+        <div style={{ position: 'relative' }}>
+          <StudentTable
+            students={students}
+            subtitle={`${students.length} học viên · ${activeCount} đang học`}
+            onSelectStudent={setDetail}
+            onEdit={openEdit}
+            onDelete={setDeleteTarget}
+            enableRowSelection={true}
+            onSelectionChange={setSelectedStudents}
+            actions={tableActions}
+            onAdd={openAdd}
+            onRefresh={refetch}
+            loading={loading}
+          />
+        </div>
       ) : loading ? (
         <LoadingSpinner />
       ) : (

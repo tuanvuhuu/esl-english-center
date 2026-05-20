@@ -1,5 +1,5 @@
 import React from 'react'
-import { DataGrid, Avatar, Badge, StatusBadge, Icon, TextWithEllipse } from '../../../components'
+import { DataGrid, Avatar, Badge, Icon, TextWithEllipse } from '../../../components'
 import type { DataGridColumn } from '../../../components'
 import type { Student } from '../../../types/data'
 
@@ -8,6 +8,8 @@ interface StudentTableProps {
   onSelectStudent: (s: Student) => void
   onEdit?: (s: Student) => void
   onDelete?: (s: Student) => void
+  onSelectionChange?: (selected: Student[]) => void
+  enableRowSelection?: boolean
   actions?: React.ReactNode
   subtitle?: string
   onAdd?: () => void
@@ -16,12 +18,13 @@ interface StudentTableProps {
 }
 
 export const StudentTable: React.FC<StudentTableProps> = ({
-  students, onSelectStudent, onEdit, onDelete, actions, subtitle, onAdd, onRefresh, loading,
+  students, onSelectStudent, onEdit, onDelete, onSelectionChange, enableRowSelection, actions, subtitle, onAdd, onRefresh, loading,
 }) => {
   const columns: DataGridColumn<Student>[] = [
     {
       key: 'name',
       title: 'Học viên',
+      sortable: true,
       filterable: true,
       isAllowCopy: true,
       filterValue: s => s.name + ' ' + (s.parent ?? ''),
@@ -30,7 +33,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({
           <Avatar initials={s.avatar || s.name[0]} size={32} />
           <div style={{ minWidth: 0 }}>
             <TextWithEllipse text={s.name} style={{ fontWeight: 600, color: 'var(--text-1)' }} />
-            <TextWithEllipse text={s.enrollDate ? `Nhập học: ${s.enrollDate}` : `#${String(s.id).slice(0, 6)}`} style={{ fontSize: 11, color: 'var(--text-4)' }} />
+            <TextWithEllipse text={s.enrollDate ? `Ngày nhập học: ${s.enrollDate}` : `#${String(s.id).slice(0, 6)}`} style={{ fontSize: 11, color: 'var(--text-4)' }} />
           </div>
         </div>
       ),
@@ -38,12 +41,14 @@ export const StudentTable: React.FC<StudentTableProps> = ({
     {
       key: 'dob',
       title: 'Ngày sinh',
+      sortable: true,
       filterable: true,
       isAllowCopy: true,
     },
     {
       key: 'level',
       title: 'Trình độ',
+      sortable: true,
       filterable: true,
       isAllowCopy: true,
       filterType: 'select',
@@ -58,14 +63,16 @@ export const StudentTable: React.FC<StudentTableProps> = ({
     {
       key: 'parent',
       title: 'Phụ huynh',
+      sortable: true,
       filterable: true,
       isAllowCopy: true,
       render: s => <TextWithEllipse text={s.parent || '—'} style={{ color: 'var(--text-2)' }} />,
     },
-    { key: 'phone', title: 'SĐT', noWrap: true, isAllowCopy: true },
+    { key: 'phone', title: 'SĐT', sortable: true, noWrap: true, isAllowCopy: true },
     {
       key: 'status',
       title: 'Trạng thái',
+      sortable: true,
       filterable: true,
       isAllowCopy: true,
       filterType: 'select',
@@ -75,11 +82,20 @@ export const StudentTable: React.FC<StudentTableProps> = ({
         { value: 'paused', label: 'Tạm nghỉ' },
         { value: 'inactive', label: 'Nghỉ học' },
       ],
-      render: s => <StatusBadge status={s.status} />,
+      render: s => {
+        const statusMap: Record<string, string> = {
+          active: 'Đang học',
+          trial: 'Học thử',
+          paused: 'Tạm nghỉ',
+          inactive: 'Nghỉ học',
+        }
+        return <Badge variant="primary">{statusMap[s.status] || s.status}</Badge>
+      },
     },
     {
       key: '_actions',
       title: '',
+      sortable: false,
       width: 72,
       render: s => (
         <div style={{ display: 'flex', gap: 4 }}>
@@ -120,6 +136,8 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       addLabel="Thêm học viên"
       onRefresh={onRefresh}
       loading={loading}
+      enableRowSelection={enableRowSelection}
+      onSelectionChange={onSelectionChange}
     />
   )
 }
