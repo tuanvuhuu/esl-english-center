@@ -55,7 +55,7 @@ export async function getClassById(id: string) {
     .from('classes')
     .select(`
       *,
-      teacher: teachers ( * ),
+      teacher: teachers!teacher_id ( * ),
       room: rooms ( * ),
       class_schedules ( * ),
       enrollments (

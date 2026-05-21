@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Avatar, Badge, Icon, Button, LoadingSpinner, useToast } from '../../../components'
-import { getEnrollmentsByClass, getStudentsNotInClass, createEnrollment, removeEnrollment } from '../../../services'
+import { Avatar, Badge, Icon, Button, LoadingSpinner, useToast, useConfirm } from '../../../components'
+import { getEnrollmentsByClass, getStudentsNotInClass, createEnrollment, removeEnrollment, notify } from '../../../services'
 
 const LVL_COLOR: Record<string, string> = { A1: '#FF6B35', A2: '#3B82F6', B1: '#10B981', B2: '#8B5CF6' }
 
@@ -16,6 +16,7 @@ interface ClassStudentsPanelProps {
 
 export const ClassStudentsPanel: React.FC<ClassStudentsPanelProps> = ({ classId, maxStudents, onSuccess }) => {
   const toast = useToast()
+  const confirm = useConfirm()
   const [enrollments, setEnrollments] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddPanel, setShowAddPanel] = useState(false)
@@ -56,6 +57,7 @@ export const ClassStudentsPanel: React.FC<ClassStudentsPanelProps> = ({ classId,
     try {
       await createEnrollment(student.id, classId)
       toast.success(`Đã thêm ${student.full_name} vào lớp`)
+      notify('Đăng ký lớp', `Học viên ${student.full_name} đã được thêm vào lớp`, 'info', { entityType: 'enrollment' })
       setAvailableStudents(prev => prev.filter(s => s.id !== student.id))
       await fetchEnrollments()
       onSuccess?.()
@@ -67,11 +69,18 @@ export const ClassStudentsPanel: React.FC<ClassStudentsPanelProps> = ({ classId,
   }
 
   const handleRemove = async (enrollment: any) => {
-    if (!confirm(`Bỏ ${enrollment.student?.full_name} khỏi lớp?`)) return
+    const ok = await confirm({
+      title: 'Xác nhận xóa khỏi lớp',
+      message: `Bỏ ${enrollment.student?.full_name} khỏi lớp?`,
+      confirmLabel: 'Xác nhận',
+      variant: 'danger',
+    })
+    if (!ok) return
     setRemoving(enrollment.id)
     try {
       await removeEnrollment(enrollment.id)
       toast.success(`Đã bỏ ${enrollment.student?.full_name} khỏi lớp`)
+      notify('Huỷ đăng ký lớp', `Học viên ${enrollment.student?.full_name} đã được bỏ khỏi lớp`, 'warning', { entityType: 'enrollment' })
       setEnrollments(prev => prev.filter(e => e.id !== enrollment.id))
       setAvailableStudents(prev => enrollment.student ? [...prev, enrollment.student] : prev)
       onSuccess?.()

@@ -243,7 +243,7 @@ export const getTodayClasses = async (filters?: { branchId?: string; yearId?: st
         is_deleted,
         branch_id,
         academic_year_id,
-        teacher: teachers ( full_name ),
+        teacher: teachers!teacher_id ( full_name ),
         room: rooms ( name ),
         enrollments ( id )
       )

@@ -42,6 +42,10 @@ export function mapStudent(s: DbStudent): Student {
     parentRelation: primaryParent?.relation ?? undefined,
     attendanceRate: (s as any).attendanceRate,
     absenceCount: (s as any).absenceCount,
+    className: (s as any).className ?? undefined,
+    enrolledDate: (s as any).enrolledDate ? formatDate((s as any).enrolledDate) : undefined,
+    totalSessions: (s as any).totalSessions ?? undefined,
+    remainingSessions: (s as any).remainingSessions ?? undefined,
   }
 }
 
@@ -95,6 +99,7 @@ export function mapClass(c: DbClass): Class {
 export function mapPayment(p: DbPayment): Payment {
   return {
     id: p.id,
+    code: p.code ?? undefined,
     student: p.student?.full_name ?? '',
     amount: p.amount,
     date: p.payment_date ? formatDate(p.payment_date) : formatDate(p.due_date),
@@ -123,6 +128,8 @@ export function mapNotification(n: DbNotification): Notification {
     time: formatRelativeTime(n.created_at),
     type: n.type,
     read: n.is_read,
+    entityType: n.entity_type,
+    entityId: n.entity_id,
   }
 }
 

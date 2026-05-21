@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Input, Select, Button, useToast } from '../../components'
-import { createRoom, updateRoom, getBranches } from '../../services'
+import { createRoom, updateRoom, getBranches, notify } from '../../services'
 import { useQuery } from '../../hooks'
 import type { Room } from '../../types/data'
 
@@ -79,6 +79,12 @@ export const RoomFormModal: React.FC<RoomFormModalProps> = ({ open, onClose, onS
         await createRoom(payload)
       }
       toast.success(isEdit ? 'Cập nhật phòng học thành công' : 'Thêm phòng học thành công')
+      notify(
+        isEdit ? 'Cập nhật phòng học' : 'Thêm phòng học mới',
+        isEdit ? `Đã cập nhật phòng ${form.name}` : `Phòng ${form.name} đã được thêm`,
+        'info',
+        { entityType: 'room' }
+      )
       onSuccess()
       onClose()
     } catch (e: any) {

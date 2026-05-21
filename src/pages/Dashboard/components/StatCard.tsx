@@ -27,17 +27,17 @@ export const StatCard: React.FC<StatCardProps> = ({
 
   const iconColors: Record<string, string> = {
     users: 'var(--primary)',
-    book: 'var(--info)',
-    wallet: 'var(--success)',
-    graduation: '#7E3AF2',
+    book: 'var(--info-dark)',
+    wallet: 'var(--success-dark)',
+    graduation: 'var(--academic-dark)',
   };
   const iconColor = iconColors[icon] || 'var(--primary)';
 
   const cardGlows: Record<string, string> = {
-    users: 'rgba(46, 91, 255, 0.05)',
-    book: 'rgba(0, 196, 140, 0.05)',
-    wallet: 'rgba(16, 185, 129, 0.05)',
-    graduation: 'rgba(126, 58, 242, 0.05)',
+    users: 'var(--primary-light)',
+    book: 'var(--info-light)',
+    wallet: 'var(--success-light)',
+    graduation: 'var(--academic-light)',
   };
   const hoverGlow = cardGlows[icon] || 'rgba(46, 91, 255, 0.05)';
 

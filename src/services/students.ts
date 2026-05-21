@@ -1,6 +1,32 @@
 import { supabase } from '../lib/supabase'
 import type { DbStudent, Parent, StudentParent } from '../types/database'
 
+export interface AttendanceDeductionPolicy {
+  present: boolean
+  late: boolean
+  absent: boolean
+  excused: boolean
+}
+
+export const DEFAULT_ATTENDANCE_POLICY: AttendanceDeductionPolicy = {
+  present: true,
+  late: true,
+  absent: true,
+  excused: true,
+}
+
+export function getAttendancePolicy(): AttendanceDeductionPolicy {
+  try {
+    const raw = localStorage.getItem('attendance_deduction_policy')
+    if (raw) {
+      return { ...DEFAULT_ATTENDANCE_POLICY, ...JSON.parse(raw) }
+    }
+  } catch (e) {
+    console.error('Failed to parse attendance policy', e)
+  }
+  return DEFAULT_ATTENDANCE_POLICY
+}
+
 export async function getStudents(filters?: { branchId?: string; yearId?: string }) {
   const hasFilter = filters?.branchId || filters?.yearId
 
@@ -8,8 +34,8 @@ export async function getStudents(filters?: { branchId?: string; yearId?: string
   // The cast is needed because Supabase TS parser can't resolve conditional select strings
   let query: any = supabase.from('students').select(
     hasFilter
-      ? `*, student_parents ( id, relation, is_primary, is_emergency, parent: parents ( id, full_name, phone, phone_secondary, email, address ) ), student_academic_records!inner ( branch_id, academic_year_id )`
-      : `*, student_parents ( id, relation, is_primary, is_emergency, parent: parents ( id, full_name, phone, phone_secondary, email, address ) )`
+      ? `*, student_parents ( id, relation, is_primary, is_emergency, parent: parents ( id, full_name, phone, phone_secondary, email, address ) ), student_academic_records!inner ( branch_id, academic_year_id ), enrollments ( id, status, enrolled_date, is_deleted, class: classes ( id, name, total_sessions ) )`
+      : `*, student_parents ( id, relation, is_primary, is_emergency, parent: parents ( id, full_name, phone, phone_secondary, email, address ) ), enrollments ( id, status, enrolled_date, is_deleted, class: classes ( id, name, total_sessions ) )`
   ).eq('is_deleted', false)
 
   if (filters?.branchId) query = query.eq('student_academic_records.branch_id', filters.branchId)
@@ -19,30 +45,84 @@ export async function getStudents(filters?: { branchId?: string; yearId?: string
   if (error) throw error
 
   const studentIds = data?.map((s: any) => s.id) ?? []
-  let statsMap: Record<string, { present: number, absent: number }> = {}
+  let statsMap: Record<string, { present: number; late: number; absent: number; excused: number }> = {}
   if (studentIds.length > 0) {
     const { data: attData } = await supabase
       .from('attendance')
-      .select('status, enrollments!inner(student_id)')
+      .select('status, session_date, enrollment_id, enrollments!inner(student_id)')
       .in('enrollments.student_id', studentIds)
       .eq('is_deleted', false)
+
+    // Build map of active enrollment for each student
+    const activeEnrollmentByStudent: Record<string, any> = {}
+    data?.forEach((s: any) => {
+      const activeEnroll = (s.enrollments ?? []).find(
+        (e: any) => (e.status === 'active' || e.status === 'enrolled') && e.is_deleted !== true
+      )
+      if (activeEnroll) {
+        activeEnrollmentByStudent[s.id] = activeEnroll
+      }
+    })
 
     attData?.forEach((r: any) => {
       const sid = r.enrollments?.student_id
       if (!sid) return
-      if (!statsMap[sid]) statsMap[sid] = { present: 0, absent: 0 }
-      if (r.status === 'present' || r.status === 'late') statsMap[sid].present++
-      if (r.status === 'absent' || r.status === 'excused') statsMap[sid].absent++
+      
+      const activeEnroll = activeEnrollmentByStudent[sid]
+      if (!activeEnroll) return
+
+      // Count attendance only for the active enrollment AND date must be >= enrolled_date
+      if (r.enrollment_id === activeEnroll.id) {
+        if (!activeEnroll.enrolled_date || r.session_date >= activeEnroll.enrolled_date) {
+          if (!statsMap[sid]) statsMap[sid] = { present: 0, late: 0, absent: 0, excused: 0 }
+          if (r.status === 'present') statsMap[sid].present++
+          else if (r.status === 'late') statsMap[sid].late++
+          else if (r.status === 'absent') statsMap[sid].absent++
+          else if (r.status === 'excused') statsMap[sid].excused++
+        }
+      }
     })
   }
 
+  const policy = getAttendancePolicy()
+
   return (data ?? []).map((s: any) => {
     const st = statsMap[s.id]
-    const total = st ? st.present + st.absent : 0
+    const activeEnroll = (s.enrollments ?? []).find(
+      (e: any) => (e.status === 'active' || e.status === 'enrolled') && e.is_deleted !== true
+    )
+    const classTotalSessions = activeEnroll?.class?.total_sessions ?? null
+    const className = activeEnroll?.class?.name ?? null
+    const enrolledDate = activeEnroll?.enrolled_date ?? null
+
+    const pCount = st?.present ?? 0
+    const lCount = st?.late ?? 0
+    const aCount = st?.absent ?? 0
+    const eCount = st?.excused ?? 0
+
+    // Present rate and absence count metrics
+    const totalPresent = pCount + lCount
+    const totalAbsent = aCount + eCount
+    const totalAttended = totalPresent + totalAbsent
+
+    let deductedSessions = 0
+    if (policy.present) deductedSessions += pCount
+    if (policy.late) deductedSessions += lCount
+    if (policy.absent) deductedSessions += aCount
+    if (policy.excused) deductedSessions += eCount
+
+    const remainingSessions = classTotalSessions != null
+      ? Math.max(0, classTotalSessions - deductedSessions)
+      : null
+
     return {
       ...s,
-      attendanceRate: total > 0 ? (st!.present / total) * 100 : undefined,
-      absenceCount: st?.absent ?? 0,
+      attendanceRate: totalAttended > 0 ? (totalPresent / totalAttended) * 100 : undefined,
+      absenceCount: totalAbsent,
+      className,
+      enrolledDate,
+      totalSessions: classTotalSessions,
+      remainingSessions,
     }
   }) as DbStudent[]
 }
@@ -57,9 +137,9 @@ export async function getStudentById(id: string) {
         parent: parents ( * )
       ),
       enrollments (
-        id, status, enrolled_date,
+        id, status, enrolled_date, is_deleted,
         class: classes ( id, name, level, fee_per_month, total_sessions, end_date,
-          teacher: teachers ( id, full_name ),
+          teacher: teachers!teacher_id ( id, full_name ),
           class_schedules ( day_of_week, start_time, end_time )
         )
       )
@@ -70,9 +150,11 @@ export async function getStudentById(id: string) {
 
   if (error) throw error
 
+  const policy = getAttendancePolicy()
+
   // Đếm số buổi đã học cho từng enrollment
   const enrollmentIds = (data?.enrollments ?? []).map((e: any) => e.id)
-  let attendanceMap: Record<string, { present: number; absent: number }> = {}
+  let attendanceMap: Record<string, { present: number; late: number; absent: number; excused: number }> = {}
   if (enrollmentIds.length > 0) {
     const { data: attRows } = await supabase
       .from('attendance')
@@ -80,19 +162,35 @@ export async function getStudentById(id: string) {
       .in('enrollment_id', enrollmentIds)
       .eq('is_deleted', false)
     attRows?.forEach((r: any) => {
-      if (!attendanceMap[r.enrollment_id]) attendanceMap[r.enrollment_id] = { present: 0, absent: 0 }
-      if (r.status === 'present' || r.status === 'late') attendanceMap[r.enrollment_id].present++
-      if (r.status === 'absent' || r.status === 'excused') attendanceMap[r.enrollment_id].absent++
+      if (!attendanceMap[r.enrollment_id]) {
+        attendanceMap[r.enrollment_id] = { present: 0, late: 0, absent: 0, excused: 0 }
+      }
+      if (r.status === 'present') attendanceMap[r.enrollment_id].present++
+      else if (r.status === 'late') attendanceMap[r.enrollment_id].late++
+      else if (r.status === 'absent') attendanceMap[r.enrollment_id].absent++
+      else if (r.status === 'excused') attendanceMap[r.enrollment_id].excused++
     })
   }
 
   const enriched = {
     ...data,
-    enrollments: (data?.enrollments ?? []).map((e: any) => ({
-      ...e,
-      attendedSessions: attendanceMap[e.id]?.present ?? 0,
-      absentSessions: attendanceMap[e.id]?.absent ?? 0,
-    }))
+    enrollments: (data?.enrollments ?? []).map((e: any) => {
+      const att = attendanceMap[e.id] ?? { present: 0, late: 0, absent: 0, excused: 0 }
+      
+      let consumed = 0
+      if (policy.present) consumed += att.present
+      if (policy.late) consumed += att.late
+      if (policy.absent) consumed += att.absent
+      if (policy.excused) consumed += att.excused
+
+      const actualAbsences = att.absent + att.excused
+
+      return {
+        ...e,
+        attendedSessions: consumed,
+        absentSessions: actualAbsences,
+      }
+    })
   }
 
   return enriched as DbStudent
@@ -196,29 +294,149 @@ export async function linkStudentToAcademicYear(
   if (error) throw error
 }
 
-export async function createStudentWithParent(
+export interface FormParentItem {
+  id?: string
+  full_name: string
+  phone: string
+  email?: string | null
+  address?: string | null
+  gender?: 'M' | 'F' | null
+  dob?: string | null
+  occupation?: string | null
+  notes?: string | null
+  relation: StudentParent['relation']
+  is_primary?: boolean
+  is_emergency?: boolean
+}
+
+export async function createStudentWithParents(
   student: Partial<DbStudent>,
-  parent: Partial<Parent>,
-  relation: StudentParent['relation'] = 'mother'
+  parents: FormParentItem[]
 ) {
   const { data: newStudent, error: sErr } = await supabase
     .from('students').insert(student).select().single()
   if (sErr) throw sErr
 
-  const { data: newParent, error: pErr } = await supabase
-    .from('parents').insert(parent).select().single()
-  if (pErr) throw pErr
-
-  const { error: spErr } = await supabase.from('student_parents').insert({
-    student_id: newStudent.id,
-    parent_id: newParent.id,
-    relation,
-    is_primary: true,
-    is_emergency: true,
-  })
-  if (spErr) throw spErr
+  for (const item of parents) {
+    const { relation, is_primary, is_emergency, id, ...parentFields } = item
+    let parentId = id
+    if (!parentId) {
+      const { data: newParent, error: pErr } = await supabase
+        .from('parents').insert(parentFields).select().single()
+      if (pErr) throw pErr
+      parentId = newParent.id
+    }
+    const { error: spErr } = await supabase.from('student_parents').insert({
+      student_id: newStudent.id,
+      parent_id: parentId,
+      relation,
+      is_primary: is_primary ?? false,
+      is_emergency: is_emergency ?? false,
+    })
+    if (spErr) throw spErr
+  }
 
   return newStudent as DbStudent
+}
+
+export async function updateStudentWithParents(
+  studentId: string,
+  studentUpdates: Partial<DbStudent>,
+  parents: FormParentItem[]
+) {
+  // Update student
+  const { error: sErr } = await supabase.from('students').update(studentUpdates).eq('id', studentId)
+  if (sErr) throw sErr
+
+  // Fetch all existing relations
+  const { data: existingLinks, error: linkErr } = await supabase
+    .from('student_parents')
+    .select('*')
+    .eq('student_id', studentId)
+  if (linkErr) throw linkErr
+
+  // Map to keep track of processed existing links
+  const processedLinkIds = new Set<string>()
+
+  for (const item of parents) {
+    const { relation, is_primary, is_emergency, id, ...parentFields } = item
+    let parentId = id
+
+    // Find if this parent is already linked
+    const existingLink = parentId
+      ? existingLinks.find(el => String(el.parent_id) === String(parentId))
+      : null
+
+    if (existingLink) {
+      processedLinkIds.add(existingLink.id)
+
+      // Update relation and primary/emergency flags
+      const { error: spErr } = await supabase
+        .from('student_parents')
+        .update({
+          relation,
+          is_primary: is_primary ?? false,
+          is_emergency: is_emergency ?? false,
+        })
+        .eq('id', existingLink.id)
+      if (spErr) throw spErr
+
+      // Update parent info if needed
+      if (parentId) {
+        const { error: pErr } = await supabase
+          .from('parents')
+          .update(parentFields)
+          .eq('id', parentId)
+        if (pErr) throw pErr
+      }
+    } else {
+      // If we don't have parent ID, or the parent is not linked to this student
+      if (!parentId) {
+        // Create new parent first
+        const { data: newParent, error: pErr } = await supabase
+          .from('parents').insert(parentFields).select().single()
+        if (pErr) throw pErr
+        parentId = newParent.id
+      }
+
+      // Create new link
+      const { error: spErr } = await supabase
+        .from('student_parents')
+        .insert({
+          student_id: studentId,
+          parent_id: parentId,
+          relation,
+          is_primary: is_primary ?? false,
+          is_emergency: is_emergency ?? false,
+        })
+      if (spErr) throw spErr
+    }
+  }
+
+  // Remove any links that were not processed (i.e. deleted by user in the form)
+  const linksToRemove = existingLinks.filter(el => !processedLinkIds.has(el.id))
+  for (const link of linksToRemove) {
+    const { error: delErr } = await supabase
+      .from('student_parents')
+      .delete()
+      .eq('id', link.id)
+    if (delErr) throw delErr
+  }
+}
+
+export async function createStudentWithParent(
+  student: Partial<DbStudent>,
+  parent: Partial<Parent>,
+  relation: StudentParent['relation'] = 'mother'
+) {
+  return createStudentWithParents(student, [
+    {
+      ...parent,
+      relation,
+      is_primary: true,
+      is_emergency: true,
+    } as any
+  ])
 }
 
 export async function updateStudentWithParent(
@@ -227,38 +445,12 @@ export async function updateStudentWithParent(
   parentInfo: Partial<Parent>,
   relation: StudentParent['relation'] = 'mother'
 ) {
-  // Update student
-  const { error: sErr } = await supabase.from('students').update(studentUpdates).eq('id', studentId)
-  if (sErr) throw sErr
-
-  // Find existing parent link
-  const { data: link } = await supabase.from('student_parents').select('id, parent_id').eq('student_id', studentId).eq('is_primary', true).maybeSingle()
-
-  if (parentInfo.id) {
-    // If user selected an existing parent
-    if (link && String(link.parent_id) !== String(parentInfo.id)) {
-      // Remove old link
-      await supabase.from('student_parents').delete().eq('id', link.id)
-      // Create new link
-      await supabase.from('student_parents').insert({ student_id: studentId, parent_id: parentInfo.id, relation, is_primary: true, is_emergency: true })
-    } else if (!link) {
-      await supabase.from('student_parents').insert({ student_id: studentId, parent_id: parentInfo.id, relation, is_primary: true, is_emergency: true })
-    } else {
-      // Link exists and points to the same parent, just update relation
-      await supabase.from('student_parents').update({ relation }).eq('id', link.id)
-      // And update parent info (in case they modified phone/email of existing parent)
-      await supabase.from('parents').update(parentInfo).eq('id', parentInfo.id)
-    }
-  } else {
-    // No parentId provided -> user typed a new name or modified an existing parent's name
-    if (link) {
-      await supabase.from('parents').update(parentInfo).eq('id', link.parent_id)
-      await supabase.from('student_parents').update({ relation }).eq('id', link.id)
-    } else {
-      // Create new parent
-      const { data: newParent, error: pErr } = await supabase.from('parents').insert(parentInfo).select().single()
-      if (pErr) throw pErr
-      await supabase.from('student_parents').insert({ student_id: studentId, parent_id: newParent.id, relation, is_primary: true, is_emergency: true })
-    }
-  }
+  await updateStudentWithParents(studentId, studentUpdates, [
+    {
+      ...parentInfo,
+      relation,
+      is_primary: true,
+      is_emergency: true,
+    } as any
+  ])
 }

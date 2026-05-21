@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button, useToast } from '../../components'
-import { createPayment, updatePayment, getStudents, getClasses } from '../../services'
+import { Modal, Input, Select, Button, useToast, Icon } from '../../components'
+import { createPayment, updatePayment, getStudents, getClasses, notify, getSystemSettings } from '../../services'
 import { useQuery } from '../../hooks'
 import type { DbPayment } from '../../types/database'
+import { printReceipt } from '../../utils'
+
 
 interface PaymentFormModalProps {
   open: boolean
@@ -53,6 +55,7 @@ const fromDb = (p: DbPayment): Form => ({
   notes:       p.notes ?? '',
 })
 
+
 export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
   open, onClose, onSuccess, studentId, classId, editItem,
 }) => {
@@ -64,6 +67,7 @@ export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
 
   const { data: studentsRaw } = useQuery(getStudents)
   const { data: classesRaw } = useQuery(getClasses)
+  const { data: settings } = useQuery(getSystemSettings)
 
   useEffect(() => {
     if (!open) return
@@ -96,9 +100,12 @@ export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
       if (isEdit && editItem) {
         await updatePayment(editItem.id, payload)
         toast.success('Đã cập nhật phiếu thu')
+        notify('Cập nhật phiếu thu', `Đã cập nhật phiếu thu ${Number(form.amount).toLocaleString('vi-VN')}đ`, 'info', { entityType: 'payment', entityId: editItem.id })
       } else {
         await createPayment(payload)
         toast.success('Tạo phiếu thu thành công')
+        const studentName = (studentsRaw ?? []).find(s => s.id === form.studentId)?.full_name ?? ''
+        notify('Tạo phiếu thu mới', `Phiếu thu ${Number(form.amount).toLocaleString('vi-VN')}đ cho học viên ${studentName}`, 'success', { entityType: 'payment' })
       }
       onSuccess()
       onClose()
@@ -113,8 +120,58 @@ export const PaymentFormModal: React.FC<PaymentFormModalProps> = ({
   const months = Array.from({ length: 12 }, (_, i) => ({ value: String(i + 1), label: `Tháng ${i + 1}` }))
   const years  = [2024, 2025, 2026, 2027].map(y => ({ value: String(y), label: String(y) }))
 
+  const handlePrintReceipt = () => {
+    if (!editItem) return
+    const studentName = (studentsRaw ?? []).find(s => s.id === editItem.student_id)?.full_name ?? ''
+    const className = (classesRaw ?? []).find(c => c.id === editItem.class_id)?.name ?? ''
+
+    const centerSettings = settings?.['center_settings']
+    const bankSettings = settings?.['bank_settings']
+
+    const success = printReceipt({
+      payment: {
+        ...editItem,
+        type: form.type as any,
+        payment_method: form.method as any,
+        period_month: parseInt(form.periodMonth),
+        period_year: parseInt(form.periodYear),
+        notes: form.notes || null,
+        due_date: form.dueDate || null,
+        payment_date: form.paymentDate || null,
+        amount: parseFloat(form.amount) || editItem.amount || 0,
+      },
+      studentName,
+      className,
+      centerSettings,
+      bankSettings,
+    })
+
+    if (success) {
+      toast.success('Đã mở phiếu thu để in')
+    } else {
+      toast.error('Không thể mở cửa sổ in. Hãy cho phép popup.')
+    }
+  }
+
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Chỉnh sửa phiếu thu' : 'Tạo phiếu thu'} width={560}>
+      {isEdit && editItem?.code && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '10px 14px', borderRadius: 10,
+          background: 'var(--primary-light)', marginBottom: 16,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="tag" size={16} style={{ color: 'var(--primary)' }} />
+            <span style={{ fontFamily: 'monospace', fontSize: 15, fontWeight: 800, color: 'var(--primary)' }}>
+              {editItem.code}
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" icon="file-text" onClick={handlePrintReceipt} style={{ color: 'var(--primary)' }}>
+            In phiếu thu
+          </Button>
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
         <div style={{ gridColumn: '1/-1' }}>
           <Select label="Học viên *" value={form.studentId} onChange={v => set('studentId', v)}

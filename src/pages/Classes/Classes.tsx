@@ -1,16 +1,22 @@
 import React, { useState } from 'react'
-import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, Modal, InfoRow, StatusBadge, Badge, ConfirmDialog } from '../../components'
+import { Card, Button, Input, Select, SelectBox, Tabs, LoadingSpinner, EmptyState, Modal, InfoRow, StatusBadge, Badge, ConfirmDialog } from '../../components'
 import { ClassTable } from './components/ClassTable'
 import { ClassGrid } from './components/ClassGrid'
 import { ClassFormModal } from './components/ClassFormModal'
 import { ClassStudentsPanel } from './components/ClassStudentsPanel'
 import { useQuery, useCRUDPage, useListFilter, useEntityDelete } from '../../hooks'
-import { getClasses, softDeleteClass } from '../../services'
+import { getClasses, softDeleteClass, getStudentLevels } from '../../services'
 import { mapClass } from '../../lib/mappers'
 import type { Class } from '../../types/data'
 import { useAppContext } from '../../context/AppContext'
 
 export const Classes: React.FC = () => {
+  const { data: levelsRaw } = useQuery(getStudentLevels)
+  const levelOptions = React.useMemo(() => [
+    { value: 'all', label: 'Tất cả trình độ' },
+    ...(levelsRaw ?? []).map(l => ({ value: l.value, label: l.label }))
+  ], [levelsRaw])
+
   const { selectedBranch, selectedYear } = useAppContext()
   const branchId = selectedBranch?.id
   const yearId = selectedYear?.id
@@ -75,15 +81,9 @@ export const Classes: React.FC = () => {
             <div style={{ flex: 1, minWidth: 200 }}>
               <Input placeholder="Tìm theo tên lớp, giáo viên..." value={search} onChange={setSearch} icon="search" />
             </div>
-            <Select value={filters.level} onChange={v => setFilter('level', v)}
-              options={[
-                { value: 'all', label: 'Tất cả trình độ' },
-                { value: 'A1', label: 'A1 · Starter' },
-                { value: 'A2', label: 'A2 · Elementary' },
-                { value: 'B1', label: 'B1 · Pre-Inter' },
-                { value: 'B2', label: 'B2 · Intermediate' },
-              ]}
-              style={{ minWidth: 160 }}
+            <SelectBox value={filters.level} onChange={v => setFilter('level', v)}
+              options={levelOptions}
+              style={{ minWidth: 180 }}
             />
             <Select value={filters.status} onChange={v => setFilter('status', v)}
               options={[

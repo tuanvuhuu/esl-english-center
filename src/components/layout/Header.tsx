@@ -1,10 +1,13 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Icon } from '../common/Icon';
 import { Avatar } from '../common/Avatar';
 import { Badge } from '../common/Badge';
 import { useTheme } from '../../hooks/useTheme';
-import { NOTIFICATIONS_DATA } from '../../data';
 import { useAuth } from '../../context/AuthContext';
+import { useQuery } from '../../hooks';
+import { getNotifications, markAsRead, markAllAsRead } from '../../services';
+import { mapNotification } from '../../lib/mappers';
+import { supabase } from '../../lib/supabase';
 import { SelectBoxBranch, SelectBoxYear, Input, Button } from '../index';
 import TEACHERS_DATA from '../../data/teachers.json';
 import STUDENTS_DATA from '../../data/students.json';
@@ -26,6 +29,46 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
   const { profile, user, logout } = useAuth();
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+
+  // Fetch notifications from DB
+  const { data: rawNotifs, refetch: refetchNotifs } = useQuery(getNotifications);
+  const notifications = (rawNotifs ?? []).map(mapNotification);
+  const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Realtime subscription — auto-refresh on new/updated notifications
+  useEffect(() => {
+    const channel = supabase
+      .channel('notifications-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, () => {
+        refetchNotifs();
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel) };
+  }, [refetchNotifs]);
+
+  // Entity type → page mapping
+  const ENTITY_PAGE: Record<string, string> = {
+    student: 'students', teacher: 'teachers', class: 'classes',
+    payment: 'finance', enrollment: 'classes', room: 'rooms',
+    test: 'tests',
+  };
+
+  const handleNotifClick = useCallback(async (n: ReturnType<typeof mapNotification>) => {
+    if (!n.read) {
+      markAsRead(String(n.id)).then(() => refetchNotifs()).catch(() => {});
+    }
+    setShowNotif(false);
+    if (n.entityType && ENTITY_PAGE[n.entityType]) {
+      onNavigate?.(ENTITY_PAGE[n.entityType]);
+    }
+  }, [refetchNotifs, onNavigate]);
+
+  const handleMarkAllRead = useCallback(async () => {
+    try {
+      await markAllAsRead(user?.id ?? '');
+      refetchNotifs();
+    } catch {}
+  }, [user, refetchNotifs]);
 
   const BACKGROUNDS = [
     '',
@@ -307,28 +350,30 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
           }}
           children=""
         />
-        <span
-          style={{
-            position: 'absolute',
-            top: -4,
-            right: -4,
-            background: '#EF4444',
-            color: '#fff',
-            fontSize: 9,
-            fontWeight: 700,
-            width: 16,
-            height: 16,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: '2px solid var(--header)',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        >
-          3
-        </span>
+        {unreadCount > 0 && (
+          <span
+            style={{
+              position: 'absolute',
+              top: -4,
+              right: -4,
+              background: '#EF4444',
+              color: '#fff',
+              fontSize: 9,
+              fontWeight: 700,
+              width: 16,
+              height: 16,
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid var(--header)',
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          >
+            {unreadCount}
+          </span>
+        )}
         {showNotif && (
           <div
             style={{
@@ -355,30 +400,73 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
               }}
             >
               <span style={{ fontWeight: 700, fontSize: 14, color: 'var(--text-1)' }}>Thông báo</span>
-              <Badge variant="primary">3 mới</Badge>
-            </div>
-            {NOTIFICATIONS_DATA.slice(0, 4).map((n) => (
-              <div
-                key={n.id}
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid var(--border-light)',
-                  background: n.read ? 'var(--card)' : 'var(--activity-warm)',
-                  cursor: 'pointer',
-                  transition: 'background 0.15s',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = n.read ? 'var(--card)' : 'var(--activity-warm)')}
-              >
-                <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: 'var(--text-1)', marginBottom: 2 }}>
-                  {n.title}
-                </div>
-                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>{n.desc}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4 }}>{n.time}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {unreadCount > 0 && (
+                  <>
+                    <Badge variant="primary">{unreadCount} mới</Badge>
+                    <button
+                      onClick={handleMarkAllRead}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontSize: 11, fontWeight: 600, color: 'var(--primary)',
+                        padding: '2px 6px', borderRadius: 6,
+                        transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+                      title="Đánh dấu tất cả đã đọc"
+                    >
+                      <Icon name="check" size={12} />
+                    </button>
+                  </>
+                )}
               </div>
-            ))}
+            </div>
+            {notifications.length === 0 ? (
+              <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                <Icon name="bell" size={32} style={{ color: 'var(--text-4)', opacity: 0.5, display: 'block', margin: '0 auto 10px' }} />
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-3)' }}>Chưa có thông báo</div>
+                <div style={{ fontSize: 12, color: 'var(--text-4)', marginTop: 4 }}>Các hoạt động sẽ xuất hiện tại đây</div>
+              </div>
+            ) : (
+              <>
+                {notifications.slice(0, 5).map((n) => (
+                  <div
+                    key={n.id}
+                    onClick={() => handleNotifClick(n)}
+                    style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid var(--border-light)',
+                      background: n.read ? 'var(--card)' : 'var(--activity-warm)',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s',
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'flex-start',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = n.read ? 'var(--card)' : 'var(--activity-warm)')}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: n.read ? 500 : 700, color: 'var(--text-1)', marginBottom: 2 }}>
+                        {n.title}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.desc}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4 }}>{n.time}</div>
+                    </div>
+                    {!n.read && (
+                      <div style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: 'var(--primary)', marginTop: 6, flexShrink: 0,
+                        animation: 'pulse 2s ease infinite',
+                      }} />
+                    )}
+                  </div>
+                ))}
+              </>
+            )}
             <div style={{ padding: 10, textAlign: 'center' }}>
-              <Button variant="ghost" size="sm" style={{ color: 'var(--primary)' }}>
+              <Button variant="ghost" size="sm" style={{ color: 'var(--primary)' }} onClick={() => { setShowNotif(false); onNavigate?.('notifications') }}>
                 Xem tất cả →
               </Button>
             </div>

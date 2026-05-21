@@ -20,12 +20,12 @@ interface TabDef {
 }
 
 const TABS: TabDef[] = [
-  { id: 'overview',   label: 'Tổng hợp',  icon: 'dashboard',  color: '#FF6B35', bg: 'var(--primary-light)' },
-  { id: 'student',    label: 'Học viên',  icon: 'users',      color: '#FF6B35', bg: 'var(--primary-light)' },
-  { id: 'finance',    label: 'Tài chính', icon: 'wallet',     color: '#16a34a', bg: '#dcfce7' },
-  { id: 'attendance', label: 'Điểm danh', icon: 'clipboard',  color: '#2563eb', bg: '#dbeafe' },
-  { id: 'academic',   label: 'Học tập',   icon: 'star',       color: '#8b5cf6', bg: '#ede9fe' },
-  { id: 'teacher',    label: 'Giáo viên', icon: 'graduation', color: '#f59e0b', bg: 'var(--warning-light)' },
+  { id: 'overview',   label: 'Tổng hợp',  icon: 'dashboard',  color: 'var(--primary)', bg: 'var(--primary-light)' },
+  { id: 'student',    label: 'Học viên',  icon: 'users',      color: 'var(--primary)', bg: 'var(--primary-light)' },
+  { id: 'finance',    label: 'Tài chính', icon: 'wallet',     color: 'var(--success-dark)', bg: 'var(--success-light)' },
+  { id: 'attendance', label: 'Điểm danh', icon: 'clipboard',  color: 'var(--info-dark)', bg: 'var(--info-light)' },
+  { id: 'academic',   label: 'Học tập',   icon: 'star',       color: 'var(--academic-dark)', bg: 'var(--academic-light)' },
+  { id: 'teacher',    label: 'Giáo viên', icon: 'graduation', color: 'var(--warning-dark)', bg: 'var(--warning-light)' },
 ]
 
 export const Reports: React.FC = () => {

@@ -33,8 +33,19 @@ export const PaymentGrid: React.FC<PaymentGridProps> = ({ rows, onMarkPaid, mark
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12, marginTop: 4 }}>
             <div>
               <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text-1)' }}>{p.student}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
-                {r.class?.name || 'Không thuộc lớp'}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                {p.code && (
+                  <span style={{
+                    fontFamily: 'monospace', fontSize: 10, fontWeight: 700,
+                    color: 'var(--primary)', background: 'var(--primary-light)',
+                    padding: '1px 6px', borderRadius: 4,
+                  }}>
+                    {p.code}
+                  </span>
+                )}
+                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                  {r.class?.name || 'Không thuộc lớp'}
+                </span>
               </div>
             </div>
             <StatusBadge status={p.status} />

@@ -179,6 +179,7 @@ export interface DbClass {
 
 export interface DbPayment {
   id: string
+  code: string | null
   student_id: string
   class_id: string | null
   branch_id: string | null

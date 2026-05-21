@@ -14,7 +14,7 @@ export const Badge: React.FC<BadgeProps> = ({ children, variant = 'default', sty
     success: { bg: 'var(--success-light)', color: 'var(--success-dark)' },
     warning: { bg: 'var(--warning-light)', color: 'var(--warning-dark)' },
     error: { bg: 'var(--error-light)', color: 'var(--error-dark)' },
-    primary: { bg: 'var(--primary-light)', color: '#E55A2B' },
+    primary: { bg: 'var(--primary-light)', color: 'var(--primary)' },
     info: { bg: 'var(--info-light)', color: 'var(--info-dark)' },
   };
   const c = colors[variant] || colors.default;

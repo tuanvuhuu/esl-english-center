@@ -11,6 +11,7 @@ interface InputProps {
   required?: boolean;
   style?: React.CSSProperties;
   list?: string;
+  disabled?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({ 
@@ -22,7 +23,8 @@ export const Input: React.FC<InputProps> = ({
   icon, 
   required,
   style = {},
-  list
+  list,
+  disabled
 }) => (
   <div style={{ display: 'flex', flexDirection: 'column', gap: 6, ...style }}>
     {label && (
@@ -49,6 +51,7 @@ export const Input: React.FC<InputProps> = ({
         onChange={e => onChange(e.target.value)} 
         placeholder={placeholder}
         list={list}
+        disabled={disabled}
         style={{
           width: '100%', 
           height: 30,
@@ -57,17 +60,21 @@ export const Input: React.FC<InputProps> = ({
           borderRadius: 8, 
           fontSize: 13, 
           fontFamily: 'var(--font)', 
-          color: 'var(--text-1)', 
+          color: disabled ? 'var(--text-3)' : 'var(--text-1)', 
           outline: 'none',
           transition: 'all 0.2s ease', 
-          background: 'var(--input-bg)', 
-          boxSizing: 'border-box'
+          background: disabled ? 'var(--hover-bg)' : 'var(--input-bg)', 
+          boxSizing: 'border-box',
+          opacity: disabled ? 0.65 : 1,
+          cursor: disabled ? 'not-allowed' : 'text'
         }}
         onFocus={e => { 
+          if (disabled) return;
           e.target.style.borderColor = 'var(--primary)'; 
           e.target.style.boxShadow = '0 0 0 3px rgba(255,107,53,0.1)'; 
         }}
         onBlur={e => { 
+          if (disabled) return;
           e.target.style.borderColor = 'var(--border)'; 
           e.target.style.boxShadow = 'none'; 
         }}

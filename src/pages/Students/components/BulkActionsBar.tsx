@@ -1,5 +1,5 @@
 import React from 'react'
-import { Button, Select } from '../../../components'
+import { Button, Select, useConfirm } from '../../../components'
 import type { Student } from '../../../types/data'
 import { bulkSoftDeleteStudents, bulkUpdateStudentStatus } from '../../../services/students'
 
@@ -29,6 +29,7 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   progress,
   error,
 }) => {
+  const confirm = useConfirm()
   const handleBulkStatusChange = async (newStatus: string) => {
     const ids = Array.from(selectedIds)
     try {
@@ -41,7 +42,13 @@ export const BulkActionsBar: React.FC<BulkActionsBarProps> = ({
   }
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Xoá ${selectedIds.size} học viên?`)) return
+    const ok = await confirm({
+      title: 'Xác nhận xóa hàng loạt',
+      message: `Xoá ${selectedIds.size} học viên đã chọn?`,
+      confirmLabel: 'Xác nhận',
+      variant: 'danger',
+    })
+    if (!ok) return
     const ids = Array.from(selectedIds)
     try {
       await bulkSoftDeleteStudents(ids)

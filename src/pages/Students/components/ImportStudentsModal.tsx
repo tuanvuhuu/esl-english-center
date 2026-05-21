@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { Modal, Button, Icon, Badge, useToast } from '../../../components'
-import { createStudent, createStudentWithParent, linkStudentToAcademicYear } from '../../../services'
+import { createStudent, createStudentWithParent, linkStudentToAcademicYear, notify } from '../../../services'
 import type { DbStudent, StudentParent } from '../../../types/database'
 
 interface Props {
@@ -388,6 +388,7 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
     if (ok > 0) {
       onSuccess()
       toast.success(`Đã import ${ok} học viên${failed > 0 ? ` (${failed} thất bại)` : ''}`)
+      notify('Import học viên', `Đã import thành công ${ok} học viên${failed > 0 ? `, ${failed} thất bại` : ''}`, 'success', { entityType: 'student' })
     }
   }
 

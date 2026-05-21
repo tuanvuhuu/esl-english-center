@@ -7,6 +7,7 @@ export { Card } from './Card';
 export { Input } from './Input';
 export { Modal } from './Modal';
 export { Select } from './Select';
+export { SelectBox } from './SelectBox';
 export { ColorPicker } from './ColorPicker';
 export { Tabs } from './Tabs';
 export { FadeIn } from './FadeIn';
@@ -21,3 +22,5 @@ export { ToastProvider, useToast } from './Toast'
 export { ConfirmProvider, useConfirm } from './ConfirmProvider'
 export { TextWithEllipse } from './TextWithEllipse';
 export { EntityHistoryTimeline } from './EntityHistoryTimeline';
+export { StudentAttendanceModal } from './StudentAttendanceModal';
+

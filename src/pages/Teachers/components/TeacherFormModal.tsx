@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Input, Select, Button, useToast, SelectBoxMultiple, ColorPicker } from '../../../components'
-import { createTeacher, updateTeacher } from '../../../services'
+import { createTeacher, updateTeacher, notify } from '../../../services'
 import type { Teacher } from '../../../types/data'
 import { useAppContext } from '../../../context/AppContext'
 
@@ -79,6 +79,12 @@ export const TeacherFormModal: React.FC<TeacherFormModalProps> = ({ open, onClos
         await createTeacher(payload, form.branchIds)
       }
       toast.success(isEdit ? 'Cập nhật giáo viên thành công' : 'Thêm giáo viên thành công')
+      notify(
+        isEdit ? 'Cập nhật giáo viên' : 'Thêm giáo viên mới',
+        isEdit ? `Đã cập nhật thông tin giáo viên ${form.name}` : `Giáo viên ${form.name} đã được thêm vào hệ thống`,
+        'info',
+        { entityType: 'teacher' }
+      )
       onSuccess()
       onClose()
     } catch (e: any) {

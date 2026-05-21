@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom'
 import { DataGrid, Avatar, Badge, StatusBadge, Icon, TextWithEllipse } from '../../../components'
 import type { DataGridColumn } from '../../../components'
 import type { Student } from '../../../types/data'
+import { getStudentLevels } from '../../../services'
+import { useQuery } from '../../../hooks'
 
 interface StudentTableProps {
   students: Student[]
@@ -17,6 +19,7 @@ interface StudentTableProps {
   onRefresh?: () => void
   loading?: boolean
   title?: string
+  onShowAttendanceHistory?: (s: Student) => void
 }
 
 const ActionMenu = ({ s, onSelectStudent, onEdit, onDelete }: {
@@ -120,8 +123,11 @@ const ActionMenu = ({ s, onSelectStudent, onEdit, onDelete }: {
 }
 
 export const StudentTable: React.FC<StudentTableProps> = ({
-  students, onSelectStudent, onEdit, onDelete, onSelectionChange, enableRowSelection, actions, subtitle, onAdd, onRefresh, loading, title
+  students, onSelectStudent, onEdit, onDelete, onSelectionChange, enableRowSelection, actions, subtitle, onAdd, onRefresh, loading, title, onShowAttendanceHistory
 }) => {
+  const { data: levelsRaw } = useQuery(getStudentLevels)
+  const levelOptions = React.useMemo(() => (levelsRaw ?? []).map(l => ({ value: l.value, label: l.value })), [levelsRaw])
+
   const columns: DataGridColumn<Student>[] = [
     {
       key: '_actions',
@@ -170,12 +176,7 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       filterable: true,
       isAllowCopy: true,
       filterType: 'select',
-      filterOptions: [
-        { value: 'A1', label: 'A1' },
-        { value: 'A2', label: 'A2' },
-        { value: 'B1', label: 'B1' },
-        { value: 'B2', label: 'B2' },
-      ],
+      filterOptions: levelOptions,
       render: s => {
         const levelVariantMap: Record<string, 'error' | 'info' | 'success' | 'warning'> = {
           A1: 'error',
@@ -187,6 +188,25 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       },
     },
     {
+      key: 'classInfo',
+      title: 'Lớp & Buổi còn lại',
+      sortable: true,
+      filterable: true,
+      filterValue: s => s.className ?? '',
+      render: s => {
+        if (!s.className) return <span style={{ color: 'var(--text-4)', fontSize: 12, fontStyle: 'italic' }}>Chưa xếp lớp</span>
+        const isLow = s.remainingSessions != null && s.remainingSessions <= 3
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-1)' }}>{s.className}</span>
+            <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+              Còn lại: <strong style={{ color: isLow ? 'var(--error-dark)' : 'var(--primary)' }}>{s.remainingSessions ?? 0}</strong>/{s.totalSessions ?? 0} buổi
+            </span>
+          </div>
+        )
+      },
+    },
+    {
       key: 'attendance',
       title: 'Điểm danh',
       align: 'center',
@@ -194,12 +214,42 @@ export const StudentTable: React.FC<StudentTableProps> = ({
         if (s.attendanceRate === undefined) return <span style={{ color: 'var(--text-4)' }}>—</span>
         const rate = Math.round(s.attendanceRate)
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: rate >= 80 ? '#10B981' : rate >= 50 ? '#F59E0B' : '#EF4444' }}>
-              {rate}%
-            </span>
+          <div 
+            onClick={e => {
+              if (onShowAttendanceHistory) {
+                e.stopPropagation()
+                onShowAttendanceHistory(s)
+              }
+            }}
+            style={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              gap: 2,
+              cursor: onShowAttendanceHistory ? 'pointer' : 'default',
+              padding: '4px 8px',
+              borderRadius: 6,
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => {
+              if (onShowAttendanceHistory) {
+                e.currentTarget.style.background = 'var(--hover-bg)'
+              }
+            }}
+            onMouseLeave={e => {
+              if (onShowAttendanceHistory) {
+                e.currentTarget.style.background = 'transparent'
+              }
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: rate >= 80 ? 'var(--success-dark)' : rate >= 50 ? 'var(--warning-dark)' : 'var(--error-dark)' }}>
+                {rate}%
+              </span>
+              <Icon name="calendar" size={12} style={{ color: rate >= 80 ? 'var(--success-dark)' : rate >= 50 ? 'var(--warning-dark)' : 'var(--error-dark)' }} />
+            </div>
             {s.absenceCount !== undefined && s.absenceCount > 0 && (
-              <span style={{ fontSize: 11, color: 'var(--error)' }}>Vắng {s.absenceCount}</span>
+              <span style={{ fontSize: 11, color: 'var(--error-dark)' }}>Vắng {s.absenceCount}</span>
             )}
           </div>
         )

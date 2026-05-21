@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Avatar, StatusBadge, InfoRow, Button, Tabs, EntityHistoryTimeline, Badge, Icon, LoadingSpinner, useToast } from '../../../components';
+import { Modal, Avatar, StatusBadge, InfoRow, Button, Tabs, EntityHistoryTimeline, Badge, Icon, LoadingSpinner, useToast, useConfirm } from '../../../components';
 import { Student } from '../../../types/data';
 import { getStudentById, getClasses, createEnrollment, removeEnrollment } from '../../../services';
 import { mapClass } from '../../../lib/mappers';
@@ -15,6 +15,14 @@ interface StudentDetailProps {
 
 const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 const LVL_COLOR: Record<string, string> = { A1: '#FF6B35', A2: '#3B82F6', B1: '#10B981', B2: '#8B5CF6' }
+const RELATION_LABELS: Record<string, string> = {
+  mother: 'Mẹ',
+  father: 'Bố',
+  grandfather: 'Ông',
+  grandmother: 'Bà',
+  guardian: 'Người giám hộ',
+  other: 'Khác',
+}
 
 function formatSchedule(schedules: any[]) {
   if (!schedules?.length) return null
@@ -25,6 +33,7 @@ function formatSchedule(schedules: any[]) {
 
 export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, onEdit, onDelete, onSuccess, defaultTab = 'info' }) => {
   const toast = useToast()
+  const confirm = useConfirm()
   const [activeTab, setActiveTab] = useState<'info' | 'history'>('info')
   const [detail, setDetailData] = useState<any>(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
@@ -101,7 +110,13 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, 
 
   const handleRemoveEnroll = async () => {
     if (!activeEnrollment) return
-    if (!confirm(`Bỏ ${student?.name} khỏi lớp "${activeEnrollment.class?.name}"?`)) return
+    const ok = await confirm({
+      title: 'Xác nhận hủy lớp',
+      message: `Bỏ ${student?.name} khỏi lớp "${activeEnrollment.class?.name}"?`,
+      confirmLabel: 'Xác nhận',
+      variant: 'danger',
+    })
+    if (!ok) return
     setRemoving(activeEnrollment.id)
     try {
       await removeEnrollment(activeEnrollment.id)
@@ -286,13 +301,85 @@ export const StudentDetail: React.FC<StudentDetailProps> = ({ student, onClose, 
                 {/* ======= THÔNG TIN CÁ NHÂN ======= */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
                   <InfoRow icon="award" label="Trình độ" value={student.level} />
-                  <InfoRow icon="user" label="Phụ huynh" value={student.parent} />
-                  <InfoRow icon="phone" label="Điện thoại" value={student.phone} />
-                  <InfoRow icon="mail" label="Email" value={student.email} />
                   <InfoRow icon="calendar" label="Ngày nhập học" value={student.enrollDate} />
                   {student.attendanceRate !== undefined && (
                     <InfoRow icon="check" label="Tỷ lệ đi học" value={`${Math.round(student.attendanceRate)}%`} />
                   )}
+                  {student.email && (
+                    <InfoRow icon="mail" label="Email học viên" value={student.email} />
+                  )}
+                </div>
+
+                {/* Danh sách người liên hệ / phụ huynh */}
+                <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-2)', marginBottom: 12 }}>
+                    Danh sách phụ huynh / Người liên hệ
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {detail?.student_parents?.map((sp: any) => {
+                      const p = sp.parent
+                      if (!p) return null
+                      return (
+                        <div
+                          key={sp.id}
+                          style={{
+                            padding: '10px 12px',
+                            background: 'var(--hover-bg)',
+                            borderRadius: 10,
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontWeight: 700, color: 'var(--text-1)', fontSize: 13 }}>
+                                {p.full_name}
+                              </span>
+                              <Badge style={{ fontSize: 10, background: 'var(--primary-light)', color: 'var(--primary)' }}>
+                                {RELATION_LABELS[sp.relation] || sp.relation}
+                              </Badge>
+                            </div>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              {sp.is_primary && (
+                                <Badge style={{ fontSize: 9, background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                                  Liên hệ chính
+                                </Badge>
+                              )}
+                              {sp.is_emergency && (
+                                <Badge style={{ fontSize: 9, background: 'rgba(239,68,68,0.1)', color: '#ef4444' }}>
+                                  Khẩn cấp
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-3)' }}>
+                            {p.phone && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Icon name="phone" size={12} /> {p.phone}
+                              </div>
+                            )}
+                            {p.email && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <Icon name="mail" size={12} /> {p.email}
+                              </div>
+                            )}
+                          </div>
+                          {p.address && (
+                            <div style={{ fontSize: 11, color: 'var(--text-4)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Icon name="map-pin" size={11} /> {p.address}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                    {(!detail?.student_parents || detail.student_parents.length === 0) && (
+                      <div style={{ fontStyle: 'italic', fontSize: 12, color: 'var(--text-4)', paddingLeft: 4 }}>
+                        Không có thông tin người liên hệ
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: 10, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>

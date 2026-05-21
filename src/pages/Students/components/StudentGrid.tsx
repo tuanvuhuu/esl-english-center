@@ -7,6 +7,7 @@ interface StudentGridProps {
   onSelectStudent: (student: Student) => void;
   onEdit?: (student: Student) => void;
   onDelete?: (student: Student) => void;
+  onShowAttendanceHistory?: (student: Student) => void;
 }
 
 const StudentCard: React.FC<{
@@ -15,7 +16,8 @@ const StudentCard: React.FC<{
   onClick: () => void;
   onEdit?: (student: Student) => void;
   onDelete?: (student: Student) => void;
-}> = ({ student, index, onClick, onEdit, onDelete }) => {
+  onShowAttendanceHistory?: (student: Student) => void;
+}> = ({ student, index, onClick, onEdit, onDelete, onShowAttendanceHistory }) => {
   const [hovered, setHovered] = useState(false);
 
   // Gradient based on Level
@@ -103,7 +105,26 @@ const StudentCard: React.FC<{
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 12, color: 'var(--text-2)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icon name="book" size={14} style={{ color: 'var(--text-4)' }} />
-            <span style={{ fontWeight: 500, color: 'var(--text-2)' }}>{student.className || 'Chưa xếp lớp'}</span>
+            <span style={{ fontWeight: 500, color: 'var(--text-2)', display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+              {student.className ? (
+                <>
+                  <span style={{ fontWeight: 600, color: 'var(--text-1)' }}>{student.className}</span>
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: student.remainingSessions != null && student.remainingSessions <= 3 ? 'var(--error-dark)' : 'var(--primary)',
+                    background: student.remainingSessions != null && student.remainingSessions <= 3 ? 'var(--error-light)' : 'var(--primary-light)',
+                    padding: '2px 6px',
+                    borderRadius: 6,
+                    marginLeft: 4,
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}>
+                    Còn {student.remainingSessions ?? 0}/{student.totalSessions ?? 0} buổi
+                  </span>
+                </>
+              ) : <span style={{ color: 'var(--text-4)', fontStyle: 'italic' }}>Chưa xếp lớp</span>}
+            </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <Icon name="user" size={14} style={{ color: 'var(--text-4)' }} />
@@ -114,7 +135,35 @@ const StudentCard: React.FC<{
             <span style={{ fontFamily: 'monospace' }}>{student.phone || '—'}</span>
           </div>
           {student.attendanceRate !== undefined && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div 
+              onClick={e => {
+                if (onShowAttendanceHistory) {
+                  e.stopPropagation();
+                  onShowAttendanceHistory(student);
+                }
+              }}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 8,
+                cursor: onShowAttendanceHistory ? 'pointer' : 'default',
+                padding: '4px 8px',
+                margin: '0 -8px',
+                borderRadius: 6,
+                background: 'transparent',
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={e => {
+                if (onShowAttendanceHistory) {
+                  e.currentTarget.style.background = 'var(--hover-bg)';
+                }
+              }}
+              onMouseLeave={e => {
+                if (onShowAttendanceHistory) {
+                  e.currentTarget.style.background = 'transparent';
+                }
+              }}
+            >
               <Icon name="check" size={14} style={{ color: student.attendanceRate >= 80 ? '#10B981' : student.attendanceRate >= 50 ? '#F59E0B' : '#EF4444' }} />
               <span>
                 Tỷ lệ đi học: <strong style={{ color: student.attendanceRate >= 80 ? '#10B981' : student.attendanceRate >= 50 ? '#F59E0B' : '#EF4444' }}>{Math.round(student.attendanceRate)}%</strong>
@@ -204,7 +253,7 @@ const StudentCard: React.FC<{
   );
 };
 
-export const StudentGrid: React.FC<StudentGridProps> = ({ students, onSelectStudent, onEdit, onDelete }) => {
+export const StudentGrid: React.FC<StudentGridProps> = ({ students, onSelectStudent, onEdit, onDelete, onShowAttendanceHistory }) => {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
       {students.map((s, i) => (
@@ -215,6 +264,7 @@ export const StudentGrid: React.FC<StudentGridProps> = ({ students, onSelectStud
           onClick={() => onSelectStudent(s)}
           onEdit={onEdit}
           onDelete={onDelete}
+          onShowAttendanceHistory={onShowAttendanceHistory}
         />
       ))}
     </div>

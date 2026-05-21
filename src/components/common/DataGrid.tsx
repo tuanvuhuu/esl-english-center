@@ -58,15 +58,31 @@ interface DataGridProps<T = any> {
 
 const PAGE_SIZES = [10, 20, 50, 100]
 
+// Sticky styles for pinned columns — header cells need extra top offset for thead sticky
+const getPinnedStyle = (column: any, isHeader = false): React.CSSProperties => {
+  const pinned = column.getIsPinned()
+  if (!pinned) return {}
+  return {
+    position: 'sticky',
+    left: pinned === 'left' ? `${column.getStart('left')}px` : undefined,
+    right: pinned === 'right' ? `${column.getAfter('right')}px` : undefined,
+    zIndex: isHeader ? 4 : 1,
+    background: 'var(--card)',
+    boxShadow: pinned === 'left'
+      ? '2px 0 6px -2px rgba(0,0,0,0.08)'
+      : '-2px 0 6px -2px rgba(0,0,0,0.08)',
+  }
+}
+
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-const IndeterminateCheckbox: React.FC<{
+const IndeterminateCheckbox = React.memo(({ checked, indeterminate, onChange, onClick, disabled }: {
   checked?: boolean
   indeterminate?: boolean
   onChange?: React.ChangeEventHandler<HTMLInputElement>
   onClick?: React.MouseEventHandler<HTMLInputElement>
   disabled?: boolean
-}> = ({ checked, indeterminate, onChange, onClick, disabled }) => {
+}) => {
   const ref = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = Boolean(indeterminate)
@@ -139,49 +155,69 @@ const IndeterminateCheckbox: React.FC<{
       </div>
     </div>
   )
-}
+})
 
-const FilterInput: React.FC<{ value: string; onChange: (v: string) => void }> = ({ value, onChange }) => (
-  <div style={{ position: 'relative', marginTop: 5 }}>
-    <Icon
-      name="filter"
-      size={10}
-      style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', color: value ? 'var(--primary)' : 'var(--text-4)', pointerEvents: 'none' }}
-    />
-    <input
-      value={value}
-      onChange={e => onChange(e.target.value)}
-      placeholder=""
-      style={{
-        width: '100%', height: 24,
-        padding: value ? '0 20px 0 22px' : '0 8px 0 22px',
-        border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
-        borderRadius: 5, fontSize: 11, fontFamily: 'var(--font)',
-        background: value ? 'var(--primary-light)' : 'var(--input-bg)',
-        color: 'var(--text-1)', outline: 'none', boxSizing: 'border-box',
-        transition: 'border-color 0.15s, background 0.15s',
-      }}
-      onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
-      onBlur={e => (e.target.style.borderColor = value ? 'var(--primary)' : 'var(--border)')}
-    />
-    {value && (
-      <button
-        onClick={() => onChange('')}
+const FilterInput = React.memo(({ value: initialValue, onChange }: { value: string; onChange: (v: string) => void }) => {
+  const [value, setValue] = useState(initialValue)
+
+  useEffect(() => {
+    setValue(initialValue)
+  }, [initialValue])
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (value !== initialValue) {
+        onChange(value)
+      }
+    }, 300)
+    return () => clearTimeout(timeout)
+  }, [value, onChange, initialValue])
+
+  return (
+    <div style={{ position: 'relative', marginTop: 5 }}>
+      <Icon
+        name="filter"
+        size={10}
+        style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', color: value ? 'var(--primary)' : 'var(--text-4)', pointerEvents: 'none' }}
+      />
+      <input
+        value={value}
+        onChange={e => setValue(e.target.value)}
+        placeholder=""
         style={{
-          position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-          background: 'none', border: 'none', cursor: 'pointer',
-          color: 'var(--text-4)', padding: 0, lineHeight: 1, fontSize: 14,
+          width: '100%', height: 24,
+          padding: value ? '0 20px 0 22px' : '0 8px 0 22px',
+          border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
+          borderRadius: 5, fontSize: 11, fontFamily: 'var(--font)',
+          background: value ? 'var(--primary-light)' : 'var(--input-bg)',
+          color: 'var(--text-1)', outline: 'none', boxSizing: 'border-box',
+          transition: 'border-color 0.15s, background 0.15s',
         }}
-      >×</button>
-    )}
-  </div>
-)
+        onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
+        onBlur={e => (e.target.style.borderColor = value ? 'var(--primary)' : 'var(--border)')}
+      />
+      {value && (
+        <button
+          onClick={() => {
+            setValue('')
+            onChange('')
+          }}
+          style={{
+            position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
+            background: 'none', border: 'none', cursor: 'pointer',
+            color: 'var(--text-4)', padding: 0, lineHeight: 1, fontSize: 14,
+          }}
+        >×</button>
+      )}
+    </div>
+  )
+})
 
-const FilterSelect: React.FC<{
+const FilterSelect = React.memo(({ value, onChange, options }: {
   value: string
   onChange: (v: string) => void
   options: { value: string; label: string }[]
-}> = ({ value, onChange, options }) => (
+}) => (
   <select
     value={value}
     onChange={e => onChange(e.target.value)}
@@ -198,7 +234,7 @@ const FilterSelect: React.FC<{
     <option value="">Tất cả</option>
     {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
   </select>
-)
+))
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -352,26 +388,45 @@ export function DataGrid<T = any>({
     pageNums.push(totalPages)
   }
 
-  // Sticky styles for pinned columns — header cells need extra top offset for thead sticky
-  const getPinnedStyle = (column: any, isHeader = false): React.CSSProperties => {
-    const pinned = column.getIsPinned()
-    if (!pinned) return {}
-    return {
-      position: 'sticky',
-      left: pinned === 'left' ? `${column.getStart('left')}px` : undefined,
-      right: pinned === 'right' ? `${column.getAfter('right')}px` : undefined,
-      zIndex: isHeader ? 4 : 1,
-      background: 'var(--card)',
-      boxShadow: pinned === 'left'
-        ? '2px 0 6px -2px rgba(0,0,0,0.08)'
-        : '-2px 0 6px -2px rgba(0,0,0,0.08)',
-    }
-  }
+
 
   const headerGroups = table.getHeaderGroups()
 
   return (
     <div style={{ background: 'var(--card)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        .data-grid-row:hover:not(.is-selected) {
+          background: var(--table-row-hover) !important;
+        }
+        .data-grid-btn-primary {
+          transition: opacity 0.15s;
+        }
+        .data-grid-btn-primary:hover:not(:disabled) {
+          opacity: 0.88;
+        }
+        .data-grid-btn-secondary {
+          transition: all 0.15s;
+        }
+        .data-grid-btn-secondary:hover:not(:disabled) {
+          border-color: var(--primary) !important;
+          color: var(--primary) !important;
+        }
+        .data-grid-pagination-btn {
+          transition: all 0.15s;
+        }
+        .data-grid-pagination-btn:hover:not(:disabled) {
+          border-color: var(--primary) !important;
+          color: var(--primary) !important;
+          background: var(--hover-bg) !important;
+        }
+        .data-grid-warning-btn {
+          transition: all 0.15s;
+        }
+        .data-grid-warning-btn:hover:not(:disabled) {
+          background: var(--warning-bg) !important;
+          opacity: 0.88;
+        }
+      `}</style>
 
       {/* ── Card Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)', gap: 12, flexShrink: 0 }}>
@@ -388,7 +443,8 @@ export function DataGrid<T = any>({
           {activeFilters > 0 && (
             <button
               onClick={() => { setColumnFilters([]); table.setPageIndex(0) }}
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--warning)', background: 'rgba(245,158,11,0.08)', color: '#b45309', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer' }}
+              className="data-grid-warning-btn"
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--warning-border)', background: 'var(--warning-bg)', color: 'var(--warning-text)', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer' }}
             >
               <Icon name="x" size={11} /> Xoá lọc ({activeFilters})
             </button>
@@ -404,9 +460,8 @@ export function DataGrid<T = any>({
           {onAdd && (
             <button
               onClick={onAdd}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', height: 30, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', transition: 'opacity 0.15s', flexShrink: 0 }}
-              onMouseEnter={e => ((e.currentTarget as HTMLElement).style.opacity = '0.88')}
-              onMouseLeave={e => ((e.currentTarget as HTMLElement).style.opacity = '1')}
+              className="data-grid-btn-primary"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', height: 30, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', flexShrink: 0 }}
             >
               <Icon name="plus" size={13} /> {addLabel}
             </button>
@@ -416,9 +471,8 @@ export function DataGrid<T = any>({
             <button
               onClick={onRefresh}
               title="Làm mới"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
+              className="data-grid-btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}
             >
               <Icon name="refresh" size={13} />
             </button>
@@ -427,9 +481,8 @@ export function DataGrid<T = any>({
           <button
             onClick={handleExport}
             title="Export CSV"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', transition: 'all 0.15s', flexShrink: 0 }}
-            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--primary)'; (e.currentTarget as HTMLElement).style.color = 'var(--primary)' }}
-            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--border)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-2)' }}
+            className="data-grid-btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}
           >
             <Icon name="download" size={13} />
           </button>
@@ -531,14 +584,13 @@ export function DataGrid<T = any>({
                 <tr
                   key={row.id}
                   onClick={() => onRowClick?.(row.original)}
+                  className={`data-grid-row ${row.getIsSelected() ? 'is-selected' : ''}`}
                   style={{
                     borderBottom: '1px solid var(--border-light)',
                     cursor: onRowClick ? 'pointer' : 'default',
                     transition: 'background 0.12s',
                     background: row.getIsSelected() ? 'var(--primary-light)' : 'transparent',
                   }}
-                  onMouseEnter={e => { if (!row.getIsSelected()) (e.currentTarget as HTMLElement).style.background = 'var(--table-row-hover)' }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = row.getIsSelected() ? 'var(--primary-light)' : 'transparent' }}
                 >
                   {row.getVisibleCells().map(cell => {
                     const colDef = columns.find(c => c.key === cell.column.id)
@@ -610,6 +662,7 @@ export function DataGrid<T = any>({
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           <button
             onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}
+            className="data-grid-pagination-btn"
             style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: !table.getCanPreviousPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanPreviousPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <Icon name="chevron-left" size={13} />
@@ -621,13 +674,14 @@ export function DataGrid<T = any>({
               : <button
                   key={n}
                   onClick={() => table.setPageIndex((n as number) - 1)}
+                  className={pageIndex + 1 === n ? "" : "data-grid-pagination-btn"}
                   style={{
                     minWidth: 28, height: 28, padding: '0 6px', borderRadius: 7,
                     border: pageIndex + 1 === n ? 'none' : '1px solid var(--border)',
                     background: pageIndex + 1 === n ? 'var(--primary)' : 'transparent',
                     color: pageIndex + 1 === n ? '#fff' : 'var(--text-3)',
                     fontSize: 12, fontWeight: pageIndex + 1 === n ? 700 : 400,
-                    fontFamily: 'var(--font)', cursor: 'pointer', transition: 'all 0.15s',
+                    fontFamily: 'var(--font)', cursor: 'pointer',
                   }}
                 >
                   {n}
@@ -636,6 +690,7 @@ export function DataGrid<T = any>({
 
           <button
             onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}
+            className="data-grid-pagination-btn"
             style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: !table.getCanNextPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanNextPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <Icon name="chevron-right" size={13} />

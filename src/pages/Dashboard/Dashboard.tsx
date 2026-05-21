@@ -85,7 +85,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
         <StatCard icon="users" iconBg="var(--primary-light)" label="Tổng học viên" value={stats?.totalStudents || 0} trend={12} trendLabel="So với tháng trước" delay={0} />
         <StatCard icon="book" iconBg="var(--info-light)" label="Lớp đang hoạt động" value={stats?.activeClasses || 0} suffix="lớp" trend={5} delay={80} />
         <StatCard icon="wallet" iconBg="var(--success-light)" label="Doanh thu tháng này" value={stats?.monthlyRevenue.toFixed(1) || "0"} suffix="tr" trend={8.2} trendLabel={`${(stats?.monthlyRevenue || 0).toLocaleString()} tr`} delay={160} />
-        <StatCard icon="graduation" iconBg="#EDE9FE" label="Giáo viên" value={stats?.totalTeachers || 0} suffix="người" delay={240} />
+        <StatCard icon="graduation" iconBg="var(--academic-light)" label="Giáo viên" value={stats?.totalTeachers || 0} suffix="người" delay={240} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, marginBottom: 24 }}>

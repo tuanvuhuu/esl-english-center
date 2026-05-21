@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react'
 import { PageHeader, Tabs, useToast } from '../../components'
 import { useQuery } from '../../hooks/useSupabase'
 import { getTests, createTest, getTestQuestions } from '../../services/tests'
+import { notify } from '../../services'
 import { getClasses } from '../../services/classes'
 import { mapClass } from '../../lib/mappers'
 import type { DbTest } from '../../types/database'
@@ -44,6 +45,7 @@ export const Tests: React.FC = () => {
     setCreating(true)
     try {
       await createTest(payload)
+      notify('Tạo bài kiểm tra', `Bài kiểm tra "${payload.name}" đã được tạo`, 'info', { entityType: 'test' })
       await refetchTests()
     } finally {
       setCreating(false)

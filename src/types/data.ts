@@ -67,10 +67,13 @@ export interface Notification {
   time: string;
   type: string;
   read: boolean;
+  entityType?: string | null;
+  entityId?: string | null;
 }
 
 export interface Payment {
   id: string | number;
+  code?: string;
   student: string;
   amount: string | number;
   date: string;

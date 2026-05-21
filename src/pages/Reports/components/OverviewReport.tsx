@@ -88,37 +88,37 @@ export const OverviewReport: React.FC<OverviewReportProps> = ({ range, onJump })
           label="Học viên"
           value={studentStats.total}
           sub={<span>{studentStats.active} đang học · +{studentStats.newInRange} mới</span>}
-          icon="users" color="#FF6B35" bg="var(--primary-light)" delay={0}
+          icon="users" color="var(--primary)" bg="var(--primary-light)" delay={0}
         />
         <KpiStat
           label="Doanh thu kỳ"
           value={VND_SHORT(financeStats.paid) + 'đ'}
           sub={<span>{financeStats.count} phiếu thu</span>}
-          icon="dollar" color="#16a34a" bg="#dcfce7" delay={70}
+          icon="dollar" color="var(--success-dark)" bg="var(--success-light)" delay={70}
         />
         <KpiStat
           label="Công nợ"
           value={VND_SHORT(financeStats.pending) + 'đ'}
           sub={<span>cần thu</span>}
-          icon="alert-circle" color="#d97706" bg="#fef3c7" delay={140}
+          icon="alert-circle" color="var(--warning-dark)" bg="var(--warning-light)" delay={140}
         />
         <KpiStat
           label="Lớp đang dạy"
           value={classStats.active}
           sub={<span>{classStats.total} tổng số lớp</span>}
-          icon="book" color="#2563eb" bg="#dbeafe" delay={210}
+          icon="book" color="var(--info-dark)" bg="var(--info-light)" delay={210}
         />
         <KpiStat
           label="Giáo viên"
           value={teacherCount}
           sub={<span>đang hoạt động</span>}
-          icon="graduation" color="#8b5cf6" bg="#ede9fe" delay={280}
+          icon="graduation" color="var(--academic-dark)" bg="var(--academic-light)" delay={280}
         />
         <KpiStat
           label="Bài kiểm tra"
           value={testStats.total}
           sub={<span>{testStats.upcoming} sắp tới · {testStats.completed} đã chấm</span>}
-          icon="clipboard" color="#ec4899" bg="#fce7f3" delay={350}
+          icon="clipboard" color="var(--pink-dark)" bg="var(--pink-light)" delay={350}
         />
       </div>
 
@@ -169,11 +169,11 @@ export const OverviewReport: React.FC<OverviewReportProps> = ({ range, onJump })
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10 }}>
           {([
-            { id: 'student',    icon: 'users',      label: 'Học viên',    color: '#FF6B35', bg: 'var(--primary-light)' },
-            { id: 'finance',    icon: 'wallet',     label: 'Tài chính',   color: '#16a34a', bg: '#dcfce7' },
-            { id: 'attendance', icon: 'clipboard',  label: 'Điểm danh',   color: '#2563eb', bg: '#dbeafe' },
-            { id: 'academic',   icon: 'star',       label: 'Học tập',     color: '#8b5cf6', bg: '#ede9fe' },
-            { id: 'teacher',    icon: 'graduation', label: 'Giáo viên',   color: '#f59e0b', bg: 'var(--warning-light)' },
+            { id: 'student',    icon: 'users',      label: 'Học viên',    color: 'var(--primary)', bg: 'var(--primary-light)' },
+            { id: 'finance',    icon: 'wallet',     label: 'Tài chính',   color: 'var(--success-dark)', bg: 'var(--success-light)' },
+            { id: 'attendance', icon: 'clipboard',  label: 'Điểm danh',   color: 'var(--info-dark)', bg: 'var(--info-light)' },
+            { id: 'academic',   icon: 'star',       label: 'Học tập',     color: 'var(--academic-dark)', bg: 'var(--academic-light)' },
+            { id: 'teacher',    icon: 'graduation', label: 'Giáo viên',   color: 'var(--warning-dark)', bg: 'var(--warning-light)' },
           ] as const).map(m => (
             <button
               key={m.id}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Button, Tabs, LoadingSpinner, EmptyState, ConfirmDialog } from '../../components'
+import { Button, Tabs, LoadingSpinner, EmptyState, ConfirmDialog, useConfirm, StudentAttendanceModal } from '../../components'
 import { StudentTable } from './components/StudentTable'
 import { StudentGrid } from './components/StudentGrid'
 import { StudentDetail } from './components/StudentDetail'
@@ -22,6 +22,7 @@ interface StudentsProps {
 }
 
 export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
+  const confirm = useConfirm()
   const { selectedBranch, selectedYear } = useAppContext()
   const branchId = selectedBranch?.id
   const yearId = selectedYear?.id
@@ -30,6 +31,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
     [branchId, yearId]
   )
   const students: Student[] = (raw ?? []).map(mapStudent)
+  const [attendanceHistoryStudent, setAttendanceHistoryStudent] = useState<Student | null>(null)
 
   const {
     state: { search, filters, viewMode, showForm, editItem: editStudent, deleteTarget, detailItem: selectedStudent },
@@ -111,7 +113,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
         style={{
           border: 'none',
           background: filters.status === 'active' ? 'var(--card)' : 'transparent',
-          color: filters.status === 'active' ? '#10B981' : 'var(--text-2)',
+          color: filters.status === 'active' ? 'var(--success-dark)' : 'var(--text-2)',
           fontWeight: filters.status === 'active' ? 700 : 500,
           fontSize: 11,
           padding: '4px 10px',
@@ -124,7 +126,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
           gap: 5,
         }}
       >
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success-dark)' }} />
         Đang học ({statusCounts.active})
       </button>
       <button
@@ -132,7 +134,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
         style={{
           border: 'none',
           background: filters.status === 'trial' ? 'var(--card)' : 'transparent',
-          color: filters.status === 'trial' ? '#3B82F6' : 'var(--text-2)',
+          color: filters.status === 'trial' ? 'var(--info-dark)' : 'var(--text-2)',
           fontWeight: filters.status === 'trial' ? 700 : 500,
           fontSize: 11,
           padding: '4px 10px',
@@ -145,7 +147,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
           gap: 5,
         }}
       >
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#3B82F6' }} />
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--info-dark)' }} />
         Học thử ({statusCounts.trial})
       </button>
       <button
@@ -153,7 +155,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
         style={{
           border: 'none',
           background: filters.status === 'paused' ? 'var(--card)' : 'transparent',
-          color: filters.status === 'paused' ? '#F59E0B' : 'var(--text-2)',
+          color: filters.status === 'paused' ? 'var(--warning-dark)' : 'var(--text-2)',
           fontWeight: filters.status === 'paused' ? 700 : 500,
           fontSize: 11,
           padding: '4px 10px',
@@ -166,7 +168,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
           gap: 5,
         }}
       >
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F59E0B' }} />
+        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning-dark)' }} />
         Tạm nghỉ ({statusCounts.paused})
       </button>
       {statusCounts.inactive > 0 && (
@@ -175,7 +177,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
           style={{
             border: 'none',
             background: filters.status === 'inactive' ? 'var(--card)' : 'transparent',
-            color: filters.status === 'inactive' ? '#EF4444' : 'var(--text-2)',
+            color: filters.status === 'inactive' ? 'var(--error-dark)' : 'var(--text-2)',
             fontWeight: filters.status === 'inactive' ? 700 : 500,
             fontSize: 11,
             padding: '4px 10px',
@@ -188,7 +190,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
             gap: 5,
           }}
         >
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#EF4444' }} />
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--error-dark)' }} />
           Nghỉ học ({statusCounts.inactive})
         </button>
       )}
@@ -202,8 +204,14 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
           size="sm"
           variant="outline"
           icon="trash"
-          onClick={() => {
-            if (confirm(`Xoá ${selectedStudents.length} học viên?`)) {
+          onClick={async () => {
+            const ok = await confirm({
+              title: 'Xác nhận xóa',
+              message: `Xoá ${selectedStudents.length} học viên?`,
+              confirmLabel: 'Xác nhận',
+              variant: 'danger',
+            })
+            if (ok) {
               bulkSoftDeleteStudents(selectedStudents.map(s => String(s.id)))
                 .then(() => {
                   setSelectedStudents([])
@@ -270,12 +278,13 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
             onAdd={openAdd}
             onRefresh={refetch}
             loading={loading}
+            onShowAttendanceHistory={setAttendanceHistoryStudent}
           />
         </div>
       ) : loading ? (
         <LoadingSpinner />
       ) : (
-        <StudentGrid students={filtered} onSelectStudent={setDetail} onEdit={openEdit} onDelete={setDeleteTarget} />
+        <StudentGrid students={filtered} onSelectStudent={setDetail} onEdit={openEdit} onDelete={setDeleteTarget} onShowAttendanceHistory={setAttendanceHistoryStudent} />
       )}
 
       <StudentDetail student={selectedStudent} onClose={() => { setDetail(null); onNavigate?.('students', null); }} onEdit={openEdit} onDelete={setDeleteTarget} onSuccess={refetch} defaultTab={params?.tab} />
@@ -304,6 +313,15 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
         branchId={branchId}
         yearId={yearId}
       />
+
+      {attendanceHistoryStudent && (
+        <StudentAttendanceModal
+          open={!!attendanceHistoryStudent}
+          onClose={() => setAttendanceHistoryStudent(null)}
+          studentId={String(attendanceHistoryStudent.id)}
+          studentName={attendanceHistoryStudent.name}
+        />
+      )}
     </div>
   )
 }

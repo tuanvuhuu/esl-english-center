@@ -63,3 +63,43 @@ export async function updatePayment(id: string, payload: Partial<DbPayment>) {
   if (error) throw error
   return data as DbPayment
 }
+
+export async function softDeletePayment(id: string) {
+  const { error } = await supabase
+    .from('payments')
+    .update({ is_deleted: true })
+    .eq('id', id)
+
+  if (error) throw error
+}
+
+export async function cancelPayment(id: string) {
+  const { data, error } = await supabase
+    .from('payments')
+    .update({ status: 'cancelled' })
+    .eq('id', id)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data as DbPayment
+}
+
+export async function bulkMarkPaid(ids: string[]) {
+  const { error } = await supabase
+    .from('payments')
+    .update({ status: 'paid', payment_date: new Date().toISOString().split('T')[0] })
+    .in('id', ids)
+
+  if (error) throw error
+}
+
+export async function bulkCreatePayments(payloads: Partial<DbPayment>[]) {
+  const { data, error } = await supabase
+    .from('payments')
+    .insert(payloads)
+    .select()
+
+  if (error) throw error
+  return data as DbPayment[]
+}

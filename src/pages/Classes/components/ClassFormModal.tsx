@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { Modal, Input, Select, Button, useToast, SelectBoxMultiple } from '../../../components'
-import { createClass, updateClass, getTeachers, getRooms, getBranches, getAcademicYears } from '../../../services'
+import { Modal, Input, Select, SelectBox, Button, useToast, SelectBoxMultiple } from '../../../components'
+import { createClass, updateClass, getTeachers, getRooms, getBranches, getAcademicYears, getStudentLevels, notify } from '../../../services'
 import { useQuery } from '../../../hooks'
 import { supabase } from '../../../lib/supabase'
 import type { Class } from '../../../types/data'
@@ -33,7 +33,7 @@ interface Form {
 }
 
 const EMPTY: Form = {
-  name: '', level: 'A1', ageGroup: '', teacherId: '', assistantIds: [],
+  name: '', level: '', ageGroup: '', teacherId: '', assistantIds: [],
   roomId: '', branchId: '', academicYearId: '', totalSessions: '', maxStudents: '15', feePerMonth: '',
   status: 'active', startDate: '', endDate: '',
   schedDays: [], schedStart: '17:00', schedEnd: '18:30',
@@ -44,7 +44,12 @@ const DAY_LABELS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
 export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, onSuccess, classData }) => {
   const isEdit = !!classData
   const toast = useToast()
-  const [form, setForm] = useState<Form>(EMPTY)
+  const { data: levelsRaw } = useQuery(getStudentLevels)
+  const levelOptions = React.useMemo(() => levelsRaw ?? [], [levelsRaw])
+
+  const [form, setForm] = useState<Form>(() => {
+    return { ...EMPTY, level: '' }
+  })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -57,7 +62,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
     if (classData) {
       setForm({
         name: classData.name ?? '',
-        level: classData.level ?? 'A1',
+        level: classData.level ?? '',
         ageGroup: classData.ageGroup ?? '',
         teacherId: String(classData.teacherId ?? ''),
         assistantIds: (classData.assistantIds as string[] | undefined) ?? [],
@@ -75,10 +80,16 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
         schedEnd: classData.endTime ?? '18:30',
       })
     } else {
-      setForm(EMPTY)
+      setForm({ ...EMPTY, level: '' })
     }
     setError(null)
   }, [classData, open])
+
+  useEffect(() => {
+    if (!classData && !form.level && levelOptions.length > 0) {
+      setForm(f => ({ ...f, level: levelOptions[0].value }))
+    }
+  }, [levelOptions, classData, form.level])
 
   const set = (k: keyof Form, v: any) => setForm(f => ({ ...f, [k]: v }))
 
@@ -135,6 +146,12 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
       }
 
       toast.success(isEdit ? 'Cập nhật lớp học thành công' : 'Mở lớp học thành công')
+      notify(
+        isEdit ? 'Cập nhật lớp học' : 'Mở lớp học mới',
+        isEdit ? `Đã cập nhật thông tin lớp ${form.name}` : `Lớp ${form.name} đã được mở thành công`,
+        'success',
+        { entityType: 'class', entityId: classId }
+      )
       onSuccess()
       onClose()
     } catch (e: any) {
@@ -155,11 +172,8 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
         </div>
 
         {/* Hàng 2: Trình độ · Độ tuổi · Trạng thái */}
-        <Select label="Trình độ" value={form.level} onChange={v => set('level', v)}
-          options={[
-            { value: 'A1', label: 'A1 · Starter' }, { value: 'A2', label: 'A2 · Elementary' },
-            { value: 'B1', label: 'B1 · Pre-Inter' }, { value: 'B2', label: 'B2 · Intermediate' },
-          ]} />
+        <SelectBox label="Trình độ" value={form.level} onChange={v => set('level', v)}
+          options={levelOptions} />
         <Input label="Độ tuổi" value={form.ageGroup} onChange={v => set('ageGroup', v)} placeholder="VD: 8-12" />
         <Select label="Trạng thái" value={form.status} onChange={v => set('status', v)}
           options={[

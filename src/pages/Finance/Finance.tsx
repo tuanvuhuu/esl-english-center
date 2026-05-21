@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react'
-import { Card, Button, Select, LoadingSpinner, EmptyState, Icon, Avatar, PageHeader, useToast } from '../../components'
+import React, { useMemo, useState, useCallback } from 'react'
+import { Card, Button, Select, LoadingSpinner, EmptyState, Icon, Avatar, PageHeader, useToast, useConfirm } from '../../components'
 import { useQuery, useCRUDPage, useListFilter } from '../../hooks'
-import { getPayments, updatePayment } from '../../services'
+import { getPayments, updatePayment, notify, softDeletePayment, cancelPayment, bulkMarkPaid } from '../../services'
 import { useAppContext } from '../../context/AppContext'
 import { mapPayment } from '../../lib/mappers'
 import { PaymentTable } from './PaymentTable'
@@ -114,6 +114,10 @@ export const Finance: React.FC = () => {
   const [markingId, setMarkingId] = useState<string | null>(null)
   const [period, setPeriod]       = useState<Period>('thismonth')
   const [agingPick, setAgingPick] = useState<AgingKey>('all')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [bulkLoading, setBulkLoading] = useState(false)
+  const [debtorFilter, setDebtorFilter] = useState<string | null>(null)
+  const confirm = useConfirm()
 
   /* ── Period range ── */
   const now = useMemo(() => new Date(), [])
@@ -283,24 +287,167 @@ export const Finance: React.FC = () => {
     })
   }, [rows, agingPick])
 
-  const filtered = useListFilter(baseRows, search, filters, {
-    searchKeys: [r => r.mapped.student, r => r.raw.class?.name ?? ''],
+  const filteredBase = useListFilter(baseRows, search, filters, {
+    searchKeys: [r => r.mapped.student, r => r.raw.class?.name ?? '', r => r.mapped.code ?? ''],
     filterMap: {
       status: r => r.mapped.status,
       type:   r => r.raw.type ?? '',
     },
   })
+  // Apply debtor filter on top
+  const filtered = debtorFilter
+    ? filteredBase.filter(r => r.mapped.student === debtorFilter)
+    : filteredBase
 
   const handleMarkPaid = async (id: string) => {
     setMarkingId(id)
     try {
       await updatePayment(id, { status: 'paid', payment_date: new Date().toISOString().split('T')[0] })
       toast.success('Đã đánh dấu đã thu')
+      notify('Xác nhận thu học phí', `Đã xác nhận thu học phí thành công`, 'success', { entityType: 'payment', entityId: id })
       refetch()
     } catch (e: any) {
       toast.error(e.message || 'Cập nhật thất bại')
     } finally { setMarkingId(null) }
   }
+
+  const handleCancel = async (id: string) => {
+    const ok = await confirm({ title: 'Huỷ phiếu thu?', message: 'Phiếu thu sẽ chuyển sang trạng thái đã huỷ.', confirmLabel: 'Huỷ phiếu', variant: 'danger' })
+    if (!ok) return
+    try {
+      await cancelPayment(id)
+      toast.success('Đã huỷ phiếu thu')
+      notify('Huỷ phiếu thu', 'Phiếu thu đã được huỷ', 'warning', { entityType: 'payment', entityId: id })
+      refetch()
+    } catch (e: any) { toast.error(e.message || 'Lỗi') }
+  }
+
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({ title: 'Xoá phiếu thu?', message: 'Phiếu thu sẽ bị xoá vĩnh viễn khỏi danh sách.', confirmLabel: 'Xoá', variant: 'danger' })
+    if (!ok) return
+    try {
+      await softDeletePayment(id)
+      toast.success('Đã xoá phiếu thu')
+      refetch()
+    } catch (e: any) { toast.error(e.message || 'Lỗi') }
+  }
+
+  const handleBulkMarkPaid = async () => {
+    if (selectedIds.size === 0) return
+    const ok = await confirm({ title: `Đánh dấu ${selectedIds.size} phiếu đã thu?`, message: 'Tất cả phiếu được chọn sẽ chuyển sang đã thu.', confirmLabel: 'Xác nhận' })
+    if (!ok) return
+    setBulkLoading(true)
+    try {
+      await bulkMarkPaid(Array.from(selectedIds))
+      toast.success(`Đã đánh dấu ${selectedIds.size} phiếu đã thu`)
+      notify('Thu học phí hàng loạt', `Đã xác nhận thu ${selectedIds.size} phiếu`, 'success', { entityType: 'payment' })
+      setSelectedIds(new Set())
+      refetch()
+    } catch (e: any) { toast.error(e.message || 'Lỗi') }
+    finally { setBulkLoading(false) }
+  }
+
+  const handleReminder = useCallback(() => {
+    const pending = rows.filter(r => r.mapped.status !== 'paid')
+    if (pending.length === 0) { toast.info('Không có phiếu cần nhắc nhở'); return }
+    for (const r of pending.slice(0, 20)) {
+      notify('Nhắc nhở thu học phí', `Phiếu ${r.mapped.code || r.mapped.id}: ${r.mapped.student} - ${typeof r.mapped.amount === 'number' ? r.mapped.amount.toLocaleString('vi-VN') + 'đ' : r.mapped.amount}`, 'warning', { entityType: 'payment', entityId: String(r.mapped.id) })
+    }
+    toast.success(`Đã gửi ${Math.min(pending.length, 20)} nhắc nhở`)
+  }, [rows, toast])
+
+  const handleExportExcel = async () => {
+    const XLSX = await import('xlsx')
+    const exportData = filtered.map(r => ({
+      'Mã phiếu': r.mapped.code || '',
+      'Học viên': r.mapped.student,
+      'Lớp': r.raw.class?.name || '',
+      'Số tiền': r.raw.amount,
+      'Loại': r.mapped.type,
+      'Trạng thái': r.mapped.status === 'paid' ? 'Đã thu' : r.mapped.status === 'pending' ? 'Chờ thu' : r.mapped.status === 'overdue' ? 'Quá hạn' : 'Đã huỷ',
+      'Phương thức': r.raw.payment_method || '',
+      'Kỳ': r.raw.period_month ? `T${r.raw.period_month}/${r.raw.period_year}` : '',
+      'Ngày thu': r.raw.payment_date || '',
+      'Hạn đóng': r.raw.due_date || '',
+      'Ghi chú': r.raw.notes || '',
+    }))
+    const ws = XLSX.utils.json_to_sheet(exportData)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Phiếu thu')
+    XLSX.writeFile(wb, `phieu-thu-${new Date().toISOString().split('T')[0]}.xlsx`)
+    toast.success('Đã xuất file Excel')
+  }
+
+  const handleExportPdf = async () => {
+    const { jsPDF } = await import('jspdf')
+    const doc = new jsPDF({ orientation: 'landscape' })
+    doc.setFontSize(16)
+    doc.setFont('helvetica', 'bold')
+    doc.text('BAO CAO TAI CHINH', 148, 15, { align: 'center' })
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.text(`Xuat ngay: ${new Date().toLocaleDateString('vi-VN')}  |  ${filtered.length} phieu thu`, 148, 22, { align: 'center' })
+
+    let y = 32
+    // Table header
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    const cols = [15, 40, 85, 135, 165, 195, 225, 255]
+    const headers = ['Ma', 'Hoc vien', 'Lop', 'So tien', 'Loai', 'Trang thai', 'PT', 'Ky']
+    headers.forEach((h, i) => doc.text(h, cols[i], y))
+    y += 5
+    doc.line(15, y, 280, y)
+    y += 4
+
+    doc.setFont('helvetica', 'normal')
+    for (const r of filtered.slice(0, 50)) {
+      if (y > 190) { doc.addPage(); y = 20 }
+      doc.text(r.mapped.code || '', cols[0], y)
+      doc.text((r.mapped.student || '').substring(0, 25), cols[1], y)
+      doc.text((r.raw.class?.name || '').substring(0, 20), cols[2], y)
+      doc.text(r.raw.amount.toLocaleString('vi-VN'), cols[3], y)
+      doc.text(r.mapped.type, cols[4], y)
+      doc.text(r.mapped.status === 'paid' ? 'Da thu' : r.mapped.status, cols[5], y)
+      doc.text(r.raw.payment_method || '', cols[6], y)
+      doc.text(r.raw.period_month ? `T${r.raw.period_month}/${r.raw.period_year}` : '', cols[7], y)
+      y += 5
+    }
+
+    doc.save(`bao-cao-tai-chinh-${new Date().toISOString().split('T')[0]}.pdf`)
+    toast.success('Đã xuất báo cáo PDF')
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+  const toggleSelectAll = () => {
+    const unpaid = filtered.filter(r => r.mapped.status !== 'paid').map(r => String(r.mapped.id))
+    setSelectedIds(prev => prev.size === unpaid.length ? new Set() : new Set(unpaid))
+  }
+
+  /* ── Payment method breakdown ── */
+  const methodBreakdown = useMemo(() => {
+    const map: Record<string, { label: string; amount: number; count: number; color: string }> = {
+      cash:          { label: 'Tiền mặt',     amount: 0, count: 0, color: '#16a34a' },
+      bank_transfer: { label: 'Chuyển khoản', amount: 0, count: 0, color: '#2563eb' },
+      momo:          { label: 'MoMo',         amount: 0, count: 0, color: '#a855f7' },
+      vnpay:         { label: 'VNPay',        amount: 0, count: 0, color: '#0ea5e9' },
+    }
+    for (const r of periodRows) {
+      if (r.mapped.status !== 'paid' || !r.raw.payment_method) continue
+      const k = r.raw.payment_method
+      if (map[k]) {
+        map[k].amount += typeof r.mapped.amount === 'number' ? r.mapped.amount : 0
+        map[k].count++
+      }
+    }
+    return Object.values(map).filter(m => m.count > 0)
+  }, [periodRows])
+  const methodTotal = methodBreakdown.reduce((s, m) => s + m.amount, 0)
 
   /* ── Quick filter chips ── */
   const statusChips = [
@@ -348,13 +495,15 @@ export const Finance: React.FC = () => {
           ? `${rows.length} phiếu thu · ${PERIOD_OPTIONS.find(o => o.value === period)?.label}`
           : `${rows.length} phiếu thu trong tất cả thời gian`}
         actions={
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <Select
               value={period}
               onChange={v => setPeriod(v as Period)}
               options={PERIOD_OPTIONS}
               style={{ minWidth: 170 }}
             />
+            <Button variant="secondary" icon="download" onClick={handleExportExcel} style={{ fontSize: 12 }}>Excel</Button>
+            <Button variant="secondary" icon="file-text" onClick={handleExportPdf} style={{ fontSize: 12 }}>PDF</Button>
             <Button icon="plus" onClick={openAdd}>Tạo phiếu thu</Button>
           </div>
         }
@@ -472,8 +621,8 @@ export const Finance: React.FC = () => {
         </Card>
       </div>
 
-      {/* ── Top debtors + Insights row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 12, marginBottom: 14 }}>
+      {/* ── Top debtors + Pie chart + Insights row ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)', gap: 12, marginBottom: 14 }}>
         {/* Top debtors */}
         <Card animate delay={420} style={{ padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -491,7 +640,18 @@ export const Finance: React.FC = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               {topDebtors.map((d, i) => (
-                <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0' }}>
+                <button
+                  key={d.name}
+                  onClick={() => setDebtorFilter(debtorFilter === d.name ? null : d.name)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '6px 8px',
+                    border: 'none', borderRadius: 8, cursor: 'pointer',
+                    background: debtorFilter === d.name ? 'var(--hover-bg)' : 'transparent',
+                    transition: 'background 0.15s', width: '100%', textAlign: 'left',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = debtorFilter === d.name ? 'var(--hover-bg)' : 'transparent')}
+                >
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-4)', width: 18 }}>#{i + 1}</span>
                   <Avatar initials={d.name[0]} size={26} />
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -507,9 +667,68 @@ export const Finance: React.FC = () => {
                   <span style={{ fontSize: 13, fontWeight: 700, color: '#dc2626' }}>
                     {VND_SHORT(d.amount)}đ
                   </span>
-                </div>
+                </button>
               ))}
             </div>
+          )}
+        </Card>
+
+        {/* Payment method pie chart */}
+        <Card animate delay={450} style={{ padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Icon name="wallet" size={15} style={{ color: '#2563eb' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>Phương thức thanh toán</span>
+          </div>
+          {methodBreakdown.length === 0 ? (
+            <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>
+              Chưa có dữ liệu thanh toán
+            </div>
+          ) : (
+            <>
+              {/* SVG Pie chart */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                <svg width="120" height="120" viewBox="0 0 120 120">
+                  {(() => {
+                    let cumAngle = -90
+                    return methodBreakdown.map((m, i) => {
+                      const pct = methodTotal > 0 ? m.amount / methodTotal : 0
+                      const angle = pct * 360
+                      const startAngle = cumAngle
+                      cumAngle += angle
+                      const largeArc = angle > 180 ? 1 : 0
+                      const rad1 = (startAngle * Math.PI) / 180
+                      const rad2 = ((startAngle + angle) * Math.PI) / 180
+                      const x1 = 60 + 50 * Math.cos(rad1)
+                      const y1 = 60 + 50 * Math.sin(rad1)
+                      const x2 = 60 + 50 * Math.cos(rad2)
+                      const y2 = 60 + 50 * Math.sin(rad2)
+                      if (pct <= 0) return null
+                      if (pct >= 0.999) return <circle key={i} cx={60} cy={60} r={50} fill={m.color} />
+                      return (
+                        <path
+                          key={i}
+                          d={`M60,60 L${x1},${y1} A50,50 0 ${largeArc},1 ${x2},${y2} Z`}
+                          fill={m.color}
+                          opacity={0.85}
+                        />
+                      )
+                    })
+                  })()}
+                  <circle cx={60} cy={60} r={28} fill="var(--card)" />
+                </svg>
+              </div>
+              {/* Legend */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {methodBreakdown.map(m => (
+                  <div key={m.label} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                    <span style={{ width: 10, height: 10, borderRadius: 3, background: m.color, flexShrink: 0 }} />
+                    <span style={{ flex: 1, color: 'var(--text-2)', fontWeight: 500 }}>{m.label}</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text-1)' }}>{VND_SHORT(m.amount)}đ</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-4)' }}>({m.count})</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Card>
 
@@ -557,7 +776,15 @@ export const Finance: React.FC = () => {
                 desc={`Đã thu ${collectionRate}% học phí kỳ này`}
               />
             )}
-            {aging['60+'].count === 0 && upcoming7Days.length === 0 && collectionRate < 95 && (
+            {(pendingCount > 0) && (
+              <InsightItem
+                color="#8b5cf6" bg="#ede9fe" icon="bell"
+                title={`Gửi nhắc nhở thu phí (${pendingCount} phiếu)`}
+                desc="Tạo thông báo nhắc nhở cho tất cả phiếu chưa thu"
+                onClick={handleReminder}
+              />
+            )}
+            {aging['60+'].count === 0 && upcoming7Days.length === 0 && pendingCount === 0 && collectionRate < 95 && (
               <div style={{ padding: '16px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 12 }}>
                 Không có cảnh báo nào lúc này
               </div>
@@ -647,6 +874,30 @@ export const Finance: React.FC = () => {
         </div>
       </Card>
 
+      {/* ── Bulk actions bar ── */}
+      {selectedIds.size > 0 && (
+        <Card animate style={{ padding: '10px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 12, background: 'var(--primary-light)' }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--primary)' }}>
+            {selectedIds.size} phiếu được chọn
+          </span>
+          <Button size="sm" icon="check" onClick={handleBulkMarkPaid} disabled={bulkLoading}>
+            {bulkLoading ? 'Đang xử lý...' : 'Đánh dấu đã thu'}
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => setSelectedIds(new Set())}>Bỏ chọn</Button>
+        </Card>
+      )}
+
+      {/* ── Debtor filter indicator ── */}
+      {debtorFilter && (
+        <Card animate style={{ padding: '8px 16px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8, background: 'var(--warning-light, #fef3c7)' }}>
+          <Icon name="filter" size={13} style={{ color: '#b45309' }} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#b45309' }}>Đang lọc: {debtorFilter}</span>
+          <button onClick={() => setDebtorFilter(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#b45309', display: 'flex' }}>
+            <Icon name="x" size={14} />
+          </button>
+        </Card>
+      )}
+
       {/* ── Main table / grid ── */}
       {error ? (
         <EmptyState title="Lỗi tải dữ liệu" desc={error.message} />
@@ -655,11 +906,16 @@ export const Finance: React.FC = () => {
           rows={filtered}
           subtitle={`${filtered.length} phiếu thu`}
           onMarkPaid={handleMarkPaid}
+          onCancel={handleCancel}
+          onDelete={handleDelete}
           markingId={markingId}
           onAdd={openAdd}
           onRefresh={refetch}
           onRowClick={openEdit}
           loading={loading}
+          selectedIds={selectedIds}
+          onToggleSelect={toggleSelect}
+          onToggleSelectAll={toggleSelectAll}
         />
       ) : loading ? (
         <LoadingSpinner />

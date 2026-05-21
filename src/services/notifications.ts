@@ -47,3 +47,24 @@ export async function createNotification(payload: Partial<DbNotification>) {
   if (error) throw error
   return data as DbNotification
 }
+
+/**
+ * Fire-and-forget notification — never throws, never blocks UI.
+ * Use this from mutation handlers so a notification failure won't roll back the main action.
+ */
+export function notify(
+  title: string,
+  body: string,
+  type: DbNotification['type'] = 'info',
+  opts?: { entityType?: string; entityId?: string },
+) {
+  createNotification({
+    title,
+    body,
+    type,
+    entity_type: opts?.entityType ?? null,
+    entity_id: opts?.entityId ?? null,
+    is_read: false,
+    is_deleted: false,
+  }).catch((err) => console.warn('[notify] failed:', err))
+}

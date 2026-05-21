@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom'
 import { DataGrid, Badge, StatusBadge, Icon, TextWithEllipse } from '../../../components'
 import type { DataGridColumn } from '../../../components'
 import type { Class } from '../../../types/data'
+import { getStudentLevels } from '../../../services'
+import { useQuery } from '../../../hooks'
 
 interface ClassTableProps {
   classes: Class[]
@@ -121,6 +123,9 @@ const ActionMenu = ({ c, onSelectClass, onEdit, onDelete }: {
 export const ClassTable: React.FC<ClassTableProps> = ({
   classes, onSelectClass, onEdit, onDelete, actions, subtitle, onAdd, onRefresh, loading,
 }) => {
+  const { data: levelsRaw } = useQuery(getStudentLevels)
+  const levelOptions = React.useMemo(() => (levelsRaw ?? []).map(l => ({ value: l.value, label: l.value })), [levelsRaw])
+
   const columns: DataGridColumn<Class>[] = [
     {
       key: '_actions',
@@ -164,12 +169,7 @@ export const ClassTable: React.FC<ClassTableProps> = ({
       filterable: true,
       isAllowCopy: true,
       filterType: 'select',
-      filterOptions: [
-        { value: 'A1', label: 'A1' },
-        { value: 'A2', label: 'A2' },
-        { value: 'B1', label: 'B1' },
-        { value: 'B2', label: 'B2' },
-      ],
+      filterOptions: levelOptions,
       render: c => (
         <Badge style={{ background: LVL_COLOR[c.level] ? `${LVL_COLOR[c.level]}20` : undefined, color: LVL_COLOR[c.level], fontSize: 12 }}>
           {c.level}

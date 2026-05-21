@@ -24,10 +24,10 @@ export function useToast() {
 }
 
 const STYLES: Record<ToastType, { icon: string; color: string; bg: string; border: string }> = {
-  success: { icon: '✓', color: '#16a34a', bg: '#f0fdf4', border: '#86efac' },
-  error:   { icon: '✕', color: '#dc2626', bg: '#fef2f2', border: '#fca5a5' },
-  warning: { icon: '!', color: '#d97706', bg: '#fffbeb', border: '#fcd34d' },
-  info:    { icon: 'i', color: '#2563eb', bg: '#eff6ff', border: '#93c5fd' },
+  success: { icon: '✓', color: 'var(--success-text)', bg: 'var(--success-bg)', border: 'var(--success-border)' },
+  error:   { icon: '✕', color: 'var(--error-text)', bg: 'var(--error-bg)', border: 'var(--error-border)' },
+  warning: { icon: '!', color: 'var(--warning-text)', bg: 'var(--warning-bg)', border: 'var(--warning-border)' },
+  info:    { icon: 'i', color: 'var(--info-text)', bg: 'var(--info-bg)', border: 'var(--info-border)' },
 }
 
 const DURATION = 3500
@@ -71,10 +71,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             <div key={t.id} style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '11px 14px',
-              background: s.bg,
+              background: `linear-gradient(0deg, ${s.bg}, ${s.bg}), var(--card)`,
               border: `1.5px solid ${s.border}`,
               borderRadius: 12,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.13)',
+              boxShadow: 'var(--shadow-lg)',
               minWidth: 240, maxWidth: 360,
               pointerEvents: 'all',
               fontFamily: 'var(--font)',
@@ -86,10 +86,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 700,
               }}>{s.icon}</div>
-              <div style={{ flex: 1, fontSize: 13, color: '#1e293b', lineHeight: 1.4 }}>{t.message}</div>
+              <div style={{ flex: 1, fontSize: 13, color: 'var(--text-1)', lineHeight: 1.4 }}>{t.message}</div>
               <button onClick={() => remove(t.id)} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: '#94a3b8', fontSize: 18, lineHeight: 1, padding: 2, flexShrink: 0,
+                color: 'var(--text-4)', fontSize: 18, lineHeight: 1, padding: 2, flexShrink: 0,
               }}>×</button>
             </div>
           )
