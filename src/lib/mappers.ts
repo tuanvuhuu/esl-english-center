@@ -40,6 +40,8 @@ export function mapStudent(s: DbStudent): Student {
     parentEmail: primaryParent?.parent?.email ?? undefined,
     parentAddress: primaryParent?.parent?.address ?? undefined,
     parentRelation: primaryParent?.relation ?? undefined,
+    attendanceRate: (s as any).attendanceRate,
+    absenceCount: (s as any).absenceCount,
   }
 }
 
@@ -83,6 +85,8 @@ export function mapClass(c: DbClass): Class {
     status: (c.status === 'active' ? 'active' : c.status === 'inactive' ? 'paused' : 'inactive') as Class['status'],
     startDate: c.start_date ? formatDate(c.start_date) : undefined,
     endDate: c.end_date ? formatDate(c.end_date) : undefined,
+    totalSessions: c.total_sessions ?? undefined,
+    completedSessions: (c as any).completed_sessions ?? 0,
     fee: c.fee_per_month ? c.fee_per_month.toLocaleString('vi-VN') + 'đ/tháng' : '',
     feeRaw: c.fee_per_month ?? null,
   }

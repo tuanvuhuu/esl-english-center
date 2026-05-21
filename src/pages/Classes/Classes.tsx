@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Card, Button, Input, Select, Tabs, LoadingSpinner, EmptyState, Modal, InfoRow, StatusBadge, Badge, ConfirmDialog } from '../../components'
 import { ClassTable } from './components/ClassTable'
 import { ClassGrid } from './components/ClassGrid'
 import { ClassFormModal } from './components/ClassFormModal'
+import { ClassStudentsPanel } from './components/ClassStudentsPanel'
 import { useQuery, useCRUDPage, useListFilter, useEntityDelete } from '../../hooks'
 import { getClasses, softDeleteClass } from '../../services'
 import { mapClass } from '../../lib/mappers'
@@ -20,11 +21,15 @@ export const Classes: React.FC = () => {
   const classes = (raw ?? []).map(mapClass)
 
   const {
-    state: { search, filters, viewMode, showForm, editItem: editClass, deleteTarget, detailItem: detailClass },
+    state: { search, filters, viewMode, showForm, editItem: editClass, deleteTarget, detailItem: rawDetailClass },
     setSearch, setFilter, setViewMode,
     openAdd, openEdit, closeForm,
     setDetail, setDeleteTarget,
   } = useCRUDPage<Class>({ status: 'all', level: 'all' })
+
+  const detailClass = rawDetailClass ? (classes.find(c => String(c.id) === String(rawDetailClass.id)) || rawDetailClass) : null
+
+  const [classTab, setClassTab] = useState<'info' | 'students'>('info')
 
   const filtered = useListFilter(classes, search, filters, {
     searchKeys: ['name', (c: Class) => c.teacher ?? ''],
@@ -114,10 +119,11 @@ export const Classes: React.FC = () => {
         <ClassGrid classes={filtered} onSelectClass={setDetail} onEdit={openEdit} onDelete={setDeleteTarget} />
       )}
 
-      <Modal open={!!detailClass} onClose={() => setDetail(null)} title="Chi tiết lớp học" width={580}>
+      <Modal open={!!detailClass} onClose={() => { setDetail(null); setClassTab('info') }} title="Chi tiết lớp học" width={650}>
         {detailClass && (
           <div>
-            <div style={{ padding: 20, background: 'var(--hover-bg)', borderRadius: 14, marginBottom: 20 }}>
+            {/* Header */}
+            <div style={{ padding: 20, background: 'var(--hover-bg)', borderRadius: 14, marginBottom: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)' }}>{detailClass.name}</div>
@@ -131,18 +137,40 @@ export const Classes: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-              <InfoRow icon="graduation" label="Giáo viên"  value={detailClass.teacher   || '—'} />
-              <InfoRow icon="calendar"   label="Lịch học"   value={detailClass.schedule  || '—'} />
-              <InfoRow icon="building"   label="Phòng"      value={detailClass.room      || '—'} />
-              <InfoRow icon="wallet"     label="Học phí"    value={detailClass.fee       || 'Miễn phí'} />
-              <InfoRow icon="clock"      label="Khai giảng" value={detailClass.startDate || '—'} />
-              <InfoRow icon="clock"      label="Bế giảng"   value={detailClass.endDate   || '—'} />
+
+            {/* Tabs */}
+            <div style={{ marginBottom: 16 }}>
+              <Tabs
+                tabs={[
+                  { id: 'info',     label: 'Thông tin',   tooltip: 'Chi tiết lớp học' },
+                  { id: 'students', label: `Học sinh (${detailClass.students})`, tooltip: 'Quản lý học sinh trong lớp' },
+                ]}
+                active={classTab}
+                onChange={v => setClassTab(v as 'info' | 'students')}
+              />
             </div>
-            <div style={{ display: 'flex', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
-              <Button icon="edit"  variant="outline" onClick={() => openEdit(detailClass)}>Chỉnh sửa</Button>
-              <Button icon="trash" variant="danger"  onClick={() => setDeleteTarget(detailClass)}>Xoá lớp</Button>
-            </div>
+
+            {classTab === 'info' ? (
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
+                  <InfoRow icon="graduation" label="Giáo viên"  value={detailClass.teacher   || '—'} />
+                  <InfoRow icon="calendar"   label="Lịch học"   value={detailClass.schedule  || '—'} />
+                  <InfoRow icon="building"   label="Phòng"      value={detailClass.room      || '—'} />
+                  <InfoRow icon="wallet"     label="Học phí"    value={detailClass.fee       || 'Miễn phí'} />
+                  <InfoRow icon="clock"      label="Khai giảng" value={detailClass.startDate || '—'} />
+                  <InfoRow icon="clock"      label="Bế giảng"   value={detailClass.endDate   || '—'} />
+                  {detailClass.totalSessions && (
+                    <InfoRow icon="check" label="Tổng số buổi" value={`${detailClass.completedSessions || 0}/${detailClass.totalSessions} buổi`} />
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 10, paddingTop: 16, borderTop: '1px solid var(--border)', justifyContent: 'center' }}>
+                  <Button icon="edit"  variant="outline" onClick={() => openEdit(detailClass)}>Chỉnh sửa</Button>
+                  <Button icon="trash" variant="danger"  onClick={() => setDeleteTarget(detailClass)}>Xoá lớp</Button>
+                </div>
+              </>
+            ) : (
+              <ClassStudentsPanel classId={String(detailClass.id)} maxStudents={detailClass.maxStudents} onSuccess={refetch} />
+            )}
           </div>
         )}
       </Modal>

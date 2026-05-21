@@ -162,6 +162,7 @@ export interface DbClass {
   status: 'active' | 'inactive' | 'completed' | 'cancelled'
   start_date: string | null
   end_date: string | null
+  total_sessions: number | null
   fee_per_month: number | null
   is_deleted: boolean
   created_at: string

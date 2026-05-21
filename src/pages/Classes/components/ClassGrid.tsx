@@ -54,6 +54,12 @@ export const ClassGrid: React.FC<ClassGridProps> = ({ classes, onSelectClass, on
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <Icon name="building" size={13} />{c.room || '—'} · {c.fee || 'Miễn phí'}
               </div>
+              {c.totalSessions && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Icon name="check" size={13} style={{ color: '#3B82F6' }} />
+                  Tiến độ: <strong style={{ color: '#3B82F6' }}>{c.completedSessions || 0} / {c.totalSessions}</strong> buổi
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }} onClick={e => e.stopPropagation()}>
               {onEdit && (

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FadeIn, LoadingSpinner } from '../../components';
-import { StatCard, TodaySchedule, RecentActivity, QuickActions, StudentDistribution, RevenueChart } from './components';
+import { StatCard, TodaySchedule, RecentActivity, QuickActions, StudentDistribution, RevenueChart, AtRiskStudents } from './components';
 import { TuitionAlerts } from './components/TuitionAlerts';
 import { useQuery } from '../../hooks/useSupabase';
 import { getDashboardStats, getTodayClasses, getRecentActivities, getTuitionAlerts } from '../../services/dashboard';
@@ -95,6 +95,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16 }}>
         <StudentDistribution data={stats?.distribution} />
+        <AtRiskStudents students={stats?.atRiskStudents} />
         <QuickActions onNavigate={onNavigate} />
         <RecentActivity activities={recentActivities || []} loading={activitiesLoading} />
       </div>

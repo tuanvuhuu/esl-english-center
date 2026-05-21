@@ -21,6 +21,7 @@ interface Form {
   roomId: string
   branchId: string
   academicYearId: string
+  totalSessions: string
   maxStudents: string
   feePerMonth: string
   status: string
@@ -33,7 +34,7 @@ interface Form {
 
 const EMPTY: Form = {
   name: '', level: 'A1', ageGroup: '', teacherId: '', assistantIds: [],
-  roomId: '', branchId: '', academicYearId: '', maxStudents: '15', feePerMonth: '',
+  roomId: '', branchId: '', academicYearId: '', totalSessions: '', maxStudents: '15', feePerMonth: '',
   status: 'active', startDate: '', endDate: '',
   schedDays: [], schedStart: '17:00', schedEnd: '18:30',
 }
@@ -63,6 +64,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
         roomId: classData.roomId ?? '',
         branchId: '',
         academicYearId: '',
+        totalSessions: classData.totalSessions != null ? String(classData.totalSessions) : '',
         maxStudents: String(classData.maxStudents ?? 15),
         feePerMonth: classData.feeRaw != null ? String(classData.feeRaw) : '',
         status: classData.status ?? 'active',
@@ -100,6 +102,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
         age_group: form.ageGroup || null,
         teacher_id: form.teacherId || null,
         room_id: form.roomId || null,
+        total_sessions: parseInt(form.totalSessions) || null,
         max_students: parseInt(form.maxStudents) || 15,
         fee_per_month: form.feePerMonth ? parseFloat(form.feePerMonth) : null,
         status: form.status,
@@ -175,6 +178,7 @@ export const ClassFormModal: React.FC<ClassFormModalProps> = ({ open, onClose, o
             { value: '', label: 'Chưa chọn phòng' },
             ...(rooms ?? []).map(r => ({ value: r.id, label: r.name })),
           ]} />
+        <Input label="Tổng số buổi" value={form.totalSessions} onChange={v => set('totalSessions', v)} type="number" placeholder="VD: 24" />
         <Input label="Sĩ số tối đa" value={form.maxStudents} onChange={v => set('maxStudents', v)} type="number" placeholder="15" />
 
         {/* Trợ giảng — full width, chọn nhiều */}

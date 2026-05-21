@@ -278,7 +278,7 @@ export const Students: React.FC<StudentsProps> = ({ params, onNavigate }) => {
         <StudentGrid students={filtered} onSelectStudent={setDetail} onEdit={openEdit} onDelete={setDeleteTarget} />
       )}
 
-      <StudentDetail student={selectedStudent} onClose={() => { setDetail(null); onNavigate?.('students', null); }} onEdit={openEdit} onDelete={setDeleteTarget} defaultTab={params?.tab} />
+      <StudentDetail student={selectedStudent} onClose={() => { setDetail(null); onNavigate?.('students', null); }} onEdit={openEdit} onDelete={setDeleteTarget} onSuccess={refetch} defaultTab={params?.tab} />
 
       <StudentFormModal
         open={showForm}

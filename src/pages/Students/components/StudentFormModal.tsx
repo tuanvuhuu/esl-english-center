@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react'
 import { Modal, Input, Select, Button, useToast } from '../../../components'
-import { createStudentWithParent, updateStudent, updateStudentWithParent } from '../../../services/students'
-import { getClasses } from '../../../services/classes'
-import { getParents } from '../../../services/parents'
+import { 
+  createStudentWithParent, 
+  updateStudentWithParent, 
+  getClasses, 
+  getParents, 
+  createEnrollment, 
+  removeEnrollment, 
+  linkStudentToAcademicYear 
+} from '../../../services'
 import { useQuery } from '../../../hooks'
+import { useAppContext } from '../../../context/AppContext'
+import { supabase } from '../../../lib/supabase'
 import type { Student } from '../../../types/data'
 import type { StudentParent } from '../../../types/database'
 
@@ -39,11 +47,40 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
   const [form, setForm] = useState<Form>(EMPTY)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [originalClassId, setOriginalClassId] = useState<string>('')
 
-  const { data: classesRaw } = useQuery(getClasses)
+  const { selectedBranch, selectedYear } = useAppContext()
+  const branchId = selectedBranch?.id
+  const yearId = selectedYear?.id
+
+  const { data: classesRaw } = useQuery(
+    () => getClasses({ branchId, academicYearId: yearId }),
+    [branchId, yearId]
+  )
   const { data: parentsRaw } = useQuery(getParents)
 
   useEffect(() => {
+    const fetchActiveEnrollment = async () => {
+      if (!student?.id) return
+      try {
+        const { data, error } = await supabase
+          .from('enrollments')
+          .select('class_id')
+          .eq('student_id', student.id)
+          .eq('is_deleted', false)
+          .maybeSingle()
+        if (error) throw error
+        if (data) {
+          setForm(f => ({ ...f, classId: data.class_id }))
+          setOriginalClassId(data.class_id)
+        } else {
+          setOriginalClassId('')
+        }
+      } catch (e) {
+        console.error('Failed to fetch student active enrollment', e)
+      }
+    }
+
     if (student) {
       setForm({
         name: student.name ?? '',
@@ -58,8 +95,11 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
         parentRelation: (student.parentRelation as StudentParent['relation']) ?? 'mother',
         classId: '',
       })
+      setOriginalClassId('')
+      fetchActiveEnrollment()
     } else {
       setForm(EMPTY)
+      setOriginalClassId('')
     }
     setError(null)
   }, [student, open])
@@ -100,10 +140,34 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
         email: form.parentEmail || null,
       }
 
+      let createdStudentId = String(student?.id || '')
       if (isEdit && student) {
         await updateStudentWithParent(String(student.id), studentData, parentData, form.parentRelation)
       } else {
-        await createStudentWithParent(studentData, parentData, form.parentRelation)
+        const newStudent = await createStudentWithParent(studentData, parentData, form.parentRelation)
+        createdStudentId = String(newStudent.id)
+        if (branchId && yearId) {
+          await linkStudentToAcademicYear(createdStudentId, branchId, yearId, form.level)
+        }
+      }
+
+      // Handle class enrollment change
+      if (form.classId !== originalClassId) {
+        if (originalClassId) {
+          const { data: originalEnrollment } = await supabase
+            .from('enrollments')
+            .select('id')
+            .eq('student_id', createdStudentId)
+            .eq('class_id', originalClassId)
+            .eq('is_deleted', false)
+            .maybeSingle()
+          if (originalEnrollment) {
+            await removeEnrollment(originalEnrollment.id)
+          }
+        }
+        if (form.classId) {
+          await createEnrollment(createdStudentId, form.classId)
+        }
       }
       toast.success(isEdit ? 'Cập nhật học viên thành công' : 'Thêm học viên thành công')
       onSuccess()
@@ -161,9 +225,7 @@ export const StudentFormModal: React.FC<StudentFormModalProps> = ({ open, onClos
               { value: 'grandfather', label: 'Ông' }, { value: 'grandmother', label: 'Bà' },
               { value: 'guardian', label: 'Người giám hộ' }, { value: 'other', label: 'Khác' },
             ]} />
-          {!isEdit && (
-            <Select label="Lớp học" value={form.classId} onChange={v => set('classId', v)} options={classOptions} />
-          )}
+          <Select label="Lớp học" value={form.classId} onChange={v => set('classId', v)} options={classOptions} />
         </>
       </div>
 

@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect } from 'react'
+import ReactDOM from 'react-dom'
 import { DataGrid, Avatar, Icon, ConfirmDialog, useToast } from '../../components'
 import type { DataGridColumn } from '../../components'
 import { useQuery, useCRUDPage } from '../../hooks'
@@ -79,7 +80,65 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
   }
 
   /* Columns */
+  const ActionMenu = ({ r }: { r: DbParent }) => {
+    const [open, setOpen] = React.useState(false)
+    const buttonRef = React.useRef<HTMLButtonElement>(null)
+    const menuRef = React.useRef<HTMLDivElement>(null)
+    const [coords, setCoords] = React.useState({ top: 0, left: 0 })
+    const handleOpen = (e: React.MouseEvent) => {
+      e.stopPropagation()
+      if (open) { setOpen(false); return }
+      const rect = buttonRef.current?.getBoundingClientRect()
+      if (rect) setCoords({ top: rect.bottom + 4, left: rect.left })
+      setOpen(true)
+    }
+    React.useEffect(() => {
+      if (!open) return
+      const handleClick = (e: MouseEvent) => {
+        if (menuRef.current?.contains(e.target as Node) || buttonRef.current?.contains(e.target as Node)) return
+        setOpen(false)
+      }
+      document.addEventListener('mousedown', handleClick)
+      return () => document.removeEventListener('mousedown', handleClick)
+    }, [open])
+    React.useEffect(() => {
+      if (!open) return
+      const handleScroll = () => setOpen(false)
+      window.addEventListener('scroll', handleScroll, true)
+      return () => window.removeEventListener('scroll', handleScroll, true)
+    }, [open])
+    return (
+      <>
+        <button ref={buttonRef} onClick={handleOpen} style={{ display: 'flex', outline: 'none', alignItems: 'center', justifyContent: 'center', background: open ? 'var(--hover-bg)' : 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-2)', padding: '6px', borderRadius: '50%', transition: 'all 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'} onMouseLeave={e => { if (!open) e.currentTarget.style.background = 'transparent' }}>
+          <Icon name="more-horizontal" size={16} />
+        </button>
+        {open && ReactDOM.createPortal(
+          <div ref={menuRef} style={{ position: 'fixed', top: coords.top, left: coords.left, zIndex: 999999, background: 'var(--card)', border: '1px solid var(--border)', boxShadow: '0 10px 25px rgba(0,0,0,0.1)', borderRadius: 10, padding: 6, display: 'flex', flexDirection: 'column', minWidth: 140 }} onMouseDown={e => e.stopPropagation()}>
+            <button onClick={e => { e.stopPropagation(); setOpen(false); setDetail(r) }} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', outline: 'none', cursor: 'pointer', color: 'var(--text-1)', padding: '10px 14px', borderRadius: 6, textAlign: 'left', width: '100%', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--hover-bg)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              <Icon name="eye" size={15} /> Xem chi tiết
+            </button>
+            <button onClick={e => { e.stopPropagation(); setOpen(false); openEdit(r) }} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', outline: 'none', cursor: 'pointer', color: 'var(--info)', padding: '10px 14px', borderRadius: 6, textAlign: 'left', width: '100%', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(59, 130, 246, 0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              <Icon name="edit" size={15} /> Chỉnh sửa
+            </button>
+            <button onClick={e => { e.stopPropagation(); setOpen(false); setDeleteTarget(r) }} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none', outline: 'none', cursor: 'pointer', color: 'var(--error)', padding: '10px 14px', borderRadius: 6, textAlign: 'left', width: '100%', fontSize: 13, fontWeight: 500, transition: 'background 0.15s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              <Icon name="trash" size={15} /> Xoá
+            </button>
+          </div>,
+          document.body
+        )}
+      </>
+    )
+  }
+
   const columns: DataGridColumn<DbParent>[] = [
+    {
+      key: '_actions',
+      title: 'Thao tác',
+      sortable: false,
+      width: 60,
+      pin: 'left',
+      render: r => <ActionMenu r={r} />,
+    },
     {
       key: 'name',
       title: 'Họ tên',
@@ -172,30 +231,6 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
         )
       },
     },
-    {
-      key: '_actions',
-      title: '',
-      width: 90,
-      sortable: false,
-      render: r => (
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-          <button
-            onClick={e => { e.stopPropagation(); openEdit(r) }}
-            title="Chỉnh sửa"
-            style={iconBtn()}
-          >
-            <Icon name="edit" size={12} />
-          </button>
-          <button
-            onClick={e => { e.stopPropagation(); setDeleteTarget(r) }}
-            title="Xoá"
-            style={{ ...iconBtn(), color: '#dc2626' }}
-          >
-            <Icon name="trash" size={12} />
-          </button>
-        </div>
-      ),
-    },
   ]
 
   return (
@@ -254,13 +289,6 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
     </div>
   )
 }
-
-const iconBtn = (): React.CSSProperties => ({
-  width: 28, height: 26, border: 'none', borderRadius: 6,
-  background: 'var(--hover-bg)', color: 'var(--text-3)',
-  cursor: 'pointer', display: 'inline-flex',
-  alignItems: 'center', justifyContent: 'center',
-})
 
 const StatPill: React.FC<{ icon: any; color: string; bg: string; label: string; value: number }> = ({
   icon, color, bg, label, value,

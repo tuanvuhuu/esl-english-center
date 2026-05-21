@@ -17,7 +17,34 @@ export async function getStudents(filters?: { branchId?: string; yearId?: string
 
   const { data, error } = await query.order('created_at', { ascending: false })
   if (error) throw error
-  return (data ?? []) as DbStudent[]
+
+  const studentIds = data?.map((s: any) => s.id) ?? []
+  let statsMap: Record<string, { present: number, absent: number }> = {}
+  if (studentIds.length > 0) {
+    const { data: attData } = await supabase
+      .from('attendance')
+      .select('status, enrollments!inner(student_id)')
+      .in('enrollments.student_id', studentIds)
+      .eq('is_deleted', false)
+
+    attData?.forEach((r: any) => {
+      const sid = r.enrollments?.student_id
+      if (!sid) return
+      if (!statsMap[sid]) statsMap[sid] = { present: 0, absent: 0 }
+      if (r.status === 'present' || r.status === 'late') statsMap[sid].present++
+      if (r.status === 'absent' || r.status === 'excused') statsMap[sid].absent++
+    })
+  }
+
+  return (data ?? []).map((s: any) => {
+    const st = statsMap[s.id]
+    const total = st ? st.present + st.absent : 0
+    return {
+      ...s,
+      attendanceRate: total > 0 ? (st!.present / total) * 100 : undefined,
+      absenceCount: st?.absent ?? 0,
+    }
+  }) as DbStudent[]
 }
 
 export async function getStudentById(id: string) {
@@ -31,7 +58,7 @@ export async function getStudentById(id: string) {
       ),
       enrollments (
         id, status, enrolled_date,
-        class: classes ( id, name, level, fee_per_month,
+        class: classes ( id, name, level, fee_per_month, total_sessions, end_date,
           teacher: teachers ( id, full_name ),
           class_schedules ( day_of_week, start_time, end_time )
         )
@@ -42,7 +69,33 @@ export async function getStudentById(id: string) {
     .single()
 
   if (error) throw error
-  return data as DbStudent
+
+  // Đếm số buổi đã học cho từng enrollment
+  const enrollmentIds = (data?.enrollments ?? []).map((e: any) => e.id)
+  let attendanceMap: Record<string, { present: number; absent: number }> = {}
+  if (enrollmentIds.length > 0) {
+    const { data: attRows } = await supabase
+      .from('attendance')
+      .select('enrollment_id, status')
+      .in('enrollment_id', enrollmentIds)
+      .eq('is_deleted', false)
+    attRows?.forEach((r: any) => {
+      if (!attendanceMap[r.enrollment_id]) attendanceMap[r.enrollment_id] = { present: 0, absent: 0 }
+      if (r.status === 'present' || r.status === 'late') attendanceMap[r.enrollment_id].present++
+      if (r.status === 'absent' || r.status === 'excused') attendanceMap[r.enrollment_id].absent++
+    })
+  }
+
+  const enriched = {
+    ...data,
+    enrollments: (data?.enrollments ?? []).map((e: any) => ({
+      ...e,
+      attendedSessions: attendanceMap[e.id]?.present ?? 0,
+      absentSessions: attendanceMap[e.id]?.absent ?? 0,
+    }))
+  }
+
+  return enriched as DbStudent
 }
 
 export async function createStudent(payload: Partial<DbStudent>) {

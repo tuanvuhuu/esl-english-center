@@ -187,6 +187,25 @@ export const StudentTable: React.FC<StudentTableProps> = ({
       },
     },
     {
+      key: 'attendance',
+      title: 'Điểm danh',
+      align: 'center',
+      render: s => {
+        if (s.attendanceRate === undefined) return <span style={{ color: 'var(--text-4)' }}>—</span>
+        const rate = Math.round(s.attendanceRate)
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: rate >= 80 ? '#10B981' : rate >= 50 ? '#F59E0B' : '#EF4444' }}>
+              {rate}%
+            </span>
+            {s.absenceCount !== undefined && s.absenceCount > 0 && (
+              <span style={{ fontSize: 11, color: 'var(--error)' }}>Vắng {s.absenceCount}</span>
+            )}
+          </div>
+        )
+      },
+    },
+    {
       key: 'dob',
       title: 'Ngày sinh',
       sortable: true,

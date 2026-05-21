@@ -10,6 +10,8 @@ export interface Student {
   joinDate?: string;
   birthDate?: string;
   attendance?: number;
+  attendanceRate?: number;
+  absenceCount?: number;
   balance?: number;
   classes?: string[];
   [key: string]: any;
@@ -51,6 +53,8 @@ export interface Class {
   endTime?: string;
   startDate?: string;
   endDate?: string;
+  totalSessions?: number;
+  completedSessions?: number;
   fee?: string;
   feeRaw?: number | null;
   [key: string]: any;

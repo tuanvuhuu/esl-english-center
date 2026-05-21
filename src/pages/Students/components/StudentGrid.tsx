@@ -113,6 +113,15 @@ const StudentCard: React.FC<{
             <Icon name="phone" size={14} style={{ color: 'var(--text-4)' }} />
             <span style={{ fontFamily: 'monospace' }}>{student.phone || '—'}</span>
           </div>
+          {student.attendanceRate !== undefined && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Icon name="check" size={14} style={{ color: student.attendanceRate >= 80 ? '#10B981' : student.attendanceRate >= 50 ? '#F59E0B' : '#EF4444' }} />
+              <span>
+                Tỷ lệ đi học: <strong style={{ color: student.attendanceRate >= 80 ? '#10B981' : student.attendanceRate >= 50 ? '#F59E0B' : '#EF4444' }}>{Math.round(student.attendanceRate)}%</strong>
+                {student.absenceCount !== undefined && student.absenceCount > 0 && ` (Vắng ${student.absenceCount})`}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

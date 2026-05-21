@@ -8,6 +8,7 @@ export interface DashboardStats {
   revenueChart: { month: string; value: number }[];
   distribution: { label: string; value: number; color: string }[];
   attendanceChart: { label: string; value: number; highlight: boolean }[];
+  atRiskStudents: { id: string; name: string; className: string; absentCount: number }[];
 }
 
 export const getDashboardStats = async (
@@ -183,6 +184,38 @@ export const getDashboardStats = async (
     };
   });
 
+  // 6. At-Risk Students (Vắng mặt nhiều)
+  let atRiskStudents: { id: string; name: string; className: string; absentCount: number }[] = [];
+  if (classIds.length > 0) {
+    const { data: absentData } = await supabase
+      .from('attendance')
+      .select('status, enrollments!inner(student:students(id, full_name), class:classes(name))')
+      .in('enrollments.class_id', classIds)
+      .in('status', ['absent', 'excused'])
+      .eq('is_deleted', false);
+      
+    if (absentData) {
+      const absentMap: Record<string, { studentId: string; name: string; className: string; count: number }> = {};
+      absentData.forEach((row: any) => {
+        const student = row.enrollments?.student;
+        const cls = row.enrollments?.class;
+        if (!student || !cls) return;
+        
+        const key = `${student.id}-${cls.name}`;
+        if (!absentMap[key]) {
+          absentMap[key] = { studentId: student.id, name: student.full_name, className: cls.name, count: 0 };
+        }
+        absentMap[key].count++;
+      });
+      
+      atRiskStudents = Object.values(absentMap)
+        .filter(s => s.count >= 2) // >= 2 sessions missed is at risk
+        .sort((a, b) => b.count - a.count)
+        .map(s => ({ id: s.studentId, name: s.name, className: s.className, absentCount: s.count }))
+        .slice(0, 5); // top 5 at risk
+    }
+  }
+
   return {
     totalStudents: totalStudents || 0,
     activeClasses: activeClasses || 0,
@@ -191,6 +224,7 @@ export const getDashboardStats = async (
     revenueChart,
     distribution: distribution.length > 0 ? distribution : [{ label: 'Trống', value: 1, color: '#eee' }],
     attendanceChart,
+    atRiskStudents,
   };
 };
 
