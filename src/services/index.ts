@@ -10,3 +10,7 @@ export * from './branches'
 export * from './tests'
 export * from './levels'
 export * from './settings'
+export * from './vocabulary'
+export * from './externalQuestions'
+
+

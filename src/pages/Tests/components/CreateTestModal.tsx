@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Modal, Button } from '../../../components'
-import type { DbTest, TestType } from '../../../types/database'
+import type { DbTest, TestType, QuestionSkill } from '../../../types/database'
 import type { Class } from '../../../types/data'
+import { getTests } from '../../../services/tests'
 
 const TEST_TYPES: { value: TestType; label: string }[] = [
   { value: 'quiz',       label: 'Quiz' },
@@ -12,11 +13,22 @@ const TEST_TYPES: { value: TestType; label: string }[] = [
   { value: 'placement',  label: 'Xếp lớp' },
 ]
 
+export interface CreateTestPayload {
+  testData: Partial<DbTest>
+  creationMode: 'blank' | 'clone' | 'ai'
+  cloneFromTestId?: string
+  aiOptions?: {
+    topic: string
+    skill: QuestionSkill | 'all'
+    count: number
+  }
+}
+
 interface CreateTestModalProps {
   open: boolean
   onClose: () => void
   classes: Class[]
-  onSave: (payload: Partial<DbTest>) => Promise<void>
+  onSave: (payload: CreateTestPayload) => Promise<void>
   saving?: boolean
 }
 
@@ -42,6 +54,31 @@ const labelStyle: React.CSSProperties = {
   display: 'block',
 }
 
+const tabContainerStyle: React.CSSProperties = {
+  display: 'flex',
+  background: 'var(--border-light)',
+  borderRadius: 10,
+  padding: 4,
+  gap: 4,
+  border: '1px solid var(--border)',
+  boxSizing: 'border-box',
+}
+
+const tabButtonStyle = (active: boolean): React.CSSProperties => ({
+  flex: 1,
+  padding: '8px 12px',
+  borderRadius: 8,
+  border: 'none',
+  background: active ? 'var(--card)' : 'transparent',
+  color: active ? 'var(--primary)' : 'var(--text-3)',
+  fontSize: 13,
+  fontWeight: active ? 700 : 500,
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+  textAlign: 'center',
+  boxShadow: active ? 'var(--shadow-sm)' : 'none',
+})
+
 export const CreateTestModal: React.FC<CreateTestModalProps> = ({
   open,
   onClose,
@@ -56,40 +93,93 @@ export const CreateTestModal: React.FC<CreateTestModalProps> = ({
     class_id: '',
     type: 'quiz' as TestType,
     test_date: today,
+    total_score: '100',
     pass_threshold: '60',
     description: '',
   })
 
+  // Thang điểm mode: 'preset' = chọn nhanh, 'custom' = nhập tùy ý
+  const [scoreMode, setScoreMode] = useState<'preset' | 'custom'>('preset')
+
+  // Mode & mode options states
+  const [creationMode, setCreationMode] = useState<'blank' | 'clone' | 'ai'>('blank')
+  const [cloneFromTestId, setCloneFromTestId] = useState('')
+  const [aiTopic, setAiTopic] = useState('')
+  const [aiSkill, setAiSkill] = useState<QuestionSkill | 'all'>('all')
+  const [aiCount, setAiCount] = useState(10)
+
+  // Past tests cache for cloning
+  const [pastTests, setPastTests] = useState<DbTest[]>([])
+  const [loadingPastTests, setLoadingPastTests] = useState(false)
+
+  // Load past tests only when cloning is selected
+  useEffect(() => {
+    if (open && creationMode === 'clone' && pastTests.length === 0) {
+      setLoadingPastTests(true)
+      getTests()
+        .then(setPastTests)
+        .catch(err => console.error('Lỗi tải bài kiểm tra cũ:', err))
+        .finally(() => setLoadingPastTests(false))
+    }
+  }, [open, creationMode, pastTests.length])
+
+  // Reset form when modal is closed
+  useEffect(() => {
+    if (!open) {
+      setForm({
+        name: '',
+        class_id: '',
+        type: 'quiz',
+        test_date: today,
+        total_score: '100',
+        pass_threshold: '60',
+        description: '',
+      })
+      setScoreMode('preset')
+      setCreationMode('blank')
+      setCloneFromTestId('')
+      setAiTopic('')
+      setAiSkill('all')
+      setAiCount(10)
+    }
+  }, [open, today])
+
   const set = (field: string, value: string) =>
     setForm(prev => ({ ...prev, [field]: value }))
 
+  const isAiValid = creationMode === 'ai' ? (aiTopic.trim().length > 0 && aiCount >= 5 && aiCount <= 20) : true
+  const isCloneValid = creationMode === 'clone' ? !!cloneFromTestId : true
+  const isValid = form.name.trim() && form.class_id && form.test_date && isAiValid && isCloneValid
+
+  const totalScoreNum = Number(form.total_score) || 100
+  const passThresholdNum = Number(form.pass_threshold) || 60
+  const passPercent = totalScoreNum > 0 ? Math.round((passThresholdNum / totalScoreNum) * 100) : 0
+
   const handleSave = async () => {
-    if (!form.name.trim() || !form.class_id || !form.test_date) return
+    if (!isValid) return
     await onSave({
-      name: form.name.trim(),
-      class_id: form.class_id,
-      type: form.type,
-      test_date: form.test_date,
-      total_score: 100,
-      pass_threshold: Number(form.pass_threshold) || 60,
-      description: form.description.trim() || null,
-      status: 'upcoming',
+      testData: {
+        name: form.name.trim(),
+        class_id: form.class_id,
+        type: form.type,
+        test_date: form.test_date,
+        total_score: totalScoreNum,
+        pass_threshold: passThresholdNum,
+        description: form.description.trim() || null,
+        status: 'upcoming',
+      },
+      creationMode,
+      cloneFromTestId: creationMode === 'clone' ? cloneFromTestId : undefined,
+      aiOptions: creationMode === 'ai' ? {
+        topic: aiTopic.trim(),
+        skill: aiSkill,
+        count: aiCount,
+      } : undefined
     })
-    setForm({
-      name: '',
-      class_id: '',
-      type: 'quiz',
-      test_date: today,
-      pass_threshold: '60',
-      description: '',
-    })
-    onClose()
   }
 
-  const isValid = form.name.trim() && form.class_id && form.test_date
-
   return (
-    <Modal open={open} onClose={onClose} title="Tạo bài kiểm tra" width={480}>
+    <Modal open={open} onClose={onClose} title="Tạo bài kiểm tra mới" width={480}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Tên bài */}
         <div>
@@ -142,18 +232,168 @@ export const CreateTestModal: React.FC<CreateTestModalProps> = ({
           </div>
         </div>
 
-        {/* Ngưỡng đạt */}
-        <div>
-          <label style={labelStyle}>Ngưỡng điểm đạt (%)</label>
-          <input
-            style={{ ...inputStyle, width: 100 }}
-            type="number"
-            min="0"
-            max="100"
-            value={form.pass_threshold}
-            onChange={e => set('pass_threshold', e.target.value)}
-          />
+        {/* Thang điểm + Ngưỡng đạt */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Thang điểm (tổng điểm bài test)</label>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[10, 50, 100].map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => {
+                    setScoreMode('preset')
+                    set('total_score', String(v))
+                    // Auto adjust pass_threshold proportionally
+                    const ratio = Number(form.pass_threshold) / (Number(form.total_score) || 100)
+                    set('pass_threshold', String(Math.round(v * ratio)))
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '6px 0',
+                    borderRadius: 8,
+                    border: `1.5px solid ${scoreMode === 'preset' && form.total_score === String(v) ? 'var(--primary)' : 'var(--border)'}`,
+                    background: scoreMode === 'preset' && form.total_score === String(v) ? 'var(--primary-light)' : 'transparent',
+                    color: scoreMode === 'preset' && form.total_score === String(v) ? 'var(--primary)' : 'var(--text-3)',
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {v}
+                </button>
+              ))}
+              <input
+                style={{ ...inputStyle, width: 60, textAlign: 'center', fontSize: 13, fontWeight: 700 }}
+                type="number"
+                min="1"
+                placeholder="..."
+                value={scoreMode === 'custom' ? form.total_score : ''}
+                onFocus={() => setScoreMode('custom')}
+                onChange={e => {
+                  setScoreMode('custom')
+                  set('total_score', e.target.value)
+                }}
+              />
+            </div>
+          </div>
+          <div>
+            <label style={labelStyle}>
+              Ngưỡng đạt
+              {passPercent > 0 && (
+                <span style={{ color: 'var(--primary)', fontWeight: 700, marginLeft: 6 }}>
+                  = {passPercent}%
+                </span>
+              )}
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <input
+                style={{ ...inputStyle, width: 80, textAlign: 'center' }}
+                type="number"
+                min="0"
+                max={totalScoreNum}
+                value={form.pass_threshold}
+                onChange={e => set('pass_threshold', e.target.value)}
+              />
+              <span style={{ fontSize: 12, color: 'var(--text-4)' }}>/ {totalScoreNum}</span>
+            </div>
+          </div>
         </div>
+
+        {/* Chế độ khởi tạo */}
+        <div>
+          <label style={labelStyle}>Phương thức tạo câu hỏi</label>
+          <div style={tabContainerStyle}>
+            <button
+              type="button"
+              style={tabButtonStyle(creationMode === 'blank')}
+              onClick={() => setCreationMode('blank')}
+            >
+              Tạo trống
+            </button>
+            <button
+              type="button"
+              style={tabButtonStyle(creationMode === 'clone')}
+              onClick={() => setCreationMode('clone')}
+            >
+              Nhân bản câu hỏi
+            </button>
+            <button
+              type="button"
+              style={tabButtonStyle(creationMode === 'ai')}
+              onClick={() => setCreationMode('ai')}
+            >
+              Tự động sinh (AI)
+            </button>
+          </div>
+        </div>
+
+        {/* Chế độ Nhân bản (Clone) */}
+        {creationMode === 'clone' && (
+          <div style={{ animation: 'slideUp 0.2s ease-out' }}>
+            <label style={labelStyle}>Sao chép câu hỏi từ bài kiểm tra *</label>
+            <select
+              style={{ ...inputStyle, cursor: 'pointer' }}
+              value={cloneFromTestId}
+              onChange={e => setCloneFromTestId(e.target.value)}
+              disabled={loadingPastTests}
+            >
+              <option value="">
+                {loadingPastTests ? 'Đang tải danh sách...' : '— Chọn bài kiểm tra cũ —'}
+              </option>
+              {pastTests.map(t => (
+                <option key={t.id} value={t.id}>
+                  {t.name} ({t.class?.name || 'Không rõ lớp'}) - {t.test_date}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Chế độ AI Generation */}
+        {creationMode === 'ai' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, animation: 'slideUp 0.2s ease-out' }}>
+            <div>
+              <label style={labelStyle}>Chủ đề câu hỏi (tiếng Anh) *</label>
+              <input
+                style={inputStyle}
+                placeholder="VD: family, animals, school, food, travel..."
+                value={aiTopic}
+                onChange={e => setAiTopic(e.target.value)}
+              />
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>Phạm vi kỹ năng</label>
+                <select
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                  value={aiSkill}
+                  onChange={e => setAiSkill(e.target.value as any)}
+                >
+                  <option value="all">Tổng hợp (Tất cả kỹ năng)</option>
+                  <option value="reading">Reading (Đọc hiểu)</option>
+                  <option value="listening">Listening (Nghe hiểu)</option>
+                  <option value="speaking">Speaking (Phát âm/Nói)</option>
+                  <option value="writing">Writing (Viết câu)</option>
+                  <option value="general">Vocabulary & Grammar</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Số lượng câu hỏi</label>
+                <input
+                  style={inputStyle}
+                  type="number"
+                  min="5"
+                  max="20"
+                  value={aiCount}
+                  onChange={e => setAiCount(Number(e.target.value) || 10)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mô tả */}
         <div>
@@ -173,14 +413,20 @@ export const CreateTestModal: React.FC<CreateTestModalProps> = ({
 
         {/* Actions */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 4 }}>
-          <Button variant="secondary" onClick={onClose}>Hủy</Button>
+          <Button variant="secondary" onClick={onClose} disabled={saving}>Hủy</Button>
           <Button
             variant="primary"
             icon="check"
             onClick={handleSave}
             disabled={!isValid || saving}
           >
-            {saving ? 'Đang lưu...' : 'Tạo bài kiểm tra'}
+            {saving
+              ? (creationMode === 'clone'
+                  ? 'Đang sao chép câu hỏi...'
+                  : creationMode === 'ai'
+                    ? 'Đang sinh câu hỏi bằng AI...'
+                    : 'Đang tạo...')
+              : 'Tạo bài kiểm tra'}
           </Button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Modal, Button, Icon, Badge, useConfirm } from '../../../components'
-import { getBankQuestions, addBankQuestionToTest, deleteBankQuestion, BankQuestion } from '../../../services/tests'
+import { Modal, Button, Icon, Badge, useConfirm, useToast } from '../../../components'
+import { useAuth } from '../../../context/AuthContext'
+import { getBankQuestions, addBankQuestionToTest, deleteBankQuestion, toggleBankQuestionPublic, BankQuestion } from '../../../services/tests'
 
 interface Props {
   open: boolean
@@ -16,10 +17,12 @@ const SKILL_LABELS: Record<string, string> = {
 
 export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, startOrderIndex, onAdded }) => {
   const confirm = useConfirm()
+  const toast = useToast()
+  const { user } = useAuth()
   const [items, setItems] = useState<BankQuestion[]>([])
   const [loading, setLoading] = useState(false)
   const [selected, setSelected] = useState<Set<string>>(new Set())
-  const [filters, setFilters] = useState({ skill: '', level: '', search: '' })
+  const [filters, setFilters] = useState({ skill: '', level: '', search: '', scope: 'all' as 'all' | 'mine' | 'shared' })
   const [adding, setAdding] = useState(false)
 
   const load = async () => {
@@ -29,12 +32,14 @@ export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, star
         skill: filters.skill || undefined,
         level: filters.level || undefined,
         search: filters.search || undefined,
+        scope: filters.scope,
+        userId: user?.id,
       })
       setItems(data)
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { if (open) load() }, [open, filters.skill, filters.level])
+  useEffect(() => { if (open) load() }, [open, filters.skill, filters.level, filters.scope])
 
   // Debounce search
   useEffect(() => {
@@ -77,6 +82,18 @@ export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, star
     load()
   }
 
+  const handleTogglePublic = async (e: React.MouseEvent, q: BankQuestion) => {
+    e.stopPropagation()
+    try {
+      const nextPublic = !q.is_public
+      await toggleBankQuestionPublic(q.id, nextPublic)
+      toast.success(nextPublic ? 'Đã chia sẻ câu hỏi này lên kho chung.' : 'Đã đưa câu hỏi về chế độ cá nhân.')
+      setItems(prev => prev.map(item => item.id === q.id ? { ...item, is_public: nextPublic } : item))
+    } catch (err: any) {
+      toast.error('Lỗi: ' + err.message)
+    }
+  }
+
   const selectStyle: React.CSSProperties = {
     height: 32, padding: '0 10px', borderRadius: 8, fontSize: 13,
     border: '1px solid var(--border)', background: 'var(--card)',
@@ -86,30 +103,60 @@ export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, star
   return (
     <Modal open={open} onClose={onClose} title="Kho câu hỏi" width={900}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, height: '65vh' }}>
-        {/* Filter bar */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-            <Icon name="search" size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }} />
-            <input
-              placeholder="Tìm câu hỏi..."
-              value={filters.search}
-              onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-              style={{
-                width: '100%', height: 32, paddingLeft: 30, paddingRight: 10,
-                borderRadius: 8, border: '1px solid var(--border)',
-                background: 'var(--card)', color: 'var(--text-1)',
-                fontSize: 13, outline: 'none', boxSizing: 'border-box',
-              }}
-            />
+        {/* Filter & Scope bar */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
+              <Icon name="search" size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }} />
+              <input
+                placeholder="Tìm câu hỏi..."
+                value={filters.search}
+                onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
+                style={{
+                  width: '100%', height: 32, paddingLeft: 30, paddingRight: 10,
+                  borderRadius: 8, border: '1px solid var(--border)',
+                  background: 'var(--card)', color: 'var(--text-1)',
+                  fontSize: 13, outline: 'none', boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <select style={selectStyle} value={filters.skill} onChange={e => setFilters(f => ({ ...f, skill: e.target.value }))}>
+              <option value="">Tất cả kỹ năng</option>
+              {Object.entries(SKILL_LABELS).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
+            </select>
+            <select style={selectStyle} value={filters.level} onChange={e => setFilters(f => ({ ...f, level: e.target.value }))}>
+              <option value="">Tất cả level</option>
+              {['Starter', 'Mover', 'Flyer', 'A1', 'A2', 'B1', 'B2'].map(l => (<option key={l} value={l}>{l}</option>))}
+            </select>
           </div>
-          <select style={selectStyle} value={filters.skill} onChange={e => setFilters(f => ({ ...f, skill: e.target.value }))}>
-            <option value="">Tất cả kỹ năng</option>
-            {Object.entries(SKILL_LABELS).map(([v, l]) => (<option key={v} value={v}>{l}</option>))}
-          </select>
-          <select style={selectStyle} value={filters.level} onChange={e => setFilters(f => ({ ...f, level: e.target.value }))}>
-            <option value="">Tất cả level</option>
-            {['Starter', 'Mover', 'Flyer', 'A1', 'A2', 'B1', 'B2'].map(l => (<option key={l} value={l}>{l}</option>))}
-          </select>
+
+          {/* Scope selector pills */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', borderBottom: '1px solid var(--border-light)', paddingBottom: 8 }}>
+            {([
+              { id: 'all', label: 'Tất cả câu hỏi', icon: 'list' },
+              { id: 'mine', label: 'Của tôi', icon: 'user' },
+              { id: 'shared', label: 'Được chia sẻ', icon: 'users' },
+            ] as const).map(scope => {
+              const active = filters.scope === scope.id
+              return (
+                <button
+                  key={scope.id}
+                  onClick={() => setFilters(f => ({ ...f, scope: scope.id }))}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                    border: active ? 'none' : '1px solid var(--border)',
+                    background: active ? 'var(--primary)' : 'var(--card)',
+                    color: active ? '#fff' : 'var(--text-2)',
+                    cursor: 'pointer', transition: 'all 0.15s',
+                  }}
+                >
+                  <Icon name={scope.icon} size={12} />
+                  {scope.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* List */}
@@ -118,7 +165,7 @@ export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, star
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>Đang tải...</div>
           ) : items.length === 0 ? (
             <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>
-              Kho rỗng. Lưu câu hỏi từ bài kiểm tra để bắt đầu xây kho.
+              Không tìm thấy câu hỏi nào.
             </div>
           ) : items.map(q => {
             const isSelected = selected.has(q.id)
@@ -144,7 +191,7 @@ export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, star
                   </div>
 
                   <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4, alignItems: 'center' }}>
                       <Badge variant="info">{SKILL_LABELS[q.skill]}</Badge>
                       {q.level && <Badge variant="default">{q.level}</Badge>}
                       {q.topic && <Badge variant="default">{q.topic}</Badge>}
@@ -152,6 +199,13 @@ export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, star
                         <span style={{ fontSize: 11, color: 'var(--text-4)' }}>
                           Đã dùng {q.usage_count}x
                         </span>
+                      )}
+                      {q.created_by === user?.id ? (
+                        <Badge variant={q.is_public ? 'success' : 'warning'}>
+                          {q.is_public ? 'Đang chia sẻ' : 'Cá nhân'}
+                        </Badge>
+                      ) : (
+                        q.is_public && <Badge variant="success">Được chia sẻ</Badge>
                       )}
                     </div>
                     <div style={{ fontSize: 13, color: 'var(--text-1)', lineHeight: 1.5 }}>
@@ -164,16 +218,33 @@ export const QuestionBankModal: React.FC<Props> = ({ open, onClose, testId, star
                     )}
                   </div>
 
-                  <button
-                    onClick={e => { e.stopPropagation(); handleDelete(q.id) }}
-                    style={{
-                      background: 'transparent', border: 'none', cursor: 'pointer',
-                      padding: 4, color: 'var(--text-4)',
-                    }}
-                    title="Xóa khỏi kho"
-                  >
-                    <Icon name="trash" size={14} />
-                  </button>
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    {q.created_by === user?.id && (
+                      <button
+                        onClick={e => handleTogglePublic(e, q)}
+                        style={{
+                          background: 'transparent', border: 'none', cursor: 'pointer',
+                          padding: 4, color: q.is_public ? 'var(--success)' : 'var(--text-4)',
+                          display: 'flex', alignItems: 'center'
+                        }}
+                        title={q.is_public ? 'Đổi về chế độ cá nhân' : 'Chia sẻ lên kho câu hỏi chung'}
+                      >
+                        <Icon name={q.is_public ? "users" : "user"} size={14} />
+                      </button>
+                    )}
+
+                    <button
+                      onClick={e => { e.stopPropagation(); handleDelete(q.id) }}
+                      style={{
+                        background: 'transparent', border: 'none', cursor: 'pointer',
+                        padding: 4, color: 'var(--text-4)',
+                        display: 'flex', alignItems: 'center'
+                      }}
+                      title="Xóa khỏi kho"
+                    >
+                      <Icon name="trash" size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )

@@ -8,9 +8,10 @@ export type IconName =
   | 'clock' | 'trending-up' | 'trending-down' | 'more-v' | 'more-horizontal' | 'filter'
   | 'download' | 'upload' | 'log-out' | 'user' | 'star' | 'check' | 'alert' | 'alert-circle'
   | 'dollar' | 'map-pin' | 'award' | 'message' | 'refresh' | 'sun' | 'moon' | 'arrow-up' | 'chevron-up' | 'copy'
-  | 'list' | 'zap' | 'loader' | 'plus-circle' | 'file-text' | 'image' | 'tag' | 'key' | 'info';
+  | 'list' | 'zap' | 'loader' | 'plus-circle' | 'file-text' | 'image' | 'tag' | 'key' | 'info' | 'volume';
 
 const ICON_PATHS: Record<string, React.ReactNode> = {
+  'volume': <><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></>,
   'info': <><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></>,
   'key': <><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></>,
   'tag': <><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></>,

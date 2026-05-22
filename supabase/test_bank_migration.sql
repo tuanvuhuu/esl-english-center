@@ -18,9 +18,10 @@ CREATE TABLE IF NOT EXISTS question_bank (
   explanation   TEXT,
   tags          TEXT[],                     -- ['unit-3', 'grammar', 'past-tense']
   usage_count   INTEGER NOT NULL DEFAULT 0, -- how many times used in tests
+  is_public     BOOLEAN NOT NULL DEFAULT FALSE, -- hybrid sharing model
   is_deleted    BOOLEAN NOT NULL DEFAULT FALSE,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  created_by    UUID,
+  created_by    UUID DEFAULT auth.uid(),
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_by    UUID
 );
@@ -46,7 +47,10 @@ CREATE TABLE IF NOT EXISTS question_bank_options (
 ALTER TABLE question_bank         ENABLE ROW LEVEL SECURITY;
 ALTER TABLE question_bank_options ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "auth_read_question_bank"          ON question_bank         FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_write_question_bank"         ON question_bank         FOR ALL    TO authenticated USING (true) WITH CHECK (true);
-CREATE POLICY "auth_read_question_bank_options"  ON question_bank_options FOR SELECT TO authenticated USING (true);
-CREATE POLICY "auth_write_question_bank_options" ON question_bank_options FOR ALL    TO authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "auth_read_question_bank"          ON question_bank         FOR SELECT TO authenticated USING (auth.uid() = created_by OR is_public = true);
+CREATE POLICY "auth_insert_question_bank"        ON question_bank         FOR INSERT TO authenticated WITH CHECK (auth.uid() = created_by);
+CREATE POLICY "auth_update_question_bank"        ON question_bank         FOR UPDATE TO authenticated USING (auth.uid() = created_by) WITH CHECK (auth.uid() = created_by);
+CREATE POLICY "auth_delete_question_bank"        ON question_bank         FOR DELETE TO authenticated USING (auth.uid() = created_by);
+
+CREATE POLICY "auth_read_question_bank_options"  ON question_bank_options FOR SELECT TO authenticated USING (EXISTS (SELECT 1 FROM question_bank q WHERE q.id = bank_id AND (q.created_by = auth.uid() OR q.is_public = true)));
+CREATE POLICY "auth_write_question_bank_options" ON question_bank_options FOR ALL    TO authenticated USING (EXISTS (SELECT 1 FROM question_bank q WHERE q.id = bank_id AND q.created_by = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM question_bank q WHERE q.id = bank_id AND q.created_by = auth.uid()));

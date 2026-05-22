@@ -121,11 +121,14 @@ export interface BankQuestion {
   explanation: string | null
   tags: string[] | null
   usage_count: number
+  is_public: boolean
+  created_by?: string | null
   options?: { id: string; option_text: string; is_correct: boolean; order_index: number }[]
 }
 
 export async function getBankQuestions(filters?: {
   skill?: string; level?: string; topic?: string; search?: string;
+  scope?: 'all' | 'mine' | 'shared'; userId?: string;
 }): Promise<BankQuestion[]> {
   let q = supabase
     .from('question_bank')
@@ -137,6 +140,12 @@ export async function getBankQuestions(filters?: {
   if (filters?.level)  q = q.eq('level', filters.level)
   if (filters?.topic)  q = q.eq('topic', filters.topic)
   if (filters?.search) q = q.ilike('question_text', `%${filters.search}%`)
+
+  if (filters?.scope === 'mine' && filters.userId) {
+    q = q.eq('created_by', filters.userId)
+  } else if (filters?.scope === 'shared') {
+    q = q.eq('is_public', true)
+  }
 
   const { data, error } = await q
   if (error) throw error
@@ -170,8 +179,16 @@ export async function deleteBankQuestion(id: string): Promise<void> {
   if (error) throw error
 }
 
+export async function toggleBankQuestionPublic(id: string, isPublic: boolean): Promise<void> {
+  const { error } = await supabase
+    .from('question_bank')
+    .update({ is_public: isPublic })
+    .eq('id', id)
+  if (error) throw error
+}
+
 // Save a test_question (and its options) into the bank
-export async function saveQuestionToBank(testQuestionId: string): Promise<void> {
+export async function saveQuestionToBank(testQuestionId: string, isPublic: boolean = false): Promise<void> {
   const { data: q, error } = await supabase
     .from('test_questions')
     .select('*, options: test_question_options(*)')
@@ -184,6 +201,7 @@ export async function saveQuestionToBank(testQuestionId: string): Promise<void> 
       skill: q.skill, type: q.type, question_text: q.question_text,
       image_url: q.image_url, audio_url: q.audio_url,
       points: q.points, explanation: q.explanation,
+      is_public: isPublic,
     },
     (q.options ?? []).map((o: any, i: number) => ({
       option_text: o.option_text, is_correct: o.is_correct, order_index: i,

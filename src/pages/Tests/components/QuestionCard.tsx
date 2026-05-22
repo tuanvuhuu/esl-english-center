@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon, IconName } from '../../../components/common/Icon';
+import { Icon } from '../../../components/common/Icon';
 import { Button } from '../../../components/common/Button';
 import type { DbTestQuestion } from '../../../types/database';
 
@@ -9,6 +9,12 @@ interface QuestionCardProps {
   onEdit?: (q: DbTestQuestion) => void;
   onDelete?: (id: string) => void;
   onSaveToBank?: (id: string) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
+  onMoveUp?: (index: number) => void;
+  onMoveDown?: (index: number) => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
@@ -17,76 +23,162 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
   onEdit,
   onDelete,
   onSaveToBank,
+  isSelected = false,
+  onToggleSelect,
+  onMoveUp,
+  onMoveDown,
+  isFirst = false,
+  isLast = false,
 }) => {
-  const getSkillIcon = (skill: string): IconName => {
-    switch (skill) {
-      case 'reading': return 'book';
-      case 'listening': return 'bell';
-      case 'speaking': return 'message';
-      case 'writing': return 'edit';
-      default: return 'alert-circle';
+  const getSkillBadgeInfo = (skill: string) => {
+    const v = (skill || 'general').toLowerCase();
+    if (v === 'grammar' || v === 'reading') {
+      return { text: 'GRAMMAR', background: '#ffedd5', color: '#ea580c' };
+    } else if (v === 'vocabulary' || v === 'listening') {
+      return { text: 'VOCABULARY', background: '#f3e8ff', color: '#9333ea' };
+    } else if (v === 'writing' || v === 'general') {
+      return { text: 'WRITING', background: '#ecfdf5', color: '#059669' };
+    } else if (v === 'speaking') {
+      return { text: 'SPEAKING', background: '#fef2f2', color: '#dc2626' };
+    } else {
+      return { text: v.toUpperCase(), background: '#e0f2fe', color: '#0284c7' };
     }
   };
 
-  const getTypeText = (type: string) => {
+  const getTypeBadgeInfo = (type: string) => {
     switch (type) {
-      case 'mcq': return 'Trắc nghiệm';
-      case 'true_false': return 'Đúng/Sai';
-      case 'fill_blank': return 'Điền từ';
-      case 'short_answer': return 'Trả lời ngắn';
-      case 'essay': return 'Tự luận';
-      case 'speaking_prompt': return 'Nói';
-      default: return type;
+      case 'mcq': return { text: 'TRẮC NGHIỆM', background: '#e0f2fe', color: '#0284c7' };
+      case 'true_false': return { text: 'ĐÚNG/SAI', background: '#e0f2fe', color: '#0284c7' };
+      case 'fill_blank': return { text: 'ĐIỀN TỪ', background: '#e0f2fe', color: '#0284c7' };
+      case 'short_answer': return { text: 'ĐÁP ÁN NGẮN', background: '#e0f2fe', color: '#0284c7' };
+      case 'essay': return { text: 'TỰ LUẬN', background: '#e0f2fe', color: '#0284c7' };
+      case 'speaking_prompt': return { text: 'NÓI', background: '#e0f2fe', color: '#0284c7' };
+      default: return { text: type.toUpperCase(), background: '#e0f2fe', color: '#0284c7' };
     }
   };
+
+  const skillBadgeInfo = getSkillBadgeInfo(question.skill);
+  const typeBadgeInfo = getTypeBadgeInfo(question.type);
 
   return (
     <div style={{
       background: 'var(--card)',
-      border: '1px solid var(--border)',
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
+      border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border)',
+      boxShadow: isSelected ? '0 0 0 1px var(--primary)' : '0 2px 8px rgba(0,0,0,0.01)',
+      borderRadius: 16,
+      padding: 24,
+      marginBottom: 16,
       transition: 'all 0.2s',
       position: 'relative'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {onToggleSelect && (
+            <input
+              type="checkbox"
+              checked={isSelected}
+              onChange={() => onToggleSelect(question.id)}
+              style={{
+                width: 16,
+                height: 16,
+                cursor: 'pointer',
+                accentColor: 'var(--primary)',
+                marginRight: 4
+              }}
+            />
+          )}
           <div style={{
             width: 24, height: 24, borderRadius: 6,
-            background: 'var(--primary-light)', color: 'var(--primary)',
+            background: '#e0f2fe', color: '#0284c7',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 12, fontWeight: 700
           }}>
             {index + 1}
           </div>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '2px 8px', borderRadius: 4,
-            background: 'var(--hover-bg)', fontSize: 11, fontWeight: 600, color: 'var(--text-3)'
+            padding: '3px 8px', borderRadius: 6,
+            background: typeBadgeInfo.background, color: typeBadgeInfo.color,
+            fontSize: 11, fontWeight: 700
           }}>
-            <Icon name={getSkillIcon(question.skill)} size={12} />
-            <span style={{ textTransform: 'capitalize' }}>{question.skill}</span>
+            {typeBadgeInfo.text}
           </div>
-          <span style={{ fontSize: 11, color: 'var(--text-4)' }}>•</span>
-          <span style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 500 }}>{getTypeText(question.type)}</span>
+          <div style={{
+            padding: '3px 8px', borderRadius: 6,
+            background: skillBadgeInfo.background, color: skillBadgeInfo.color,
+            fontSize: 11, fontWeight: 700
+          }}>
+            {skillBadgeInfo.text}
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {onSaveToBank && (
-            <Button variant="ghost" size="sm" icon="book" title="Lưu vào kho câu hỏi" onClick={() => onSaveToBank(question.id)} children="" />
-          )}
-          <Button variant="ghost" size="sm" icon="edit" onClick={() => onEdit?.(question)} children="" />
-          <Button variant="ghost" size="sm" icon="trash" style={{ color: '#ef4444' }} onClick={() => onDelete?.(question.id)} children="" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            padding: '4px 8px', borderRadius: 6,
+            background: '#f1f5f9', color: '#475569',
+            fontSize: 11, fontWeight: 600
+          }}>
+            {question.points.toFixed(1)} điểm
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {!isFirst && onMoveUp && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="chevron-up"
+                title="Di chuyển lên"
+                onClick={() => onMoveUp(index)}
+                style={{ padding: '4px', minWidth: 'auto', height: 28, width: 28, color: '#64748b' }}
+                children=""
+              />
+            )}
+            {!isLast && onMoveDown && (
+              <Button
+                variant="ghost"
+                size="sm"
+                icon="chevron-down"
+                title="Di chuyển xuống"
+                onClick={() => onMoveDown(index)}
+                style={{ padding: '4px', minWidth: 'auto', height: 28, width: 28, color: '#64748b' }}
+                children=""
+              />
+            )}
+            {onSaveToBank && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                icon="book" 
+                title="Lưu vào kho câu hỏi" 
+                onClick={() => onSaveToBank(question.id)} 
+                style={{ padding: '4px', minWidth: 'auto', height: 28, width: 28, color: '#64748b' }}
+                children="" 
+              />
+            )}
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              icon="edit" 
+              onClick={() => onEdit?.(question)} 
+              style={{ padding: '4px', minWidth: 'auto', height: 28, width: 28, color: '#475569' }}
+              children="" 
+            />
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              icon="trash" 
+              style={{ padding: '4px', minWidth: 'auto', height: 28, width: 28, color: '#475569' }} 
+              onClick={() => onDelete?.(question.id)} 
+              children="" 
+            />
+          </div>
         </div>
       </div>
 
-      <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-1)', marginBottom: 12, lineHeight: 1.5 }}>
+      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-1)', marginBottom: 16, lineHeight: 1.6 }}>
         {question.question_text}
       </div>
 
       {question.image_url && (
         <div style={{ 
-          marginBottom: 12, borderRadius: 8, overflow: 'hidden', 
+          marginBottom: 16, borderRadius: 12, overflow: 'hidden', 
           border: '1px solid var(--border)', background: '#fff',
           display: 'flex', justifyContent: 'center'
         }}>
@@ -99,28 +191,41 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       )}
 
       {question.options && question.options.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           {question.options.map((opt, i) => (
             <div key={opt.id} style={{
-              padding: '8px 12px', borderRadius: 8,
-              border: `1px solid ${opt.is_correct ? 'var(--primary)' : 'var(--border)'}`,
-              background: opt.is_correct ? 'var(--primary-light)' : 'transparent',
+              padding: '12px 16px', borderRadius: 12,
+              border: opt.is_correct ? '1.5px solid var(--primary)' : '1.5px solid var(--border)',
+              background: opt.is_correct ? 'var(--primary-light)' : '#ffffff',
               fontSize: 13, color: opt.is_correct ? 'var(--primary)' : 'var(--text-2)',
-              display: 'flex', alignItems: 'center', gap: 8
+              fontWeight: opt.is_correct ? 600 : 500,
+              display: 'flex', alignItems: 'center', transition: 'all 0.15s',
+              minHeight: 46
             }}>
-              <span style={{ fontWeight: 700, fontSize: 11 }}>{String.fromCharCode(65 + i)}.</span>
-              {opt.option_text}
-              {opt.is_correct && <Icon name="check" size={12} style={{ marginLeft: 'auto' }} />}
+              <div style={{
+                width: 24, height: 24, borderRadius: '50%',
+                background: opt.is_correct ? 'var(--primary)' : '#f1f5f9',
+                color: opt.is_correct ? '#fff' : '#475569',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700, marginRight: 12, flexShrink: 0
+              }}>
+                {String.fromCharCode(65 + i)}
+              </div>
+              <span style={{ flex: 1, lineHeight: 1.4 }}>{opt.option_text}</span>
+              {opt.is_correct && (
+                <div style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  border: '1.5px solid var(--primary)', color: 'var(--primary)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginLeft: 8, flexShrink: 0
+                }}>
+                  <Icon name="check" size={11} />
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12, paddingTop: 12, borderTop: '1px dotted var(--border)' }}>
-        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-4)' }}>
-          {question.points} điểm
-        </div>
-      </div>
     </div>
   );
 };

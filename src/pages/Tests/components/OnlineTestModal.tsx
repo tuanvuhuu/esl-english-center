@@ -84,17 +84,37 @@ export const OnlineTestModal: React.FC<Props> = ({ open, onClose, test }) => {
     setAnswers(prev => ({ ...prev, [qId]: value }))
   }
 
-  const computeScore = (): number => {
-    let correct = 0
-    let total   = 0
+  const computeScore = (): { raw: number; scaled: number; bySkill: Record<string, number>; maxBySkill: Record<string, number>; hasNonMcq: boolean } => {
+    let earned = 0
+    const bySkill: Record<string, number> = {}
+    const maxBySkill: Record<string, number> = {}
+    let hasNonMcq = false
+
     for (const q of questions) {
       const opts = (q as any).options as { id: string; is_correct: boolean }[] | undefined
-      if (!opts || opts.length === 0) continue   // skip non-MCQ
-      total++
+      const skill = q.skill || 'general'
+      maxBySkill[skill] = (maxBySkill[skill] || 0) + q.points
+
+      if (!opts || opts.length === 0) {
+        hasNonMcq = true
+        continue // Non-MCQ: cần giáo viên chấm tay sau
+      }
+
       const answerId = answers[q.id]
-      if (answerId && opts.find(o => o.id === answerId)?.is_correct) correct++
+      if (answerId && opts.find(o => o.id === answerId)?.is_correct) {
+        earned += q.points
+        bySkill[skill] = (bySkill[skill] || 0) + q.points
+      }
     }
-    return total > 0 ? Math.round((correct / total) * 100) : 0
+
+    const totalPossible = questions.reduce((s, q) => s + q.points, 0)
+    return {
+      raw: earned,
+      scaled: totalPossible > 0 ? Math.round((earned / totalPossible) * 100) : 0,
+      bySkill,
+      maxBySkill,
+      hasNonMcq,
+    }
   }
 
   const handleSubmit = async () => {
@@ -102,17 +122,29 @@ export const OnlineTestModal: React.FC<Props> = ({ open, onClose, test }) => {
     if (timerRef.current) clearInterval(timerRef.current)
     setSubmitting(true)
     try {
-      const score = computeScore()
-      const isPassed = score >= test.pass_threshold
+      const result = computeScore()
+      const isPassed = result.raw >= test.pass_threshold
+
+      // Tính điểm từng kỹ năng (scale theo trọng số max của kỹ năng đó)
+      const skillScore = (skill: string): number | null => {
+        const max = result.maxBySkill[skill]
+        if (!max) return null
+        const earned = result.bySkill[skill] || 0
+        return Math.round((earned / max) * 100)
+      }
 
       await upsertTestResult({
         test_id: test.id,
         student_id: studentId,
-        total_score: score,
+        total_score: result.raw,
         is_passed: isPassed,
+        score_reading: skillScore('reading'),
+        score_listening: skillScore('listening'),
+        score_speaking: skillScore('speaking'),
+        score_writing: skillScore('writing'),
       } as Partial<DbTestResult>)
 
-      setResultScore(score)
+      setResultScore(result.raw)
       setPhase('done')
     } finally {
       setSubmitting(false)
@@ -236,9 +268,21 @@ export const OnlineTestModal: React.FC<Props> = ({ open, onClose, test }) => {
             }}>
               <p>📝 <strong>{questions.length} câu hỏi</strong>, mỗi câu có 1 phút.</p>
               <p>⏰ Tổng thời gian: <strong>{fmtTime(questions.length * 60)}</strong>.</p>
+              <p>🎯 Tổng điểm bài thi: <strong>{test?.total_score ?? 100} điểm</strong>.</p>
               <p>💡 Đọc kỹ câu hỏi, chọn đáp án đúng nhất.</p>
               <p>⚠️ Không được chuyển sang tab khác trong khi làm bài!</p>
               <p>🎯 Nhớ kiểm tra lại các câu trả lời trước khi nộp.</p>
+              {(() => {
+                const nonMcqCount = questions.filter(q => {
+                  const opts = (q as any).options
+                  return !opts || opts.length === 0
+                }).length
+                return nonMcqCount > 0 ? (
+                  <p style={{ color: 'var(--warning-dark)', fontWeight: 600 }}>
+                    📋 Lưu ý: Có {nonMcqCount} câu tự luận/điền từ sẽ được cô chấm riêng sau.
+                  </p>
+                ) : null
+              })()}
             </div>
             <div style={{ textAlign: 'center', marginTop: 24 }}>
               <Button variant="primary" size="lg" icon="check" onClick={startTest}>
@@ -402,16 +446,23 @@ export const OnlineTestModal: React.FC<Props> = ({ open, onClose, test }) => {
               color: '#fff',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               margin: '0 auto 20px',
-              fontSize: 36, fontWeight: 800,
+              fontSize: 28, fontWeight: 800,
+              flexDirection: 'column', lineHeight: 1.2,
             }}>
-              {resultScore}
+              <span>{resultScore}</span>
+              <span style={{ fontSize: 12, opacity: 0.85 }}>/ {test?.total_score ?? 100}</span>
             </div>
             <h2 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8 }}>
               Hoàn thành bài kiểm tra!
             </h2>
-            <p style={{ color: 'var(--text-3)', fontSize: 14, marginBottom: 24 }}>
+            <p style={{ color: 'var(--text-3)', fontSize: 14, marginBottom: 8 }}>
               Cảm ơn con đã làm bài. Cô sẽ nhận xét chi tiết và gửi cho ba mẹ con sớm nhất.
             </p>
+            {(resultScore ?? 0) >= (test?.pass_threshold ?? 60) ? (
+              <p style={{ color: 'var(--success)', fontSize: 15, fontWeight: 700, marginBottom: 24 }}>🎉 Đạt!</p>
+            ) : (
+              <p style={{ color: 'var(--warning-dark)', fontSize: 15, fontWeight: 700, marginBottom: 24 }}>Cần cố gắng thêm nhé!</p>
+            )}
             <Button variant="primary" onClick={onClose}>
               Đóng
             </Button>

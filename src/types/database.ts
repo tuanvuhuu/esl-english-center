@@ -321,3 +321,21 @@ export interface StudentAcademicRecord {
   academic_year?: AcademicYear
   branch?: Branch
 }
+
+export interface DbVocabularyEntry {
+  id: string
+  word: string
+  meaning_vi: string | null
+  meaning_en: string | null
+  phonetic: string | null
+  audio_url: string | null
+  part_of_speech: string | null
+  cefr_level: string
+  topic: string | null
+  example_sentence: string | null
+  example_vi: string | null
+  source: string
+  created_at: string
+  updated_at: string
+}
+

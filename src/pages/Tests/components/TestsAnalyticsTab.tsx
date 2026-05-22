@@ -107,8 +107,8 @@ export const TestsAnalyticsTab: React.FC<TestsAnalyticsTabProps> = ({
   return (
     <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: 16, alignItems: 'start' }}>
       {/* Test selector sidebar */}
-      <Card style={{ padding: 0, overflow: 'hidden' }}>
-        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border)', fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+      <Card style={{ padding: '8px 0', overflow: 'hidden' }}>
+        <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
           Chọn bài kiểm tra
         </div>
         {tests.filter(t => t.status === 'completed').length === 0 ? (
@@ -121,13 +121,31 @@ export const TestsAnalyticsTab: React.FC<TestsAnalyticsTabProps> = ({
               key={t.id}
               onClick={() => { onSelectTest(t); setAiInsight('') }}
               style={{
-                display: 'block', width: '100%', textAlign: 'left',
-                padding: '12px 16px', border: 'none', cursor: 'pointer',
-                borderBottom: '1px solid var(--border-light)',
-                background: selectedTest?.id === t.id ? 'var(--primary-light)' : 'transparent',
-                transition: 'background 0.15s',
+                display: 'block',
+                width: 'calc(100% - 16px)',
+                margin: '4px 8px',
+                textAlign: 'left',
+                padding: '10px 14px',
+                borderRadius: 8,
+                background: selectedTest?.id === t.id ? 'var(--sidebar-hover)' : 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                position: 'relative',
+                paddingLeft: selectedTest?.id === t.id ? '20px' : '14px',
               }}
             >
+              {selectedTest?.id === t.id && (
+                <div style={{
+                  position: 'absolute',
+                  left: 6,
+                  top: '20%',
+                  bottom: '20%',
+                  width: 3,
+                  borderRadius: 2,
+                  background: 'var(--primary)',
+                }} />
+              )}
               <div style={{ fontSize: 13, fontWeight: 600, color: selectedTest?.id === t.id ? 'var(--primary)' : 'var(--text-1)', marginBottom: 2 }}>
                 {t.name}
               </div>

@@ -40,7 +40,8 @@ const labelStyle: React.CSSProperties = {
 function computeTotal(r: number | null, l: number | null, s: number | null, w: number | null): number | null {
   const vals = [r, l, s, w].filter((v): v is number => v !== null)
   if (vals.length === 0) return null
-  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+  // Tổng điểm = tổng các kỹ năng (không phải trung bình)
+  return Math.round(vals.reduce((a, b) => a + b, 0) * 10) / 10
 }
 
 export const ScoreEntryModal: React.FC<ScoreEntryModalProps> = ({
@@ -144,7 +145,7 @@ export const ScoreEntryModal: React.FC<ScoreEntryModalProps> = ({
         {/* Skill scores */}
         <div>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-3)', marginBottom: 10 }}>
-            Điểm theo kỹ năng (0–100)
+            Điểm theo kỹ năng (tổng các phần = tổng điểm bài test)
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 10 }}>
             {scoreField('Đọc',  reading,   setReading)}

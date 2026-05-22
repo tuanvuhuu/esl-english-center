@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Card, Badge, Button, Icon } from '../../../components'
+import { Card, Badge, Button, Icon, Input, Select } from '../../../components'
 import type { DbTest, TestType } from '../../../types/database'
 
 const TYPE_LABELS: Record<TestType, string> = {
@@ -18,6 +18,15 @@ const TYPE_VARIANTS: Record<TestType, 'primary' | 'info' | 'warning' | 'error' |
   final:      'error',
   speaking:   'primary',
   placement:  'success',
+}
+
+const TYPE_COLORS: Record<TestType, string> = {
+  quiz:       'var(--info)',
+  unit_test:  'var(--text-4)',
+  midterm:    'var(--warning)',
+  final:      'var(--error)',
+  speaking:   'var(--primary)',
+  placement:  'var(--success)',
 }
 
 function fmtDate(dateStr: string) {
@@ -65,19 +74,6 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
   const upcoming = filtered.filter(t => t.status === 'upcoming')
   const completed = filtered.filter(t => t.status === 'completed')
 
-  const selectStyle: React.CSSProperties = {
-    height: 32,
-    padding: '0 10px',
-    borderRadius: 8,
-    fontSize: 13,
-    border: '1px solid var(--border)',
-    background: 'var(--card-bg)',
-    color: 'var(--text-2)',
-    cursor: 'pointer',
-    fontFamily: 'var(--font)',
-    outline: 'none',
-  }
-
   if (loading) {
     return (
       <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>
@@ -89,6 +85,7 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
   const renderTestCard = (t: DbTest, i: number) => {
     const days = daysUntil(t.test_date)
     const isUpcoming = t.status === 'upcoming'
+    const leftBorderColor = TYPE_COLORS[t.type] || 'var(--text-4)'
 
     return (
       <Card
@@ -96,107 +93,147 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
         hover
         animate
         delay={i * 50}
-        style={{ cursor: 'pointer' }}
-        onClick={() => onSelectTest(t)}
-      >
-        {/* Header row */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <Badge variant={TYPE_VARIANTS[t.type]}>{TYPE_LABELS[t.type]}</Badge>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {isUpcoming && days >= 0 && (
-              <span style={{ fontSize: 11, color: days <= 3 ? 'var(--warning-dark)' : 'var(--text-4)' }}>
-                {days === 0 ? 'Hôm nay' : `${days} ngày nữa`}
-              </span>
-            )}
-            <Badge variant={isUpcoming ? 'warning' : 'success'}>
-              {isUpcoming ? 'Sắp tới' : 'Hoàn thành'}
-            </Badge>
-          </div>
-        </div>
-
-        {/* Name */}
-        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-1)', marginBottom: 4 }}>
-          {t.name}
-        </div>
-
-        {/* Class */}
-        <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>
-          {t.class?.name ?? '—'}
-          {t.class?.teacher && ` · ${t.class.teacher.full_name}`}
-        </div>
-
-        {/* Footer */}
-        <div style={{
-          paddingTop: 10,
-          borderTop: '1px solid var(--border-light)',
+        style={{
+          cursor: 'pointer',
+          borderLeft: `4px solid ${leftBorderColor}`,
+          padding: '12px 14px',
+          paddingLeft: '16px',
           display: 'flex',
           flexDirection: 'column',
-          gap: 8,
-        }}>
-          {/* Row 1: date */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--text-3)' }}>
-            <Icon name="calendar" size={14} />
-            {fmtDate(t.test_date)}
+          justifyContent: 'space-between',
+          gap: 10,
+        }}
+        onClick={() => onSelectTest(t)}
+      >
+        <div>
+          {/* Header row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, flexWrap: 'wrap', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Badge variant={TYPE_VARIANTS[t.type]} style={{ padding: '1px 6px', fontSize: 10 }}>
+                {TYPE_LABELS[t.type]}
+              </Badge>
+              <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>
+                {t.class?.name ?? '—'}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {isUpcoming && days >= 0 && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 3,
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: days === 0 ? 'var(--error-text)' : days <= 3 ? 'var(--warning-text)' : 'var(--text-3)',
+                  background: days === 0 ? 'var(--error-bg)' : days <= 3 ? 'var(--warning-bg)' : 'var(--border-light)',
+                  padding: '1px 6px',
+                  borderRadius: '100px',
+                }}>
+                  <Icon name="clock" size={10} />
+                  {days === 0 ? 'Hôm nay' : `${days} ngày`}
+                </div>
+              )}
+              <Badge variant={isUpcoming ? 'warning' : 'success'} style={{ padding: '1px 6px', fontSize: 10 }}>
+                {isUpcoming ? 'Sắp tới' : 'Xong'}
+              </Badge>
+            </div>
           </div>
 
-          {/* Row 2: actions */}
-          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+          {/* Name */}
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-1)', marginBottom: 6, lineHeight: 1.25 }}>
+            {t.name}
+          </div>
+
+          {/* Teacher and Date in a single row */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, fontSize: 11, color: 'var(--text-3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Icon name="calendar" size={12} style={{ color: 'var(--text-4)' }} />
+              <span>{fmtDate(t.test_date)}</span>
+            </div>
+            {t.class?.teacher && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Icon name="graduation" size={12} style={{ color: 'var(--text-4)' }} />
+                <span style={{ maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.class.teacher.full_name}>
+                  {t.class.teacher.full_name}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer actions */}
+        <div style={{
+          paddingTop: 8,
+          borderTop: '1px solid var(--border-light)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 6,
+        }} onClick={e => e.stopPropagation()}>
+          <div style={{ display: 'flex', gap: 4 }}>
             {isUpcoming && onBuildQuestions && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 icon="list"
-                onClick={e => { e.stopPropagation(); onBuildQuestions(t) }}
-                style={{ color: 'var(--primary)', fontWeight: 700 }}
+                onClick={() => onBuildQuestions(t)}
+                style={{ padding: '2px 8px', height: 24, fontSize: 11 }}
               >
                 Câu hỏi
               </Button>
             )}
             {isUpcoming && onTakeOnline && (
               <Button
-                variant="ghost"
+                variant="primary"
                 size="sm"
                 icon="zap"
-                onClick={e => { e.stopPropagation(); onTakeOnline(t) }}
-                style={{ color: 'var(--success)', fontWeight: 700 }}
+                onClick={() => onTakeOnline(t)}
+                style={{ padding: '2px 8px', height: 24, fontSize: 11 }}
               >
-                Làm online
-              </Button>
-            )}
-            {onViewPdf && (
-              <Button
-                variant="ghost"
-                size="sm"
-                icon="eye"
-                onClick={e => { e.stopPropagation(); onViewPdf(t) }}
-              >
-                Xem PDF
-              </Button>
-            )}
-            {onExportPdf && (
-              <Button
-                variant="ghost"
-                size="sm"
-                icon="download"
-                loading={exportingId === t.id}
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  setExportingId(t.id);
-                  await onExportPdf(t);
-                  setExportingId(null);
-                }}
-              >
-                In PDF
+                Online
               </Button>
             )}
             {t.status === 'completed' && (
               <Button
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 icon="bar-chart-2"
-                onClick={e => { e.stopPropagation(); onSelectTest(t) }}
+                onClick={() => onSelectTest(t)}
+                style={{ color: 'var(--info-text)', borderColor: 'var(--info-border)', padding: '2px 8px', height: 24, fontSize: 11 }}
               >
                 Kết quả
+              </Button>
+            )}
+          </div>
+
+          <div style={{ display: 'inline-flex', gap: 4 }}>
+            {onViewPdf && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon="eye"
+                title="Xem PDF"
+                onClick={() => onViewPdf(t)}
+                style={{ width: 24, height: 24, padding: 0 }}
+              >
+                {null}
+              </Button>
+            )}
+            {onExportPdf && (
+              <Button
+                variant="secondary"
+                size="sm"
+                icon="download"
+                title="Tải PDF"
+                loading={exportingId === t.id}
+                onClick={async () => {
+                  setExportingId(t.id);
+                  await onExportPdf(t);
+                  setExportingId(null);
+                }}
+                style={{ width: 24, height: 24, padding: 0 }}
+              >
+                {null}
               </Button>
             )}
           </div>
@@ -208,41 +245,38 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
   return (
     <div>
       {/* Filter bar */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: 200 }}>
-          <Icon
-            name="search"
-            size={14}
-            style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }}
-          />
-          <input
-            style={{
-              width: '100%', height: 32, paddingLeft: 30, paddingRight: 10,
-              borderRadius: 8, border: '1px solid var(--border)',
-              background: 'var(--card-bg)', color: 'var(--text-1)',
-              fontSize: 13, fontFamily: 'var(--font)', outline: 'none',
-              boxSizing: 'border-box',
-            }}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <Input
             placeholder="Tìm tên bài, tên lớp..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={setSearch}
+            icon="search"
           />
         </div>
 
-        <select style={selectStyle} value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
-          <option value="">Tất cả loại</option>
-          {Object.entries(TYPE_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>{l}</option>
-          ))}
-        </select>
+        <Select
+          value={typeFilter}
+          onChange={setTypeFilter}
+          options={[
+            { value: '', label: 'Tất cả loại' },
+            ...Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l }))
+          ]}
+          style={{ minWidth: 160 }}
+        />
 
-        <select style={selectStyle} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-          <option value="">Tất cả trạng thái</option>
-          <option value="upcoming">Sắp tới</option>
-          <option value="completed">Hoàn thành</option>
-        </select>
+        <Select
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: '', label: 'Tất cả trạng thái' },
+            { value: 'upcoming', label: 'Sắp tới' },
+            { value: 'completed', label: 'Hoàn thành' }
+          ]}
+          style={{ minWidth: 160 }}
+        />
 
-        <Button variant="primary" icon="plus" size="md" onClick={onCreate}>
+        <Button variant="primary" icon="plus" onClick={onCreate}>
           Tạo bài kiểm tra
         </Button>
       </div>
@@ -253,7 +287,7 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-3)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Sắp tới · {upcoming.length}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
             {upcoming.map((t, i) => renderTestCard(t, i))}
           </div>
         </div>
@@ -265,7 +299,7 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-3)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Đã hoàn thành · {completed.length}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 10 }}>
             {completed.map((t, i) => renderTestCard(t, i))}
           </div>
         </div>

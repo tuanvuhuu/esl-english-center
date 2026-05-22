@@ -1,11 +1,6 @@
-/**
- * Tìm câu hỏi từ internet bằng Gemini Search Grounding.
- * Gemini sẽ tự search Google, đọc các trang đề thi online,
- * extract câu hỏi và trả về kèm source URL.
- */
 import { getGeminiKey } from '../../lib/gemini'
 import type { GeneratedQuestion } from './questionGenerator'
-import type { QuestionSkill } from '../../types/database'
+import type { QuestionSkill, QuestionType } from '../../types/database'
 
 const GEMINI_MODEL = 'gemini-flash-latest'
 
@@ -19,8 +14,9 @@ const buildSearchPrompt = (opts: {
   skill: QuestionSkill | 'all'
   level: string
   count: number
+  type?: QuestionType | 'all'
 }): string => {
-  const { topic, skill, level, count } = opts
+  const { topic, skill, level, count, type = 'all' } = opts
   const topicVi = topic.trim() || 'tổng hợp'
   const levelMap: Record<string, string> = {
     'STARTER': 'mầm non / lớp 1',
@@ -32,6 +28,16 @@ const buildSearchPrompt = (opts: {
     'B1': 'THCS lớp 6-8',
   }
   const levelVi = levelMap[level.toUpperCase()] || level
+
+  const typeMap: Record<string, string> = {
+    'mcq': 'trắc nghiệm (multiple choice)',
+    'true_false': 'đúng/sai (true/false)',
+    'fill_blank': 'điền vào chỗ trống (fill in the blank)',
+    'short_answer': 'trả lời ngắn (short answer)',
+    'essay': 'tự luận/viết đoạn văn (essay)',
+    'speaking_prompt': 'nói/đọc to (speaking prompt)',
+  }
+  const typeVi = type !== 'all' ? (typeMap[type] || type) : null
 
   return `
 Hãy SEARCH GOOGLE tìm các đề thi/bài tập tiếng Anh cho **${levelVi}** với chủ đề "${topicVi}" trên các trang giáo dục Việt Nam như:
@@ -45,13 +51,14 @@ Yêu cầu:
 5. Câu hỏi phải ĐÚNG NGUYÊN VĂN tiếng Anh từ đề thi gốc, không tự bịa.
 
 ${skill !== 'all' ? `Kỹ năng: ${skill}` : 'Mix các kỹ năng'}
+${typeVi ? `Định dạng câu hỏi: CHỈ tìm và trích xuất các câu hỏi loại: ${typeVi}` : 'Mix các loại câu hỏi'}
 
 **TRẢ VỀ JSON HỢP LỆ (không markdown fence)**, theo schema:
 {
   "questions": [
     {
       "skill": "reading|listening|speaking|writing|general",
-      "type": "mcq|true_false|fill_blank|short_answer|essay",
+      "type": "mcq|true_false|fill_blank|short_answer|essay|speaking_prompt",
       "question_text": "string (English)",
       "options": [{ "text": "string", "isCorrect": boolean }],
       "explanation": "string (có thể tiếng Việt)",
@@ -71,6 +78,8 @@ export async function searchQuestionsOnline(opts: {
   skill: QuestionSkill | 'all'
   level: string
   count: number
+  type?: QuestionType | 'all'
+  skillPoints?: Record<QuestionSkill, number>
 }): Promise<WebSearchedQuestion[]> {
   const apiKey = getGeminiKey()
   if (!apiKey) throw new Error('Chưa cấu hình Gemini API key')
@@ -129,7 +138,7 @@ export async function searchQuestionsOnline(opts: {
     question_text: q.question_text,
     options: q.options,
     explanation: q.explanation,
-    points: q.points ?? 1,
+    points: opts.skillPoints?.[q.skill as QuestionSkill] ?? (q.points ?? 1),
     source_url: q.source_url,
     source_title: q.source_title,
     image_url: undefined,

@@ -1,7 +1,7 @@
 import { aiJson } from '../../lib/ai'
 import { generateImageUrl, stableSeed, buildImagePrompt } from '../../lib/imageGen'
 import type { GeneratedQuestion } from './questionGenerator'
-import type { QuestionSkill } from '../../types/database'
+import type { QuestionSkill, QuestionType } from '../../types/database'
 
 interface GeminiQuestion {
   skill: 'reading' | 'listening' | 'speaking' | 'writing' | 'general'
@@ -122,13 +122,18 @@ const buildPrompt = (opts: {
   skill: QuestionSkill | 'all'
   level: string
   count: number
+  type?: string
 }): string => {
-  const { topic, skill, level, count } = opts
+  const { topic, skill, level, count, type = 'all' } = opts
   const format = examFormatFor(level)
 
   const skillInstr = skill === 'all'
     ? 'Mix các kỹ năng: reading, listening, speaking, writing, general (vocabulary/grammar).'
     : `Tất cả câu hỏi thuộc kỹ năng: ${skill}.`
+
+  const typeInstr = type === 'all'
+    ? 'Mix các loại câu hỏi: mcq (trắc nghiệm), true_false (đúng/sai), fill_blank (điền từ vào chỗ trống), short_answer (trả lời ngắn), essay (tự luận viết đoạn văn), speaking_prompt (nói).'
+    : `Tất cả câu hỏi PHẢI thuộc loại câu hỏi: ${type}.`
 
   const topicInstr = topic.trim()
     ? `Chủ đề: "${topic.trim()}". Tất cả câu hỏi xoay quanh chủ đề này.`
@@ -142,16 +147,18 @@ Hãy tạo ${count} câu hỏi tiếng Anh:
 **Đặc điểm độ tuổi/level:**${format.guidelines}
 
 **Kỹ năng:** ${skillInstr}
+**Loại câu hỏi:** ${typeInstr}
 **Chủ đề:** ${topicInstr}
 
 **Quy tắc:**
 1. Câu hỏi ĐƠN GIẢN, vui, phù hợp tuổi học sinh. KHÔNG dùng từ/cấu trúc cao hơn level.
-2. Mỗi MCQ có 3-4 options, 1 đáp án đúng. Đáp án sai phải gần đúng (không vô lý).
-3. Câu hỏi bằng tiếng Anh.
-4. Điểm: MCQ/True-False = 1-2 điểm, speaking/essay = 5-15 điểm.
-5. Reading: passage ngắn + câu hỏi (format: "Read: '...' Question: <câu hỏi>").
-6. Listening: nội dung audio trong \`explanation\`, câu hỏi ngắn ở \`question_text\`.
-7. Mỗi câu KHÁC NHAU rõ rệt — không trùng nội dung, từ vựng, cấu trúc.
+2. Mỗi câu hỏi MCQ (trắc nghiệm) bắt buộc phải có đúng 4 options, trong đó có duy nhất 1 đáp án đúng (isCorrect: true).
+3. Mỗi câu hỏi True/False (true_false) bắt buộc phải có đúng 2 options: "True" và "False" (hoặc "Đúng" và "Sai") và đánh dấu đúng/sai tương ứng.
+4. Câu hỏi bằng tiếng Anh.
+5. Điểm: MCQ/True-False = 1-2 điểm, speaking/essay = 5-15 điểm.
+6. Reading: passage ngắn + câu hỏi (format: "Read: '...' Question: <câu hỏi>").
+7. Listening: nội dung audio trong \`explanation\`, câu hỏi ngắn ở \`question_text\`.
+8. Mỗi câu KHÁC NHAU rõ rệt — không trùng nội dung, từ vựng, cấu trúc.
 
 **ẢNH MINH HỌA — CHỈ KHI THẬT SỰ CẦN:**
 10. **MẶC ĐỊNH \`needsImage = false\`.** Đa số câu hỏi KHÔNG cần ảnh.
@@ -182,6 +189,8 @@ export const generateQuestionsWithAi = async (opts: {
   skill: QuestionSkill | 'all'
   level: string
   count: number
+  type?: string
+  skillPoints?: Record<QuestionSkill, number>
 }): Promise<GeneratedQuestion[]> => {
   const prompt = buildPrompt(opts)
   const result = await aiJson<{ questions: GeminiQuestion[] }>(
@@ -208,7 +217,7 @@ export const generateQuestionsWithAi = async (opts: {
       question_text: q.question_text,
       options: q.options,
       explanation: q.explanation,
-      points: q.points,
+      points: opts.skillPoints?.[q.skill as QuestionSkill] ?? q.points,
       hasImageSuggestion: shouldHaveImage,
       imageSuggestion: q.imagePrompt,
       image_url: imagePrompt
@@ -216,4 +225,88 @@ export const generateQuestionsWithAi = async (opts: {
         : undefined,
     }
   })
+}
+
+const SINGLE_QUESTION_SCHEMA = {
+  type: 'object',
+  properties: {
+    skill: { type: 'string', enum: ['reading', 'listening', 'speaking', 'writing', 'general'] },
+    type:  { type: 'string', enum: ['mcq', 'true_false', 'fill_blank', 'short_answer', 'essay', 'speaking_prompt'] },
+    question_text: { type: 'string' },
+    options: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          text:      { type: 'string'  },
+          isCorrect: { type: 'boolean' },
+        },
+        required: ['text', 'isCorrect'],
+      },
+    },
+    explanation: { type: 'string' },
+    points: { type: 'number' },
+    needsImage: { type: 'boolean' },
+    imagePrompt: { type: 'string' },
+  },
+  required: ['skill', 'type', 'question_text', 'points'],
+}
+
+export const generateSingleQuestionWithAi = async (opts: {
+  skill: QuestionSkill
+  type: QuestionType
+  level: string
+  topic?: string
+}): Promise<GeneratedQuestion> => {
+  const format = examFormatFor(opts.level)
+  const topicInstr = opts.topic?.trim()
+    ? `Chủ đề: "${opts.topic.trim()}". Câu hỏi phải xoay quanh chủ đề này.`
+    : 'Chủ đề tự do, phù hợp lứa tuổi học sinh.'
+
+  const prompt = `
+Bạn là cô giáo dạy tiếng Anh cho trẻ em tại trung tâm ESL Việt Nam. Bạn soạn đề kiểm tra cho **${format.exam}** — học sinh **${format.ageRange}**.
+
+Hãy tạo đúng 1 câu hỏi tiếng Anh với yêu cầu sau:
+- Kỹ năng: ${opts.skill}
+- Loại câu hỏi: ${opts.type} (mcq - trắc nghiệm, true_false - đúng/sai, fill_blank - điền từ vào chỗ trống, short_answer - trả lời ngắn, essay - tự luận viết đoạn văn, speaking_prompt - gợi ý nói).
+- **Chủ đề**: ${topicInstr}
+
+**Đặc điểm độ tuổi/level:**${format.guidelines}
+
+**Quy tắc bắt buộc cho loại câu hỏi "${opts.type}":**
+1. Nếu loại câu hỏi là "mcq" (Trắc nghiệm): Phải cung cấp đúng 4 đáp án (options), trong đó chỉ có duy nhất 1 đáp án có "isCorrect": true, các đáp án còn lại có "isCorrect": false.
+2. Nếu loại câu hỏi là "true_false" (Đúng/Sai): Phải cung cấp đúng 2 đáp án (options) là "True" và "False" và đánh dấu đúng/sai tương ứng.
+3. Nếu loại câu hỏi là "fill_blank", "short_answer", "essay" hoặc "speaking_prompt": Trường "options" phải để trống hoặc là mảng rỗng (không cần tạo đáp án lựa chọn).
+4. Nội dung câu hỏi phải hoàn toàn ngẫu nhiên và tự nhiên, không được trùng lặp với các ví dụ mẫu.
+5. Điểm số: mcq/true_false = 1-2 điểm, speaking/essay = 5-10 điểm, short_answer/fill_blank = 1-3 điểm.
+6. Reading: passage ngắn + câu hỏi.
+7. Listening: nội dung hội thoại/audio ghi ở 'explanation', câu hỏi ghi ở 'question_text'.
+
+Trả về JSON khớp đúng schema.
+`
+
+  const result = await aiJson<GeminiQuestion>(
+    prompt,
+    SINGLE_QUESTION_SCHEMA,
+    { temperature: 1.0 }
+  )
+
+  const shouldHaveImage = result.needsImage === true && !!result.imagePrompt
+  const imagePrompt = shouldHaveImage
+    ? buildImagePrompt(result.question_text, result.imagePrompt!)
+    : null
+
+  return {
+    skill: result.skill as QuestionSkill,
+    type: result.type as any,
+    question_text: result.question_text,
+    options: result.options,
+    explanation: result.explanation,
+    points: result.points,
+    hasImageSuggestion: shouldHaveImage,
+    imageSuggestion: result.imagePrompt,
+    image_url: imagePrompt
+      ? generateImageUrl(imagePrompt, { seed: stableSeed(result.question_text + (result.imagePrompt ?? '')) })
+      : undefined,
+  }
 }
