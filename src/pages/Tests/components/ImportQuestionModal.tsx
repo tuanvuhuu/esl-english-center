@@ -30,8 +30,19 @@ export const ImportQuestionModal: React.FC<ImportQuestionModalProps> = ({
     setError(null);
     try {
       if (sourceType === 'excel' && selectedFile) {
-        const data = await selectedFile.arrayBuffer();
-        const workbook = XLSX.read(data, { type: 'array' });
+        let workbook
+        if (selectedFile.name.toLowerCase().endsWith('.csv')) {
+          const text = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result as string)
+            reader.onerror = () => reject(new Error('Không đọc được file CSV'))
+            reader.readAsText(selectedFile, 'utf-8')
+          })
+          workbook = XLSX.read(text, { type: 'string' })
+        } else {
+          const data = await selectedFile.arrayBuffer()
+          workbook = XLSX.read(data, { type: 'array' })
+        }
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json<any>(worksheet, { defval: '' });

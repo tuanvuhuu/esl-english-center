@@ -49,8 +49,19 @@ export const ImportScoresModal: React.FC<Props> = ({ open, onClose, test, rows, 
   const handleFile = async (file: File) => {
     reset()
     try {
-      const data = await file.arrayBuffer()
-      const wb = XLSX.read(data, { type: 'array' })
+      let wb
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error('Không đọc được file CSV'))
+          reader.readAsText(file, 'utf-8')
+        })
+        wb = XLSX.read(text, { type: 'string' })
+      } else {
+        const data = await file.arrayBuffer()
+        wb = XLSX.read(data, { type: 'array' })
+      }
       const ws = wb.Sheets[wb.SheetNames[0]]
       const json = XLSX.utils.sheet_to_json<any>(ws, { defval: null })
 
@@ -254,7 +265,7 @@ export const ImportScoresModal: React.FC<Props> = ({ open, onClose, test, rows, 
         <input
           ref={inputRef}
           type="file"
-          accept=".xlsx,.xls"
+          accept=".xlsx,.xls,.csv"
           style={{ display: 'none' }}
           onChange={e => {
             const f = e.target.files?.[0]

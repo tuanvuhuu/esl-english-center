@@ -40,7 +40,7 @@ export default function App() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <div style={{
             width: 48, height: 48, borderRadius: 14,
-            background: 'linear-gradient(135deg, #FF6B35, #e85d04)',
+            background: 'linear-gradient(135deg, #80b848, #5f8f2e)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 24, fontWeight: 800, color: '#fff',
           }}>E</div>

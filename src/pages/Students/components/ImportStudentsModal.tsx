@@ -166,8 +166,19 @@ export const ImportStudentsModal: React.FC<Props> = ({ open, onClose, onSuccess,
     setError(null)
     setFilename(file.name)
     try {
-      const data = await file.arrayBuffer()
-      const wb = XLSX.read(data, { type: 'array', cellDates: false })
+      let wb
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        const text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = (e) => resolve(e.target?.result as string)
+          reader.onerror = () => reject(new Error('Không đọc được file CSV'))
+          reader.readAsText(file, 'utf-8')
+        })
+        wb = XLSX.read(text, { type: 'string', cellDates: false })
+      } else {
+        const data = await file.arrayBuffer()
+        wb = XLSX.read(data, { type: 'array', cellDates: false })
+      }
       const ws = wb.Sheets[wb.SheetNames[0]]
       const json = XLSX.utils.sheet_to_json<any>(ws, { defval: null, raw: true })
       if (!json.length) { setError('File rỗng hoặc không có dữ liệu'); return }

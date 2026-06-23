@@ -26,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
   const [showNotif, setShowNotif] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const [landingBtnHover, setLandingBtnHover] = useState(false);
   const themeRef = useRef<HTMLDivElement>(null);
   const { mode, toggle: toggleTheme, primaryColor, bgImage, setPrimaryColor, setBgImage } = useTheme();
   const { profile, user, logout } = useAuth();
@@ -84,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
     'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=1200',
   ];
 
-  const THEME_COLORS = ['#FF6B35', '#3B82F6', '#10B981', '#F43F5E', '#8B5CF6', '#F59E0B', '#06B6D4'];
+  const THEME_COLORS = ['#80b848', '#f58220', '#3B82F6', '#10B981', '#F43F5E', '#8B5CF6', '#06B6D4'];
 
   const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Admin';
   const displayEmail = user?.email || '';
@@ -258,6 +259,27 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
       {!isMobile && (
         <WeatherBadge data={weather} loading={weatherLoading} />
       )}
+
+      {/* Landing Page */}
+      <Button
+        variant="primary"
+        icon="graduation"
+        onClick={() => window.open('https://www.eslacademy.edu.vn/', '_blank')}
+        onMouseEnter={() => setLandingBtnHover(true)}
+        onMouseLeave={() => setLandingBtnHover(false)}
+        style={{
+          borderRadius: 10,
+          height: 34,
+          background: landingBtnHover ? '#5f8f2e' : '#80b848',
+          color: '#fff',
+          border: 'none',
+          padding: isMobile ? '0 8px' : '0 12px',
+          boxShadow: '0 2px 8px rgba(128, 184, 72, 0.25)',
+        }}
+        title="Landing Page"
+      >
+        {!isMobile && "Landing Page"}
+      </Button>
 
       {/* Theme Settings */}
       <div ref={themeRef} style={{ position: 'relative' }}>

@@ -5,7 +5,7 @@ interface LandingProps {
 }
 
 const NAVY = '#0B2545'
-const ORANGE = '#FF6B35'
+const GREEN = '#80b848'
 
 const programs = [
   {
@@ -13,7 +13,7 @@ const programs = [
     age: '4 - 6 tuổi',
     title: 'Little Stars',
     desc: 'Khơi nguồn cảm hứng học tiếng Anh qua bài hát, trò chơi & flashcard sinh động.',
-    color: '#FF6B35',
+    color: '#80b848',
   },
   {
     icon: '🎒',
@@ -97,10 +97,10 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
               width: 40, height: 40, borderRadius: 12,
-              background: 'linear-gradient(135deg, #FF6B35, #E55A2B)',
+              background: 'linear-gradient(135deg, #80b848, #5f8f2e)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 18, fontWeight: 900, color: '#fff',
-              boxShadow: '0 8px 20px rgba(255,107,53,0.35)',
+              boxShadow: '0 8px 20px rgba(128,184,72,0.35)',
             }}>E</div>
             <div>
               <div style={{ fontSize: 15, fontWeight: 800, color: NAVY, lineHeight: 1.1 }}>ESL English Center</div>
@@ -119,7 +119,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
                 fontSize: 14, fontWeight: 600, color: NAVY,
                 textDecoration: 'none', transition: 'color 0.15s',
               }}
-                 onMouseEnter={e => e.currentTarget.style.color = ORANGE}
+                 onMouseEnter={e => e.currentTarget.style.color = GREEN}
                  onMouseLeave={e => e.currentTarget.style.color = NAVY}>
                 {n.label}
               </a>
@@ -142,7 +142,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
             color: '#fff', border: 'none', borderRadius: 10,
             fontSize: 13.5, fontWeight: 700, fontFamily: 'var(--font)',
             cursor: 'pointer', letterSpacing: 0.2,
-            boxShadow: '0 6px 16px rgba(255,107,53,0.38)',
+            boxShadow: '0 6px 16px rgba(128,184,72,0.38)',
             transition: 'transform 0.15s',
           }}
           onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
@@ -162,7 +162,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
         {/* Decorative blobs */}
         <div style={{
           position: 'absolute', width: 480, height: 480, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,107,53,0.18) 0%, rgba(255,107,53,0) 65%)',
+          background: 'radial-gradient(circle, rgba(128,184,72,0.18) 0%, rgba(128,184,72,0) 65%)',
           top: -120, right: -80, pointerEvents: 'none',
         }} />
         <div style={{
@@ -180,12 +180,12 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '6px 14px', borderRadius: 999,
-              background: '#FFF5F0', color: ORANGE,
+              background: '#eef4de', color: GREEN,
               fontSize: 12, fontWeight: 700, letterSpacing: 0.4,
               marginBottom: 20,
-              border: '1px solid rgba(255,107,53,0.2)',
+              border: '1px solid rgba(128,184,72,0.2)',
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: ORANGE }} />
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: GREEN }} />
               ƯU ĐÃI THÁNG 6: GIẢM ĐẾN 30% HỌC PHÍ
             </div>
 
@@ -197,7 +197,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
               Học tiếng Anh{' '}
               <span style={{
                 position: 'relative',
-                background: 'linear-gradient(135deg, #FF6B35, #E55A2B)',
+                background: 'linear-gradient(135deg, #80b848, #5f8f2e)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
@@ -219,7 +219,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
                 background: 'var(--gradient-primary)',
                 color: '#fff', borderRadius: 12,
                 fontSize: 15, fontWeight: 700, textDecoration: 'none',
-                boxShadow: '0 12px 28px rgba(255,107,53,0.40)',
+                boxShadow: '0 12px 28px rgba(128,184,72,0.40)',
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 transition: 'transform 0.15s',
               }}
@@ -236,7 +236,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
                 display: 'inline-flex', alignItems: 'center', gap: 8,
                 transition: 'border-color 0.15s',
               }}
-                 onMouseEnter={e => e.currentTarget.style.borderColor = ORANGE}
+                 onMouseEnter={e => e.currentTarget.style.borderColor = GREEN}
                  onMouseLeave={e => e.currentTarget.style.borderColor = '#E6ECF5'}>
                 Xem chương trình
               </a>
@@ -267,7 +267,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
             }}>
               <div style={{
                 position: 'absolute', width: 220, height: 220, borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255,107,53,0.4) 0%, rgba(255,107,53,0) 65%)',
+                background: 'radial-gradient(circle, rgba(128,184,72,0.4) 0%, rgba(128,184,72,0) 65%)',
                 top: -80, right: -60,
               }} />
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -289,7 +289,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
                 {['T', 'M', 'L', 'A'].map((c, i) => (
                   <div key={i} style={{
                     width: 32, height: 32, borderRadius: '50%',
-                    background: ['#FF6B35', '#3B82F6', '#10B981', '#8B5CF6'][i],
+                    background: ['#80b848', '#3B82F6', '#10B981', '#8B5CF6'][i],
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 700, color: '#fff',
                     border: '2px solid #143360',
@@ -315,7 +315,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <div style={{
                   width: 40, height: 40, borderRadius: 10,
-                  background: '#FFF5F0',
+                  background: '#eef4de',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 20,
                 }}>📈</div>
@@ -364,7 +364,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
             <div style={{
               display: 'inline-block',
               padding: '4px 12px', borderRadius: 999,
-              background: '#FFF5F0', color: ORANGE,
+              background: '#eef4de', color: GREEN,
               fontSize: 11, fontWeight: 700, letterSpacing: 0.6,
               marginBottom: 14, textTransform: 'uppercase',
             }}>
@@ -442,7 +442,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
               <div style={{
                 display: 'inline-block',
                 padding: '4px 12px', borderRadius: 999,
-                background: '#FFF5F0', color: ORANGE,
+                background: '#eef4de', color: GREEN,
                 fontSize: 11, fontWeight: 700, letterSpacing: 0.6,
                 marginBottom: 14, textTransform: 'uppercase',
               }}>
@@ -499,7 +499,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
             <div style={{
               display: 'inline-block',
               padding: '4px 12px', borderRadius: 999,
-              background: '#FFF5F0', color: ORANGE,
+              background: '#eef4de', color: GREEN,
               fontSize: 11, fontWeight: 700, letterSpacing: 0.6,
               marginBottom: 14, textTransform: 'uppercase',
             }}>
@@ -521,7 +521,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
               }}>
                 <div style={{
                   position: 'absolute', top: 18, right: 22,
-                  fontSize: 48, color: ORANGE, opacity: 0.18,
+                  fontSize: 48, color: GREEN, opacity: 0.18,
                   fontFamily: 'serif', lineHeight: 1,
                 }}>"</div>
                 <div style={{ display: 'flex', gap: 4, marginBottom: 14 }}>
@@ -562,7 +562,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
         }}>
           <div style={{
             position: 'absolute', width: 480, height: 480, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,107,53,0.30) 0%, rgba(255,107,53,0) 65%)',
+            background: 'radial-gradient(circle, rgba(128,184,72,0.30) 0%, rgba(128,184,72,0) 65%)',
             top: -180, right: -120, pointerEvents: 'none',
           }} />
           <div style={{
@@ -579,14 +579,14 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
               }}>
                 Sẵn sàng bắt đầu hành trình{' '}
                 <span style={{
-                  background: 'linear-gradient(135deg, #FF8A5C, #FF6B35)',
+                  background: 'linear-gradient(135deg, #a6c940, #80b848)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text',
                 }}>tiếng Anh</span>?
               </h2>
               <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.75)', margin: 0, lineHeight: 1.65 }}>
-                Đăng ký nhận tư vấn lộ trình & kiểm tra trình độ <strong style={{ color: '#FFB496' }}>miễn phí</strong> — ưu đãi học phí lên đến 30% trong tháng này.
+                Đăng ký nhận tư vấn lộ trình & kiểm tra trình độ <strong style={{ color: '#a6c940' }}>miễn phí</strong> — ưu đãi học phí lên đến 30% trong tháng này.
               </p>
             </div>
 
@@ -596,7 +596,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
                 background: 'var(--gradient-primary)',
                 color: '#fff', borderRadius: 12,
                 fontSize: 15, fontWeight: 700, textDecoration: 'none',
-                boxShadow: '0 12px 28px rgba(255,107,53,0.45)',
+                boxShadow: '0 12px 28px rgba(128,184,72,0.45)',
                 textAlign: 'center',
               }}>
                 📞 Gọi tư vấn ngay: 1900 XXXX
@@ -629,7 +629,7 @@ export const Landing: React.FC<LandingProps> = ({ onEnterApp }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
                 <div style={{
                   width: 38, height: 38, borderRadius: 11,
-                  background: 'linear-gradient(135deg, #FF6B35, #E55A2B)',
+                  background: 'linear-gradient(135deg, #80b848, #5f8f2e)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 17, fontWeight: 900, color: '#fff',
                 }}>E</div>

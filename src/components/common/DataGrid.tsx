@@ -67,12 +67,32 @@ const getPinnedStyle = (column: any, isHeader = false): React.CSSProperties => {
     left: pinned === 'left' ? `${column.getStart('left')}px` : undefined,
     right: pinned === 'right' ? `${column.getAfter('right')}px` : undefined,
     zIndex: isHeader ? 4 : 1,
-    background: 'var(--card)',
+    background: isHeader ? 'var(--table-header)' : 'var(--card)',
     boxShadow: pinned === 'left'
-      ? '2px 0 6px -2px rgba(0,0,0,0.08)'
-      : '-2px 0 6px -2px rgba(0,0,0,0.08)',
+      ? '4px 0 12px -6px rgba(11,37,69,0.12)'
+      : '-4px 0 12px -6px rgba(11,37,69,0.12)',
   }
 }
+
+const SortIndicator = ({ direction }: { direction: false | 'asc' | 'desc' }) => (
+  <span style={{
+    display: 'inline-flex', flexDirection: 'column',
+    marginLeft: 4, lineHeight: 0.8, flexShrink: 0,
+  }}>
+    <span style={{
+      fontSize: 8,
+      color: direction === 'asc' ? 'var(--primary)' : 'var(--text-4)',
+      opacity: direction === 'asc' ? 1 : 0.45,
+      transition: 'color 0.15s, opacity 0.15s',
+    }}>▲</span>
+    <span style={{
+      fontSize: 8, marginTop: 1,
+      color: direction === 'desc' ? 'var(--primary)' : 'var(--text-4)',
+      opacity: direction === 'desc' ? 1 : 0.45,
+      transition: 'color 0.15s, opacity 0.15s',
+    }}>▼</span>
+  </span>
+)
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
@@ -174,27 +194,34 @@ const FilterInput = React.memo(({ value: initialValue, onChange }: { value: stri
   }, [value, onChange, initialValue])
 
   return (
-    <div style={{ position: 'relative', marginTop: 5 }}>
+    <div style={{ position: 'relative', marginTop: 6, textTransform: 'none' }}>
       <Icon
-        name="filter"
-        size={10}
-        style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', color: value ? 'var(--primary)' : 'var(--text-4)', pointerEvents: 'none' }}
+        name="search"
+        size={11}
+        style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: value ? 'var(--primary)' : 'var(--text-4)', pointerEvents: 'none', transition: 'color 0.15s' }}
       />
       <input
         value={value}
         onChange={e => setValue(e.target.value)}
-        placeholder=""
+        placeholder="Lọc..."
         style={{
-          width: '100%', height: 24,
-          padding: value ? '0 20px 0 22px' : '0 8px 0 22px',
+          width: '100%', height: 28,
+          padding: value ? '0 24px 0 26px' : '0 8px 0 26px',
           border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
-          borderRadius: 5, fontSize: 11, fontFamily: 'var(--font)',
+          borderRadius: 7, fontSize: 11, fontWeight: 500, fontFamily: 'var(--font)',
           background: value ? 'var(--primary-light)' : 'var(--input-bg)',
           color: 'var(--text-1)', outline: 'none', boxSizing: 'border-box',
-          transition: 'border-color 0.15s, background 0.15s',
+          letterSpacing: 0,
+          transition: 'border-color 0.15s, background 0.15s, box-shadow 0.15s',
         }}
-        onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
-        onBlur={e => (e.target.style.borderColor = value ? 'var(--primary)' : 'var(--border)')}
+        onFocus={e => {
+          e.target.style.borderColor = 'var(--primary)';
+          e.target.style.boxShadow = '0 0 0 3px var(--primary-15)';
+        }}
+        onBlur={e => {
+          e.target.style.borderColor = value ? 'var(--primary)' : 'var(--border)';
+          e.target.style.boxShadow = 'none';
+        }}
       />
       {value && (
         <button
@@ -204,8 +231,10 @@ const FilterInput = React.memo(({ value: initialValue, onChange }: { value: stri
           }}
           style={{
             position: 'absolute', right: 4, top: '50%', transform: 'translateY(-50%)',
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: 'var(--text-4)', padding: 0, lineHeight: 1, fontSize: 14,
+            background: 'var(--primary)', border: 'none', cursor: 'pointer',
+            color: '#fff', padding: 0, lineHeight: 1, fontSize: 11,
+            width: 16, height: 16, borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >×</button>
       )}
@@ -222,12 +251,18 @@ const FilterSelect = React.memo(({ value, onChange, options }: {
     value={value}
     onChange={e => onChange(e.target.value)}
     style={{
-      width: '100%', height: 24, marginTop: 5,
-      padding: '0 6px',
+      width: '100%', height: 28, marginTop: 6,
+      padding: '0 24px 0 10px',
       border: `1px solid ${value ? 'var(--primary)' : 'var(--border)'}`,
-      borderRadius: 5, fontSize: 11, fontFamily: 'var(--font)',
+      borderRadius: 7, fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)',
       background: value ? 'var(--primary-light)' : 'var(--input-bg)',
-      color: 'var(--text-1)', outline: 'none', cursor: 'pointer',
+      color: value ? 'var(--primary)' : 'var(--text-2)',
+      outline: 'none', cursor: 'pointer',
+      letterSpacing: 0, textTransform: 'none',
+      appearance: 'none',
+      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'right 8px center',
       transition: 'border-color 0.15s, background 0.15s',
     }}
   >
@@ -393,16 +428,34 @@ export function DataGrid<T = any>({
   const headerGroups = table.getHeaderGroups()
 
   return (
-    <div style={{ background: 'var(--card)', borderRadius: 16, border: '1px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{
+      background: 'var(--card)',
+      borderRadius: 18,
+      border: '1px solid var(--border-light)',
+      overflow: 'hidden',
+      boxShadow: '0 4px 12px -4px rgba(11,37,69,0.06), 0 1px 3px rgba(11,37,69,0.04)',
+      display: 'flex', flexDirection: 'column',
+    }}>
       <style>{`
+        .data-grid-row {
+          position: relative;
+        }
         .data-grid-row:hover:not(.is-selected) {
           background: var(--table-row-hover) !important;
         }
+        .data-grid-row.is-selected td:first-child::before {
+          content: '';
+          position: absolute;
+          left: 0; top: 0; bottom: 0;
+          width: 3px;
+          background: var(--primary);
+        }
         .data-grid-btn-primary {
-          transition: opacity 0.15s;
+          transition: transform 0.15s, box-shadow 0.2s;
         }
         .data-grid-btn-primary:hover:not(:disabled) {
-          opacity: 0.88;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 18px -6px rgba(255,107,53,0.50);
         }
         .data-grid-btn-secondary {
           transition: all 0.15s;
@@ -410,6 +463,7 @@ export function DataGrid<T = any>({
         .data-grid-btn-secondary:hover:not(:disabled) {
           border-color: var(--primary) !important;
           color: var(--primary) !important;
+          background: var(--primary-light) !important;
         }
         .data-grid-pagination-btn {
           transition: all 0.15s;
@@ -417,7 +471,7 @@ export function DataGrid<T = any>({
         .data-grid-pagination-btn:hover:not(:disabled) {
           border-color: var(--primary) !important;
           color: var(--primary) !important;
-          background: var(--hover-bg) !important;
+          background: var(--primary-light) !important;
         }
         .data-grid-warning-btn {
           transition: all 0.15s;
@@ -426,17 +480,54 @@ export function DataGrid<T = any>({
           background: var(--warning-bg) !important;
           opacity: 0.88;
         }
+        .data-grid-resize-handle:hover {
+          background: var(--primary) !important;
+          opacity: 0.5;
+        }
+        .data-grid-sort-th:hover .sort-ind {
+          opacity: 1 !important;
+        }
       `}</style>
 
       {/* ── Card Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', borderBottom: '1px solid var(--border)', gap: 12, flexShrink: 0 }}>
-        <div style={{ flex: 1 }}>
-          {title && <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{title}</div>}
-          {subtitle && <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 1 }}>{subtitle}</div>}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '14px 18px',
+        borderBottom: '1px solid var(--border-light)',
+        background: 'linear-gradient(180deg, var(--card) 0%, var(--input-bg-subtle) 100%)',
+        gap: 12, flexShrink: 0,
+      }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+          {title && (
+            <span style={{
+              width: 4, height: 22, borderRadius: 2,
+              background: 'linear-gradient(180deg, var(--primary), var(--primary-dark))',
+              flexShrink: 0,
+            }} />
+          )}
+          <div style={{ minWidth: 0 }}>
+            {title && (
+              <div style={{
+                fontSize: 14, fontWeight: 800, color: 'var(--text-1)',
+                letterSpacing: -0.1, lineHeight: 1.2,
+              }}>{title}</div>
+            )}
+            {subtitle && (
+              <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{subtitle}</div>
+            )}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
           {selectedCount > 0 && (
-            <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600, padding: '4px 10px', background: 'var(--primary-light)', borderRadius: 8 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              fontSize: 11, color: 'var(--primary)', fontWeight: 700,
+              padding: '5px 11px',
+              background: 'var(--primary-light)',
+              border: '1px solid var(--primary-15)',
+              borderRadius: 8,
+            }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} />
               {selectedCount} đã chọn
             </span>
           )}
@@ -444,7 +535,7 @@ export function DataGrid<T = any>({
             <button
               onClick={() => { setColumnFilters([]); table.setPageIndex(0) }}
               className="data-grid-warning-btn"
-              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: '1px solid var(--warning-border)', background: 'var(--warning-bg)', color: 'var(--warning-text)', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '6px 11px', borderRadius: 8, border: '1px solid var(--warning-border)', background: 'var(--warning-bg)', color: 'var(--warning-text)', fontSize: 11, fontWeight: 700, fontFamily: 'var(--font)', cursor: 'pointer' }}
             >
               <Icon name="x" size={11} /> Xoá lọc ({activeFilters})
             </button>
@@ -452,7 +543,7 @@ export function DataGrid<T = any>({
 
           {/* Divider before action buttons */}
           {(onRefresh || onAdd || actions) && (
-            <div style={{ width: 1, height: 20, background: 'var(--border)', margin: '0 2px' }} />
+            <div style={{ width: 1, height: 22, background: 'var(--border)', margin: '0 4px' }} />
           )}
 
           {actions}
@@ -461,9 +552,18 @@ export function DataGrid<T = any>({
             <button
               onClick={onAdd}
               className="data-grid-btn-primary"
-              style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 14px', height: 30, borderRadius: 8, border: 'none', background: 'var(--primary)', color: '#fff', fontSize: 11, fontWeight: 600, fontFamily: 'var(--font)', cursor: 'pointer', flexShrink: 0 }}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 6,
+                padding: '0 14px', height: 32, borderRadius: 9,
+                border: 'none',
+                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                color: '#fff', fontSize: 12, fontWeight: 700,
+                fontFamily: 'var(--font)', cursor: 'pointer', flexShrink: 0,
+                boxShadow: '0 4px 12px -4px rgba(255,107,53,0.45)',
+                letterSpacing: 0.2,
+              }}
             >
-              <Icon name="plus" size={13} /> {addLabel}
+              <Icon name="plus" size={14} /> {addLabel}
             </button>
           )}
 
@@ -472,9 +572,9 @@ export function DataGrid<T = any>({
               onClick={onRefresh}
               title="Làm mới"
               className="data-grid-btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}
             >
-              <Icon name="refresh" size={13} />
+              <Icon name="refresh" size={14} />
             </button>
           )}
 
@@ -482,21 +582,26 @@ export function DataGrid<T = any>({
             onClick={handleExport}
             title="Export CSV"
             className="data-grid-btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--hover-bg)', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 9, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text-2)', cursor: 'pointer', flexShrink: 0 }}
           >
-            <Icon name="download" size={13} />
+            <Icon name="download" size={14} />
           </button>
         </div>
       </div>
 
       {/* ── Scrollable Table Area ── */}
       <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight, flexShrink: 1 }}>
-        <table style={{ minWidth: '100%', width: table.getTotalSize(), borderCollapse: 'collapse', fontSize: 12 }}>
+        <table style={{ minWidth: '100%', width: table.getTotalSize(), borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             {headerGroups.map(headerGroup => (
               <tr
                 key={headerGroup.id}
-                style={{ background: 'var(--table-header)', borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, zIndex: 2 }}
+                style={{
+                  background: 'var(--table-header)',
+                  borderBottom: '1px solid var(--border)',
+                  position: 'sticky', top: 0, zIndex: 2,
+                  boxShadow: '0 1px 0 var(--border-light)',
+                }}
               >
                 {headerGroup.headers.map(header => {
                   const colDef = columns.find(c => c.key === header.column.id)
@@ -506,11 +611,16 @@ export function DataGrid<T = any>({
                   return (
                     <th
                       key={header.id}
+                      className={canSort ? 'data-grid-sort-th' : ''}
                       style={{
                         width: header.getSize(),
-                        padding: hasFilterRow ? '8px 10px 6px' : '10px 14px',
+                        padding: hasFilterRow ? '10px 12px 8px' : '12px 14px',
                         textAlign: colDef?.align ?? 'left',
-                        fontWeight: 600, color: 'var(--text-3)', fontSize: 11,
+                        fontWeight: 700,
+                        color: sorted ? 'var(--primary)' : 'var(--text-2)',
+                        fontSize: 11,
+                        letterSpacing: 0.5,
+                        textTransform: 'uppercase',
                         whiteSpace: 'nowrap', userSelect: 'none',
                         position: 'relative',
                         verticalAlign: 'top',
@@ -520,13 +630,19 @@ export function DataGrid<T = any>({
                     >
                       {/* Title row with sort */}
                       <div
-                        style={{ display: 'flex', alignItems: 'center', gap: 4, cursor: canSort ? 'pointer' : 'default', marginBottom: colDef?.filterable ? 0 : 0 }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: colDef?.align === 'right' ? 'flex-end' : colDef?.align === 'center' ? 'center' : 'flex-start',
+                          gap: 2,
+                          cursor: canSort ? 'pointer' : 'default',
+                        }}
                         onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                       >
                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                         {canSort && (
-                          <span style={{ color: sorted ? 'var(--primary)' : 'var(--border)', fontSize: 9, lineHeight: 1, flexShrink: 0 }}>
-                            {sorted === 'asc' ? '▲' : sorted === 'desc' ? '▼' : '⇅'}
+                          <span className="sort-ind" style={{ opacity: sorted ? 1 : 0.4, transition: 'opacity 0.15s' }}>
+                            <SortIndicator direction={sorted} />
                           </span>
                         )}
                       </div>
@@ -550,10 +666,14 @@ export function DataGrid<T = any>({
                         <div
                           onMouseDown={header.getResizeHandler()}
                           onTouchStart={header.getResizeHandler()}
+                          className="data-grid-resize-handle"
                           style={{
-                            position: 'absolute', right: 0, top: 0, height: '100%', width: 4,
+                            position: 'absolute', right: 0, top: 8, bottom: 8, width: 3,
                             cursor: 'col-resize', userSelect: 'none', touchAction: 'none',
                             background: header.column.getIsResizing() ? 'var(--primary)' : 'transparent',
+                            borderRadius: 2,
+                            transition: 'background 0.15s, opacity 0.15s',
+                            opacity: header.column.getIsResizing() ? 1 : 0,
                           }}
                         />
                       )}
@@ -566,17 +686,40 @@ export function DataGrid<T = any>({
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={tanstackColumns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
-                    <span>Đang tải...</span>
+                <td colSpan={tanstackColumns.length} style={{ padding: 64, textAlign: 'center', color: 'var(--text-4)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+                    <div style={{ width: 36, height: 36, border: '3px solid var(--border-light)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.7s linear infinite' }} />
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Đang tải dữ liệu...</span>
                   </div>
                 </td>
               </tr>
             ) : table.getRowModel().rows.length === 0 ? (
               <tr>
-                <td colSpan={tanstackColumns.length} style={{ padding: 48, textAlign: 'center', color: 'var(--text-4)' }}>
-                  {emptyText}
+                <td colSpan={tanstackColumns.length} style={{ padding: 64, textAlign: 'center', color: 'var(--text-4)' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                    <div style={{
+                      width: 56, height: 56, borderRadius: 16,
+                      background: 'var(--input-bg-subtle)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: 'var(--text-4)',
+                    }}>
+                      <Icon name="search" size={24} />
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{emptyText}</div>
+                    {activeFilters > 0 && (
+                      <button
+                        onClick={() => { setColumnFilters([]); table.setPageIndex(0) }}
+                        style={{
+                          padding: '6px 14px', borderRadius: 8,
+                          border: '1px solid var(--border)',
+                          background: 'var(--card)', color: 'var(--text-2)',
+                          fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                          fontFamily: 'var(--font)',
+                        }}>
+                        Xoá bộ lọc
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ) : (
@@ -588,7 +731,7 @@ export function DataGrid<T = any>({
                   style={{
                     borderBottom: '1px solid var(--border-light)',
                     cursor: onRowClick ? 'pointer' : 'default',
-                    transition: 'background 0.12s',
+                    transition: 'background 0.15s',
                     background: row.getIsSelected() ? 'var(--primary-light)' : 'transparent',
                   }}
                 >
@@ -599,14 +742,16 @@ export function DataGrid<T = any>({
                         key={cell.id}
                         className="grid-cell"
                         style={{
-                          padding: '9px 10px',
+                          padding: '11px 14px',
                           textAlign: colDef?.align ?? 'left',
-                          color: 'var(--text-2)',
+                          color: 'var(--text-1)',
+                          fontSize: 13,
                           whiteSpace: colDef?.noWrap ? 'nowrap' : undefined,
                           verticalAlign: 'middle',
                           width: cell.column.getSize(),
                           position: 'relative',
                           ...getPinnedStyle(cell.column),
+                          ...(row.getIsSelected() && cell.column.getIsPinned() ? { background: 'var(--primary-light)' } : {}),
                         }}
                       >
                         <div style={{ display: 'inline-flex', alignItems: 'flex-start', gap: 5 }}>
@@ -651,37 +796,62 @@ export function DataGrid<T = any>({
       </div>
 
       {/* ── Pagination ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px', borderTop: '1px solid var(--border)', gap: 12, flexWrap: 'wrap', flexShrink: 0 }}>
-        <span style={{ fontSize: 11, color: 'var(--text-3)', whiteSpace: 'nowrap' }}>
-          {totalFiltered === 0 ? '0 kết quả' : `${from}–${to} / ${totalFiltered} dòng`}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '12px 18px',
+        borderTop: '1px solid var(--border-light)',
+        background: 'var(--input-bg-subtle)',
+        gap: 12, flexWrap: 'wrap', flexShrink: 0,
+      }}>
+        <span style={{ fontSize: 12, color: 'var(--text-3)', whiteSpace: 'nowrap', fontWeight: 500 }}>
+          {totalFiltered === 0
+            ? <>Không có kết quả</>
+            : <>Hiển thị <strong style={{ color: 'var(--text-1)', fontWeight: 700 }}>{from}–{to}</strong> trên <strong style={{ color: 'var(--text-1)', fontWeight: 700 }}>{totalFiltered.toLocaleString()}</strong> dòng</>}
           {data.length !== totalFiltered && (
-            <span style={{ color: 'var(--warning)', marginLeft: 6 }}>(đang lọc từ {data.length})</span>
+            <span style={{
+              display: 'inline-block', marginLeft: 8,
+              padding: '2px 8px', borderRadius: 6,
+              background: 'var(--warning-bg)', color: 'var(--warning-text)',
+              fontSize: 11, fontWeight: 600,
+            }}>lọc từ {data.length.toLocaleString()}</span>
           )}
         </span>
 
         <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
           <button
+            onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}
+            className="data-grid-pagination-btn"
+            title="Trang đầu"
+            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: !table.getCanPreviousPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanPreviousPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !table.getCanPreviousPage() ? 0.5 : 1, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', lineHeight: 1, paddingBottom: 2 }}
+          >
+            «
+          </button>
+          <button
             onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}
             className="data-grid-pagination-btn"
-            style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: !table.getCanPreviousPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanPreviousPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: !table.getCanPreviousPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanPreviousPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !table.getCanPreviousPage() ? 0.5 : 1 }}
           >
-            <Icon name="chevron-left" size={13} />
+            <Icon name="chevron-left" size={14} />
           </button>
 
           {pageNums.map((n, i) =>
             n === '...'
-              ? <span key={`e${i}`} style={{ padding: '0 4px', color: 'var(--text-4)', fontSize: 12 }}>…</span>
+              ? <span key={`e${i}`} style={{ padding: '0 4px', color: 'var(--text-4)', fontSize: 13 }}>…</span>
               : <button
                   key={n}
                   onClick={() => table.setPageIndex((n as number) - 1)}
                   className={pageIndex + 1 === n ? "" : "data-grid-pagination-btn"}
                   style={{
-                    minWidth: 28, height: 28, padding: '0 6px', borderRadius: 7,
+                    minWidth: 30, height: 30, padding: '0 8px', borderRadius: 8,
                     border: pageIndex + 1 === n ? 'none' : '1px solid var(--border)',
-                    background: pageIndex + 1 === n ? 'var(--primary)' : 'transparent',
-                    color: pageIndex + 1 === n ? '#fff' : 'var(--text-3)',
-                    fontSize: 12, fontWeight: pageIndex + 1 === n ? 700 : 400,
+                    background: pageIndex + 1 === n
+                      ? 'linear-gradient(135deg, var(--primary), var(--primary-dark))'
+                      : 'var(--card)',
+                    color: pageIndex + 1 === n ? '#fff' : 'var(--text-2)',
+                    fontSize: 12, fontWeight: pageIndex + 1 === n ? 800 : 600,
                     fontFamily: 'var(--font)', cursor: 'pointer',
+                    boxShadow: pageIndex + 1 === n ? '0 4px 10px -4px rgba(255,107,53,0.5)' : 'none',
+                    transition: 'all 0.15s',
                   }}
                 >
                   {n}
@@ -691,16 +861,33 @@ export function DataGrid<T = any>({
           <button
             onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}
             className="data-grid-pagination-btn"
-            style={{ width: 28, height: 28, borderRadius: 7, border: '1px solid var(--border)', background: 'transparent', color: !table.getCanNextPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanNextPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: !table.getCanNextPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanNextPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !table.getCanNextPage() ? 0.5 : 1 }}
           >
-            <Icon name="chevron-right" size={13} />
+            <Icon name="chevron-right" size={14} />
+          </button>
+          <button
+            onClick={() => table.setPageIndex(totalPages - 1)} disabled={!table.getCanNextPage()}
+            className="data-grid-pagination-btn"
+            title="Trang cuối"
+            style={{ width: 30, height: 30, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: !table.getCanNextPage() ? 'var(--text-4)' : 'var(--text-2)', cursor: !table.getCanNextPage() ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: !table.getCanNextPage() ? 0.5 : 1, fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', lineHeight: 1, paddingBottom: 2 }}
+          >
+            »
           </button>
         </div>
 
         <select
           value={pageSize}
           onChange={e => { table.setPageSize(Number(e.target.value)); table.setPageIndex(0) }}
-          style={{ padding: '4px 8px', borderRadius: 7, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text-2)', fontSize: 11, fontFamily: 'var(--font)', cursor: 'pointer', outline: 'none' }}
+          style={{
+            padding: '6px 28px 6px 12px', height: 30,
+            borderRadius: 8, border: '1px solid var(--border)',
+            background: 'var(--card)', color: 'var(--text-2)',
+            fontSize: 12, fontWeight: 600, fontFamily: 'var(--font)',
+            cursor: 'pointer', outline: 'none', appearance: 'none',
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 8px center',
+          }}
         >
           {PAGE_SIZES.map(n => <option key={n} value={n}>{n} / trang</option>)}
         </select>

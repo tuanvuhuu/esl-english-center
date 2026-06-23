@@ -13,7 +13,7 @@ interface ThemeContextType {
 
 export const ThemeContext = createContext<ThemeContextType>({ 
   mode: 'light', 
-  primaryColor: '#FF6B35',
+  primaryColor: '#80b848',
   bgImage: '',
   toggle: () => {},
   setPrimaryColor: () => {},
@@ -24,7 +24,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [mode, setMode] = useState<ThemeMode>(() => 
     (localStorage.getItem('esl-theme') as ThemeMode) || 'light'
   );
-  const [primaryColor, setPrimaryColorRaw] = useState(() => localStorage.getItem('esl-primary-color') || '#FF6B35');
+  const [primaryColor, setPrimaryColorRaw] = useState(() => {
+    const saved = localStorage.getItem('esl-primary-color');
+    if (!saved || saved === '#FF6B35') {
+      return '#80b848';
+    }
+    return saved;
+  });
   const [bgImage, setBgImageRaw] = useState(() => localStorage.getItem('esl-bg-image') || '');
 
   const toggle = useCallback(() => {

@@ -126,8 +126,19 @@ export const ManageVocabularyModal: React.FC<ManageVocabularyModalProps> = ({ op
     if (!selectedFile) return
     setImporting(true)
     try {
-      const buffer = await selectedFile.arrayBuffer()
-      const workbook = XLSX.read(buffer, { type: 'array' })
+      let workbook
+      if (selectedFile.name.toLowerCase().endsWith('.csv')) {
+        const text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => resolve(reader.result as string)
+          reader.onerror = () => reject(new Error('Không đọc được file CSV'))
+          reader.readAsText(selectedFile, 'utf-8')
+        })
+        workbook = XLSX.read(text, { type: 'string' })
+      } else {
+        const buffer = await selectedFile.arrayBuffer()
+        workbook = XLSX.read(buffer, { type: 'array' })
+      }
       const worksheet = workbook.Sheets[workbook.SheetNames[0]]
       const rows = XLSX.utils.sheet_to_json<any>(worksheet, { defval: '' })
 

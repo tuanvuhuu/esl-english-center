@@ -86,7 +86,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           borderRadius: 12,
           cursor: 'pointer',
           background: isActive
-            ? 'linear-gradient(90deg, rgba(255,107,53,0.16) 0%, rgba(255,107,53,0.04) 100%)'
+            ? 'linear-gradient(90deg, rgba(128,184,72,0.16) 0%, rgba(128,184,72,0.04) 100%)'
             : 'transparent',
           color: isActive ? 'var(--primary)' : 'var(--sidebar-text)',
           fontSize: 13,
@@ -96,7 +96,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           position: 'relative',
           textAlign: 'left',
           margin: collapsed && !isMobile ? '2px 8px' : '2px 0',
-          boxShadow: isActive ? '0 6px 14px -8px rgba(255,107,53,0.4)' : 'none',
+          boxShadow: isActive ? '0 6px 14px -8px rgba(128,184,72,0.4)' : 'none',
         }}
         onMouseEnter={(e) => {
           if (!isActive) e.currentTarget.style.background = 'var(--sidebar-hover)';
@@ -110,8 +110,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
             position: 'absolute',
             left: -12, top: '50%', transform: 'translateY(-50%)',
             width: 4, height: 22, borderRadius: '0 4px 4px 0',
-            background: 'linear-gradient(180deg, #FF6B35, #E55A2B)',
-            boxShadow: '0 0 12px rgba(255,107,53,0.6)',
+            background: 'linear-gradient(180deg, #80b848, #5f8f2e)',
+            boxShadow: '0 0 12px rgba(128,184,72,0.6)',
           }} />
         )}
         <Icon name={item.icon || 'book'} size={20} />
@@ -193,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
             borderBottom: '1px solid var(--sidebar-border)',
             minHeight: 64,
-            background: 'linear-gradient(135deg, rgba(255,107,53,0.04) 0%, rgba(11,37,69,0.04) 100%)',
+            background: 'linear-gradient(135deg, rgba(128,184,72,0.04) 0%, rgba(11,37,69,0.04) 100%)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -202,7 +202,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 width: 38,
                 height: 38,
                 borderRadius: 12,
-                background: 'linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%)',
+                background: 'linear-gradient(135deg, #80b848 0%, #5f8f2e 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -210,7 +210,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 fontWeight: 900,
                 color: '#fff',
                 flexShrink: 0,
-                boxShadow: '0 8px 20px rgba(255,107,53,0.4)',
+                boxShadow: '0 8px 20px rgba(128,184,72,0.4)',
                 letterSpacing: -0.5,
               }}
             >
@@ -272,7 +272,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             margin: collapsed && !isMobile ? '8px' : '10px 12px 12px',
             padding: collapsed && !isMobile ? '10px 0' : '10px 12px',
             borderRadius: 12,
-            background: 'linear-gradient(135deg, rgba(11,37,69,0.04), rgba(255,107,53,0.04))',
+            background: 'linear-gradient(135deg, rgba(11,37,69,0.04), rgba(128,184,72,0.04))',
             border: '1px solid var(--border-light)',
             display: 'flex',
             alignItems: 'center',

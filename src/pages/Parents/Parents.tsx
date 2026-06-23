@@ -148,11 +148,14 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <Avatar initials={initials(r.full_name)} size={32} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 13 }}>{r.full_name}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 1 }}>
-              {r.gender === 'M' ? 'Nam' : r.gender === 'F' ? 'Nữ' : '—'}
-              {r.occupation && ` · ${r.occupation}`}
-            </div>
+            <div style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: 13, whiteSpace: 'nowrap' }}>{r.full_name}</div>
+            {(r.gender || r.occupation) && (
+              <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 1, whiteSpace: 'nowrap' }}>
+                {r.gender === 'M' ? 'Nam' : r.gender === 'F' ? 'Nữ' : ''}
+                {r.gender && r.occupation && ' · '}
+                {r.occupation || ''}
+              </div>
+            )}
           </div>
         </div>
       ),
@@ -165,9 +168,9 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
       filterValue: r => r.phone,
       render: r => (
         <div>
-          <div style={{ fontWeight: 500 }}>{r.phone}</div>
+          <div style={{ fontWeight: 500, whiteSpace: 'nowrap' }}>{r.phone}</div>
           {r.phone_secondary && (
-            <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 1 }}>{r.phone_secondary}</div>
+            <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 1, whiteSpace: 'nowrap' }}>{r.phone_secondary}</div>
           )}
         </div>
       ),
@@ -179,7 +182,7 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
       isAllowCopy: true,
       filterValue: r => r.email ?? '',
       render: r => r.email
-        ? <span style={{ color: 'var(--text-2)' }}>{r.email}</span>
+        ? <span style={{ color: 'var(--text-2)', whiteSpace: 'nowrap' }}>{r.email}</span>
         : <span style={{ color: 'var(--text-4)', fontStyle: 'italic' }}>—</span>,
     },
     {
@@ -194,7 +197,7 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
     {
       key: 'students',
       title: 'Học viên',
-      width: 230,
+      width: 240,
       sortable: false,
       filterable: true,
       filterValue: r => (r.student_parents ?? []).map(sp => sp.student?.full_name ?? '').join(' '),
@@ -204,18 +207,23 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
           return <span style={{ color: 'var(--text-4)', fontStyle: 'italic', fontSize: 12 }}>Chưa liên kết</span>
         }
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, width: '100%' }}>
             {links.slice(0, 2).map(link => {
               const s = link.student
               if (!s) return null
               const c = RELATION_COLOR[link.relation] ?? '#6b7280'
               return (
-                <div key={link.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-                  {link.is_primary && <Icon name="star" size={10} style={{ color: '#f59e0b' }} />}
-                  <span style={{ color: 'var(--text-2)', fontWeight: 500 }}>{s.full_name}</span>
+                <div key={link.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, whiteSpace: 'nowrap', width: '100%', justifyContent: 'flex-start' }}>
+                  {link.is_primary && (
+                    <Icon name="star" size={10} style={{ color: '#f59e0b', flexShrink: 0 }} title="Liên kết chính" />
+                  )}
+                  <span style={{ color: 'var(--text-2)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {s.full_name}
+                  </span>
                   <span style={{
                     fontSize: 10, padding: '1px 6px', borderRadius: 99,
-                    background: c + '20', color: c, fontWeight: 700,
+                    background: c + '15', color: c, fontWeight: 700,
+                    flexShrink: 0, display: 'inline-flex', alignItems: 'center',
                   }}>
                     {RELATION_LABEL[link.relation] ?? link.relation}
                   </span>
@@ -223,7 +231,7 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
               )
             })}
             {links.length > 2 && (
-              <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
+              <div style={{ fontSize: 11, color: 'var(--text-4)', whiteSpace: 'nowrap' }}>
                 +{links.length - 2} học viên khác
               </div>
             )}
@@ -235,14 +243,6 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
 
   return (
     <div>
-      {/* KPI strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 14 }}>
-        <StatPill icon="user"    color="#FF6B35" bg="var(--primary-light)" label="Tổng phụ huynh"   value={all.length} />
-        <StatPill icon="users"   color="#16a34a" bg="#dcfce7"              label="Có con đang học"  value={withChildren} />
-        <StatPill icon="message" color="#2563eb" bg="#dbeafe"              label="Liên kết HV-PH"   value={totalLinks} />
-        <StatPill icon="alert"   color="#d97706" bg="#fef3c7"              label="Chưa có con"      value={orphanCount} />
-      </div>
-
       <DataGrid<DbParent>
         title="Danh sách phụ huynh"
         subtitle={`${all.length} phụ huynh`}
@@ -289,27 +289,5 @@ export const Parents: React.FC<ParentsProps> = ({ params, onNavigate }) => {
     </div>
   )
 }
-
-const StatPill: React.FC<{ icon: any; color: string; bg: string; label: string; value: number }> = ({
-  icon, color, bg, label, value,
-}) => (
-  <div style={{
-    display: 'flex', alignItems: 'center', gap: 12,
-    padding: 14, borderRadius: 12,
-    background: 'var(--card)', border: '1px solid var(--border-light)',
-    boxShadow: 'var(--shadow-sm)',
-  }}>
-    <div style={{
-      width: 36, height: 36, borderRadius: 10, background: bg,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>
-      <Icon name={icon} size={17} style={{ color }} />
-    </div>
-    <div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1 }}>{value}</div>
-      <div style={{ fontSize: 11, color: 'var(--text-4)', marginTop: 4 }}>{label}</div>
-    </div>
-  </div>
-)
 
 export default Parents

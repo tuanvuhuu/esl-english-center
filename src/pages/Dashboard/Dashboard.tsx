@@ -55,20 +55,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           position: 'relative',
           overflow: 'hidden',
           borderRadius: 20,
-          background: 'var(--gradient-hero)',
+          background: 'var(--gradient-brand-soft)',
           padding: '24px 28px',
-          color: '#fff',
-          boxShadow: '0 18px 40px -16px rgba(11,37,69,0.45)',
+          color: 'var(--text-1)',
+          border: '1px solid var(--border-light)',
+          boxShadow: 'var(--shadow-md)',
         }}>
           {/* Decorative glows */}
           <div style={{
             position: 'absolute', width: 320, height: 320, borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(255,107,53,0.32) 0%, rgba(255,107,53,0) 65%)',
+            background: 'radial-gradient(circle, rgba(128,184,72,0.15) 0%, rgba(128,184,72,0) 65%)',
             top: -120, right: -80, pointerEvents: 'none',
           }} />
           <div style={{
-            position: 'absolute', inset: 0, opacity: 0.06, pointerEvents: 'none',
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)',
+            position: 'absolute', inset: 0, opacity: 0.04, pointerEvents: 'none',
+            backgroundImage: 'radial-gradient(var(--navy) 1px, transparent 1px)',
             backgroundSize: '20px 20px',
           }} />
 
@@ -81,26 +82,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 6,
                 padding: '4px 10px', borderRadius: 999,
-                background: 'rgba(255,107,53,0.18)',
-                border: '1px solid rgba(255,107,53,0.35)',
-                fontSize: 11, fontWeight: 700, color: '#FFB496',
+                background: 'rgba(128,184,72,0.12)',
+                border: '1px solid rgba(128,184,72,0.3)',
+                fontSize: 11, fontWeight: 700, color: 'var(--primary-dark)',
                 letterSpacing: 0.6, marginBottom: 10,
               }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#FF6B35' }} />
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--primary)' }} />
                 TỔNG QUAN HÔM NAY
               </div>
               <h1 style={{
-                fontSize: 26, fontWeight: 800, color: '#fff',
+                fontSize: 26, fontWeight: 800, color: 'var(--text-1)',
                 margin: 0, letterSpacing: -0.3,
               }}>
                 {greeting}, Admin 👋
               </h1>
               <p style={{
-                fontSize: 13.5, color: 'rgba(255,255,255,0.72)',
+                fontSize: 13.5, color: 'var(--text-3)',
                 margin: '6px 0 0',
               }}>
                 {dateStr} · Hôm nay có{' '}
-                <strong style={{ color: '#FFB496' }}>{(todayClasses || []).length}</strong> lớp đang diễn ra
+                <strong style={{ color: 'var(--primary-dark)', fontWeight: 700 }}>{(todayClasses || []).length}</strong> lớp đang diễn ra
               </p>
             </div>
 
@@ -111,24 +112,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                 height: 38,
                 padding: '0 32px 0 14px',
                 borderRadius: 10,
-                border: '1px solid rgba(255,255,255,0.20)',
-                background: 'rgba(255,255,255,0.10)',
-                color: '#fff',
+                border: '1px solid var(--border)',
+                background: 'var(--card)',
+                color: 'var(--text-1)',
                 fontSize: 13,
                 fontWeight: 600,
                 fontFamily: 'var(--font)',
                 outline: 'none',
                 cursor: 'pointer',
                 appearance: 'none',
-                backdropFilter: 'blur(6px)',
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+                boxShadow: 'var(--shadow-sm)',
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%235C6F8A' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
                 backgroundPosition: 'right 10px center',
               }}
             >
-              <option value={7} style={{ color: '#0B2545' }}>7 ngày qua</option>
-              <option value={14} style={{ color: '#0B2545' }}>14 ngày qua</option>
-              <option value={30} style={{ color: '#0B2545' }}>30 ngày qua</option>
+              <option value={7}>7 ngày qua</option>
+              <option value={14}>14 ngày qua</option>
+              <option value={30}>30 ngày qua</option>
             </select>
           </div>
         </div>

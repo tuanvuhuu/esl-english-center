@@ -39,10 +39,10 @@ export const Login: React.FC = () => {
         overflow: 'hidden',
         color: '#fff',
       }}>
-        {/* Soft orange glow blobs */}
+        {/* Soft green glow blobs */}
         <div style={{
           position: 'absolute', width: 520, height: 520, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,107,53,0.35) 0%, rgba(255,107,53,0) 65%)',
+          background: 'radial-gradient(circle, rgba(128,184,72,0.35) 0%, rgba(128,184,72,0) 65%)',
           top: -160, right: -140, pointerEvents: 'none',
         }} />
         <div style={{
@@ -61,10 +61,10 @@ export const Login: React.FC = () => {
         <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, zIndex: 1 }}>
           <div style={{
             width: 44, height: 44, borderRadius: 14,
-            background: 'linear-gradient(135deg, #FF6B35, #E55A2B)',
+            background: 'linear-gradient(135deg, #80b848, #5f8f2e)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 20, fontWeight: 900, color: '#fff',
-            boxShadow: '0 10px 28px rgba(255,107,53,0.45)',
+            boxShadow: '0 10px 28px rgba(128,184,72,0.45)',
           }}>E</div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.2 }}>ESL English Center</div>
@@ -77,12 +77,12 @@ export const Login: React.FC = () => {
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
             padding: '6px 14px', borderRadius: 999,
-            background: 'rgba(255,107,53,0.18)',
-            border: '1px solid rgba(255,107,53,0.35)',
-            fontSize: 12, fontWeight: 700, color: '#FFB496', letterSpacing: 0.4,
+            background: 'rgba(128,184,72,0.18)',
+            border: '1px solid rgba(128,184,72,0.35)',
+            fontSize: 12, fontWeight: 700, color: '#a6c940', letterSpacing: 0.4,
             marginBottom: 20,
           }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF6B35' }} />
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#80b848' }} />
             HỆ THỐNG QUẢN LÝ TRUNG TÂM
           </div>
           <h1 style={{
@@ -91,7 +91,7 @@ export const Login: React.FC = () => {
           }}>
             Định hình tương lai{' '}
             <span style={{
-              background: 'linear-gradient(135deg, #FF8A5C, #FF6B35)',
+              background: 'linear-gradient(135deg, #a6c940, #80b848)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -185,7 +185,7 @@ export const Login: React.FC = () => {
                 }}
                 onFocus={e => {
                   e.target.style.borderColor = 'var(--primary)';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(255,107,53,0.12)';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(128,184,72,0.12)';
                 }}
                 onBlur={e => {
                   e.target.style.borderColor = 'var(--border)';
@@ -217,7 +217,7 @@ export const Login: React.FC = () => {
                   }}
                   onFocus={e => {
                     e.target.style.borderColor = 'var(--primary)';
-                    e.target.style.boxShadow = '0 0 0 4px rgba(255,107,53,0.12)';
+                    e.target.style.boxShadow = '0 0 0 4px rgba(128,184,72,0.12)';
                   }}
                   onBlur={e => {
                     e.target.style.borderColor = 'var(--border)';
@@ -277,7 +277,7 @@ export const Login: React.FC = () => {
                 fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
                 cursor: loading ? 'not-allowed' : 'pointer',
                 transition: 'transform 0.15s, box-shadow 0.2s',
-                boxShadow: loading ? 'none' : '0 8px 22px rgba(255,107,53,0.40)',
+                boxShadow: loading ? 'none' : '0 8px 22px rgba(128,184,72,0.40)',
                 marginTop: 4,
                 letterSpacing: 0.2,
               }}

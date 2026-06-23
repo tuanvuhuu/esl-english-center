@@ -13,7 +13,7 @@
   --sidebar: #FFFFFF;
   --sidebar-text: #0B2545;
   --sidebar-text-sub: #5C6F8A;
-  --sidebar-hover: rgba(255, 107, 53, 0.08);
+  --sidebar-hover: rgba(128, 184, 72, 0.08);
   --sidebar-border: #E6ECF5;
 
   --input-bg: #FFFFFF;
@@ -77,7 +77,7 @@
   --sidebar: #0E0E11;
   --sidebar-text: #F4F4F5;
   --sidebar-text-sub: rgba(244, 244, 245, 0.45);
-  --sidebar-hover: rgba(255, 107, 53, 0.12);
+  --sidebar-hover: rgba(128, 184, 72, 0.12);
   --sidebar-border: rgba(255, 255, 255, 0.04);
 
   --input-bg: #27272A;
