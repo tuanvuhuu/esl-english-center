@@ -109,7 +109,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
   return (
     <header
       style={{
-        height: 56,
+        height: 60,
         background: 'var(--header)',
         borderBottom: '1px solid var(--header-border)',
         display: 'flex',
@@ -122,6 +122,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
         transition: 'background 0.35s, border-color 0.35s',
         backdropFilter: 'var(--glass-filter)',
         WebkitBackdropFilter: 'var(--glass-filter)',
+        boxShadow: '0 1px 0 rgba(11,37,69,0.02), 0 4px 16px -8px rgba(11,37,69,0.06)',
       }}
     >
       {isMobile && (

@@ -75,11 +75,11 @@ export const StatCard: React.FC<StatCardProps> = ({
       delay={delay} 
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      style={{ 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: 8, 
-        padding: 14,
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 10,
+        padding: 18,
         minWidth: 0,
         position: 'relative',
         overflow: 'hidden',
@@ -111,33 +111,37 @@ export const StatCard: React.FC<StatCardProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
         <div
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 10,
+            width: 44,
+            height: 44,
+            borderRadius: 13,
             background: iconBg || 'var(--primary-light)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             color: iconColor,
             transition: 'all 0.3s',
-            transform: isHovered ? 'scale(1.08) rotate(4deg)' : 'scale(1) rotate(0)',
+            transform: isHovered ? 'scale(1.08) rotate(-5deg)' : 'scale(1) rotate(0)',
+            boxShadow: isHovered ? `0 10px 22px -8px ${iconColor}66` : 'none',
           }}
         >
-          <Icon name={icon} size={18} />
+          <Icon name={icon} size={22} />
         </div>
         {trend != null && (
           <div
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 3,
-              fontSize: 10,
+              gap: 4,
+              fontSize: 11,
               fontWeight: 700,
               color: trend >= 0 ? 'var(--success-dark)' : 'var(--error-dark)',
               background: trend >= 0 ? 'var(--success-light)' : 'var(--error-light)',
-              padding: '2px 6px',
-              borderRadius: 6,
+              padding: '4px 8px',
+              borderRadius: 8,
               transition: 'all 0.35s',
+              border: trend >= 0
+                ? '1px solid rgba(16,185,129,0.2)'
+                : '1px solid rgba(239,68,68,0.2)',
             }}
           >
             <Icon name={trend >= 0 ? 'trending-up' : 'trending-down'} size={12} />
@@ -145,11 +149,11 @@ export const StatCard: React.FC<StatCardProps> = ({
           </div>
         )}
       </div>
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1 }}>
+      <div style={{ position: 'relative', zIndex: 1, marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: 'var(--text-3)', fontWeight: 700, marginBottom: 4, letterSpacing: 0.5, textTransform: 'uppercase' }}>{label}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-1)', lineHeight: 1, letterSpacing: -0.5 }}>
           <AnimNum value={value} suffix={suffix} decimals={value.toString().includes('.') ? 1 : 0} />
         </div>
-        <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 3, fontWeight: 500 }}>{label}</div>
       </div>
       {trendLabel && <div style={{ fontSize: 10, color: 'var(--text-4)', position: 'relative', zIndex: 1 }}>{trendLabel}</div>}
 

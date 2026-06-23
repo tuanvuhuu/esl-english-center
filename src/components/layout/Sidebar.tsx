@@ -41,15 +41,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div
           key={item.section}
           style={{
-            padding: '20px 16px 8px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '20px 14px 8px',
             fontSize: 10,
-            fontWeight: 700,
-            letterSpacing: 1.2,
-            color: 'var(--sidebar-text)',
-            opacity: 0.5,
+            fontWeight: 800,
+            letterSpacing: 1.4,
+            color: 'var(--text-3)',
             textTransform: 'uppercase',
           }}
         >
+          <span style={{
+            width: 14, height: 2, borderRadius: 2,
+            background: 'linear-gradient(90deg, var(--primary), transparent)',
+          }} />
           {item.section}
         </div>
       );
@@ -74,12 +80,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           alignItems: 'center',
           gap: 12,
           width: '100%',
-          padding: collapsed && !isMobile ? '12px 0' : '11px 16px',
+          padding: collapsed && !isMobile ? '12px 0' : '11px 14px',
           justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
           border: 'none',
           borderRadius: 12,
           cursor: 'pointer',
-          background: isActive ? 'var(--primary-15)' : 'transparent',
+          background: isActive
+            ? 'linear-gradient(90deg, rgba(255,107,53,0.16) 0%, rgba(255,107,53,0.04) 100%)'
+            : 'transparent',
           color: isActive ? 'var(--primary)' : 'var(--sidebar-text)',
           fontSize: 13,
           fontWeight: isActive ? 700 : 500,
@@ -88,14 +96,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
           position: 'relative',
           textAlign: 'left',
           margin: collapsed && !isMobile ? '2px 8px' : '2px 0',
+          boxShadow: isActive ? '0 6px 14px -8px rgba(255,107,53,0.4)' : 'none',
         }}
         onMouseEnter={(e) => {
           if (!isActive) e.currentTarget.style.background = 'var(--sidebar-hover)';
         }}
         onMouseLeave={(e) => {
-          if (!isActive) e.currentTarget.style.background = isActive ? 'var(--primary-15)' : 'transparent';
+          if (!isActive) e.currentTarget.style.background = 'transparent';
         }}
       >
+        {isActive && (!collapsed || isMobile) && (
+          <span style={{
+            position: 'absolute',
+            left: -12, top: '50%', transform: 'translateY(-50%)',
+            width: 4, height: 22, borderRadius: '0 4px 4px 0',
+            background: 'linear-gradient(180deg, #FF6B35, #E55A2B)',
+            boxShadow: '0 0 12px rgba(255,107,53,0.6)',
+          }} />
+        )}
         <Icon name={item.icon || 'book'} size={20} />
         {showLabel && <span style={{ flex: 1 }}>{item.label}</span>}
         {showLabel && badge != null && (
@@ -171,35 +189,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 12,
-            padding: collapsed && !isMobile ? '12px 0' : '12px 20px',
+            padding: collapsed && !isMobile ? '14px 0' : '14px 18px',
             justifyContent: collapsed && !isMobile ? 'center' : 'space-between',
             borderBottom: '1px solid var(--sidebar-border)',
-            minHeight: 56,
+            minHeight: 64,
+            background: 'linear-gradient(135deg, rgba(255,107,53,0.04) 0%, rgba(11,37,69,0.04) 100%)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div
               style={{
-                width: 32,
-                height: 32,
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))',
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 14,
-                fontWeight: 800,
+                fontSize: 17,
+                fontWeight: 900,
                 color: '#fff',
                 flexShrink: 0,
-                boxShadow: '0 4px 12px var(--primary-15)',
+                boxShadow: '0 8px 20px rgba(255,107,53,0.4)',
+                letterSpacing: -0.5,
               }}
             >
               E
             </div>
             {(!collapsed || isMobile) && (
               <div style={{ animation: 'fadeIn 0.2s ease', whiteSpace: 'nowrap' }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--sidebar-text)', lineHeight: 1.2 }}>ESL English</div>
-                <div style={{ fontSize: 10, color: 'var(--sidebar-text-sub)', fontWeight: 500 }}>Management</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--sidebar-text)', lineHeight: 1.2, letterSpacing: -0.2 }}>ESL English</div>
+                <div style={{ fontSize: 10, color: 'var(--sidebar-text-sub)', fontWeight: 600, letterSpacing: 0.4, textTransform: 'uppercase' }}>Management</div>
               </div>
             )}
           </div>
@@ -249,22 +269,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* User Profile */}
         <div
           style={{
-            padding: collapsed && !isMobile ? '12px 0' : '12px 16px',
-            borderTop: '1px solid var(--sidebar-border)',
+            margin: collapsed && !isMobile ? '8px' : '10px 12px 12px',
+            padding: collapsed && !isMobile ? '10px 0' : '10px 12px',
+            borderRadius: 12,
+            background: 'linear-gradient(135deg, rgba(11,37,69,0.04), rgba(255,107,53,0.04))',
+            border: '1px solid var(--border-light)',
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            gap: 10,
             justifyContent: collapsed && !isMobile ? 'center' : 'flex-start',
-            overflow: 'hidden'
+            overflow: 'hidden',
           }}
         >
-          <Avatar initials="AD" size={28} color="var(--primary)" />
+          <Avatar initials="AD" size={32} color="var(--primary)" />
           {(!collapsed || isMobile) && (
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--sidebar-text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 Admin
               </div>
-              <div style={{ fontSize: 11, color: 'var(--sidebar-text-sub)' }}>Quản trị viên</div>
+              <div style={{ fontSize: 10, color: 'var(--sidebar-text-sub)', fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase' }}>Quản trị viên</div>
             </div>
           )}
         </div>

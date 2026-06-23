@@ -1,18 +1,28 @@
 :root {
-  /* Primary Colors */
+  /* Primary Colors — ESL Academy orange */
   --primary: #FF6B35;
   --primary-dark: #E55A2B;
   --primary-light: #FFF5F0;
   --primary-15: rgba(255, 107, 53, 0.15);
 
-  /* Modern Gradients */
+  /* Secondary Brand — Deep Navy (ESL Academy) */
+  --navy: #0B2545;
+  --navy-dark: #061a36;
+  --navy-light: #1B3B6F;
+  --navy-soft: #EEF3FB;
+  --navy-15: rgba(11, 37, 69, 0.15);
+
+  /* Brand Gradients */
   --gradient-primary: linear-gradient(135deg, #FF6B35 0%, #FF8A5C 100%);
+  --gradient-brand: linear-gradient(135deg, #0B2545 0%, #1B3B6F 60%, #FF6B35 130%);
+  --gradient-brand-soft: linear-gradient(135deg, #FFF5F0 0%, #EEF3FB 100%);
+  --gradient-hero: linear-gradient(120deg, #0B2545 0%, #143360 55%, #1B3B6F 100%);
   --gradient-success: linear-gradient(135deg, #10B981 0%, #34D399 100%);
   --gradient-error: linear-gradient(135deg, #EF4444 0%, #F87171 100%);
   --gradient-warning: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
   --gradient-info: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
-  --gradient-glow-1: radial-gradient(circle, rgba(255, 107, 53, 0.08) 0%, rgba(255, 107, 53, 0) 70%);
-  --gradient-glow-2: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0) 70%);
+  --gradient-glow-1: radial-gradient(circle, rgba(255, 107, 53, 0.10) 0%, rgba(255, 107, 53, 0) 70%);
+  --gradient-glow-2: radial-gradient(circle, rgba(11, 37, 69, 0.10) 0%, rgba(11, 37, 69, 0) 70%);
 
   /* Status Colors */
   --success: #10B981;

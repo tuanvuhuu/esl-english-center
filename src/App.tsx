@@ -5,6 +5,7 @@ import { pageTitles, pageComponents } from './config/routers';
 import { useAuth } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
 import { Login } from './pages/Login/Login';
+import { Landing } from './pages/Landing/Landing';
 
 export default function App() {
   const { session, loading: authLoading } = useAuth();
@@ -18,6 +19,7 @@ export default function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(true);
+  const [publicView, setPublicView] = useState<'landing' | 'login'>('landing');
 
   useEffect(() => {
     const h = () => {
@@ -49,7 +51,15 @@ export default function App() {
   }
 
   if (!session) {
-    return <ToastProvider><ConfirmProvider><Login /></ConfirmProvider></ToastProvider>;
+    return (
+      <ToastProvider>
+        <ConfirmProvider>
+          {publicView === 'landing'
+            ? <Landing onEnterApp={() => setPublicView('login')} />
+            : <Login />}
+        </ConfirmProvider>
+      </ToastProvider>
+    );
   }
 
   return (

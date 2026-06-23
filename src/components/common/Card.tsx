@@ -41,11 +41,13 @@ export const Card: React.FC<CardProps> = ({
         onMouseLeave?.();
       }}
       style={{
-        background: 'var(--card)', 
-        borderRadius: 16, 
+        background: 'var(--card)',
+        borderRadius: 18,
         padding: 20,
-        boxShadow: hov ? 'var(--shadow-lg)' : 'var(--shadow-sm)',
-        transition: 'box-shadow 0.25s, transform 0.2s, background 0.35s',
+        boxShadow: hov
+          ? '0 24px 48px -16px rgba(11,37,69,0.18), 0 8px 16px -8px rgba(11,37,69,0.08)'
+          : '0 4px 12px -4px rgba(11,37,69,0.06), 0 1px 3px rgba(11,37,69,0.04)',
+        transition: 'box-shadow 0.25s, transform 0.2s, background 0.35s, border-color 0.25s',
         cursor: onClick ? 'pointer' : 'default',
         transform: hov ? 'translateY(-3px)' : 'translateY(0)',
         border: '1px solid var(--border-light)',

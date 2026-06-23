@@ -1,20 +1,20 @@
 /* Light Theme (default) */
 :root[data-theme="light"],
 :root:not([data-theme]) {
-  --bg: #F8F9FA;
+  --bg: #F6F8FC;
   --card: #FFFFFF;
-  --text-1: #0F172A;
-  --text-2: #334155;
-  --text-3: #64748B;
+  --text-1: #0B2545;
+  --text-2: #1F3658;
+  --text-3: #5C6F8A;
   --text-4: #94A3B8;
 
   --header: #FFFFFF;
-  --header-border: #F1F5F9;
+  --header-border: #E6ECF5;
   --sidebar: #FFFFFF;
-  --sidebar-text: #0F172A;
-  --sidebar-text-sub: #64748B;
-  --sidebar-hover: rgba(255, 107, 53, 0.06);
-  --sidebar-border: #F1F5F9;
+  --sidebar-text: #0B2545;
+  --sidebar-text-sub: #5C6F8A;
+  --sidebar-hover: rgba(255, 107, 53, 0.08);
+  --sidebar-border: #E6ECF5;
 
   --input-bg: #FFFFFF;
   --input-bg-subtle: #F8FAFC;

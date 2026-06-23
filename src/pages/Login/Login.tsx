@@ -28,55 +28,120 @@ export const Login: React.FC = () => {
       background: 'var(--bg)',
       fontFamily: 'var(--font)',
     }}>
-      {/* Left panel */}
+      {/* Left brand panel */}
       <div style={{
-        flex: 1,
-        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+        flex: 1.1,
+        background: 'var(--gradient-hero)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 48,
+        padding: '48px 56px',
         position: 'relative',
         overflow: 'hidden',
+        color: '#fff',
       }}>
-        {/* decorative circles */}
-        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(255,107,53,0.08)', top: -100, right: -100 }} />
-        <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,107,53,0.05)', bottom: -50, left: -50 }} />
+        {/* Soft orange glow blobs */}
+        <div style={{
+          position: 'absolute', width: 520, height: 520, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(255,107,53,0.35) 0%, rgba(255,107,53,0) 65%)',
+          top: -160, right: -140, pointerEvents: 'none',
+        }} />
+        <div style={{
+          position: 'absolute', width: 420, height: 420, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(96,165,250,0.20) 0%, rgba(96,165,250,0) 70%)',
+          bottom: -120, left: -80, pointerEvents: 'none',
+        }} />
+        {/* Dotted grid overlay */}
+        <div style={{
+          position: 'absolute', inset: 0, opacity: 0.08, pointerEvents: 'none',
+          backgroundImage: 'radial-gradient(rgba(255,255,255,0.6) 1px, transparent 1px)',
+          backgroundSize: '22px 22px',
+        }} />
 
-        <div style={{ position: 'relative', textAlign: 'center', maxWidth: 400 }}>
+        {/* Top bar (logo) */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12, zIndex: 1 }}>
           <div style={{
-            width: 72, height: 72, borderRadius: 20,
-            background: 'linear-gradient(135deg, #FF6B35, #e85d04)',
+            width: 44, height: 44, borderRadius: 14,
+            background: 'linear-gradient(135deg, #FF6B35, #E55A2B)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 32, fontWeight: 800, color: '#fff',
-            margin: '0 auto 24px',
-            boxShadow: '0 8px 32px rgba(255,107,53,0.4)',
+            fontSize: 20, fontWeight: 900, color: '#fff',
+            boxShadow: '0 10px 28px rgba(255,107,53,0.45)',
           }}>E</div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 0.2 }}>ESL English Center</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>Management Portal</div>
+          </div>
+        </div>
 
-          <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: '0 0 12px' }}>
-            ESL English Center
+        {/* Middle hero text */}
+        <div style={{ position: 'relative', zIndex: 1, marginTop: 'auto', marginBottom: 'auto', maxWidth: 460 }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '6px 14px', borderRadius: 999,
+            background: 'rgba(255,107,53,0.18)',
+            border: '1px solid rgba(255,107,53,0.35)',
+            fontSize: 12, fontWeight: 700, color: '#FFB496', letterSpacing: 0.4,
+            marginBottom: 20,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#FF6B35' }} />
+            HỆ THỐNG QUẢN LÝ TRUNG TÂM
+          </div>
+          <h1 style={{
+            fontSize: 42, fontWeight: 800, color: '#fff',
+            margin: '0 0 16px', lineHeight: 1.15, letterSpacing: -0.5,
+          }}>
+            Định hình tương lai{' '}
+            <span style={{
+              background: 'linear-gradient(135deg, #FF8A5C, #FF6B35)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>tiếng Anh</span>
+            {' '}của học viên.
           </h1>
-          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.6)', lineHeight: 1.6, margin: 0 }}>
-            Hệ thống quản lý trung tâm Anh ngữ toàn diện — học viên, lớp học, tài chính và hơn thế nữa.
+          <p style={{
+            fontSize: 15, color: 'rgba(255,255,255,0.72)',
+            lineHeight: 1.65, margin: 0,
+          }}>
+            Quản lý học viên, lớp học, lịch dạy, học phí và kết quả học tập trong một nền tảng duy nhất — đơn giản, hiện đại, theo dõi real-time.
           </p>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 48, textAlign: 'left' }}>
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14,
+            marginTop: 36,
+          }}>
             {[
-              { icon: '👨‍🎓', text: 'Quản lý học viên & phụ huynh' },
-              { icon: '📚', text: 'Lịch học & điểm danh tự động' },
-              { icon: '💰', text: 'Theo dõi học phí & tài chính' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 20 }}>{item.icon}</span>
-                <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>{item.text}</span>
+              { icon: '🎓', title: '2,400+', sub: 'Học viên' },
+              { icon: '📚', title: '180+', sub: 'Lớp hoạt động' },
+              { icon: '👩‍🏫', title: '95+', sub: 'Giáo viên' },
+              { icon: '⭐', title: '4.9/5', sub: 'Phản hồi PH' },
+            ].map((s, i) => (
+              <div key={i} style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '12px 14px',
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                borderRadius: 14, backdropFilter: 'blur(6px)',
+              }}>
+                <div style={{ fontSize: 22 }}>{s.icon}</div>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{s.title}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 500 }}>{s.sub}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
+
+        {/* Footer in left panel */}
+        <div style={{
+          position: 'relative', zIndex: 1, fontSize: 12,
+          color: 'rgba(255,255,255,0.45)',
+        }}>
+          © 2026 ESL English Center — Internal staff portal
+        </div>
       </div>
 
-      {/* Right panel — login form */}
+      {/* Right form panel */}
       <div style={{
         width: 480,
         display: 'flex',
@@ -84,17 +149,20 @@ export const Login: React.FC = () => {
         justifyContent: 'center',
         padding: 48,
         background: 'var(--card)',
+        position: 'relative',
       }}>
-        <div style={{ width: '100%', maxWidth: 360 }}>
-          <h2 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-1)', margin: '0 0 8px' }}>
-            Đăng nhập
+        <div style={{ width: '100%', maxWidth: 380 }}>
+          <h2 style={{
+            fontSize: 28, fontWeight: 800, color: 'var(--text-1)',
+            margin: '0 0 8px', letterSpacing: -0.3,
+          }}>
+            Chào mừng trở lại 👋
           </h2>
           <p style={{ fontSize: 14, color: 'var(--text-3)', margin: '0 0 32px' }}>
-            Chào mừng trở lại! Nhập thông tin đăng nhập của bạn.
+            Đăng nhập để vào hệ thống quản lý ESL.
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {/* Email */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 6 }}>
                 Email
@@ -106,21 +174,26 @@ export const Login: React.FC = () => {
                 placeholder="admin@esl.edu.vn"
                 required
                 style={{
-                  width: '100%', padding: '11px 14px',
+                  width: '100%', padding: '12px 14px',
                   border: '1.5px solid var(--border)',
                   borderRadius: 12, fontSize: 14,
                   fontFamily: 'var(--font)',
                   color: 'var(--text-1)',
                   background: 'var(--input-bg)',
                   outline: 'none', boxSizing: 'border-box',
-                  transition: 'border-color 0.2s',
+                  transition: 'border-color 0.2s, box-shadow 0.2s',
                 }}
-                onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-                onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                onFocus={e => {
+                  e.target.style.borderColor = 'var(--primary)';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(255,107,53,0.12)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = 'var(--border)';
+                  e.target.style.boxShadow = 'none';
+                }}
               />
             </div>
 
-            {/* Password */}
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', display: 'block', marginBottom: 6 }}>
                 Mật khẩu
@@ -133,76 +206,102 @@ export const Login: React.FC = () => {
                   placeholder="••••••••"
                   required
                   style={{
-                    width: '100%', padding: '11px 44px 11px 14px',
+                    width: '100%', padding: '12px 44px 12px 14px',
                     border: '1.5px solid var(--border)',
                     borderRadius: 12, fontSize: 14,
                     fontFamily: 'var(--font)',
                     color: 'var(--text-1)',
                     background: 'var(--input-bg)',
                     outline: 'none', boxSizing: 'border-box',
-                    transition: 'border-color 0.2s',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
                   }}
-                  onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-                  onBlur={e => e.target.style.borderColor = 'var(--border)'}
+                  onFocus={e => {
+                    e.target.style.borderColor = 'var(--primary)';
+                    e.target.style.boxShadow = '0 0 0 4px rgba(255,107,53,0.12)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = 'var(--border)';
+                    e.target.style.boxShadow = 'none';
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
                   style={{
-                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
                     background: 'none', border: 'none', cursor: 'pointer',
                     color: 'var(--text-4)', fontSize: 16, padding: 4,
                   }}
+                  aria-label="Hiện/ẩn mật khẩu"
                 >
                   {showPass ? '🙈' : '👁'}
                 </button>
               </div>
             </div>
 
-            {/* Remember me */}
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={e => setRemember(e.target.checked)}
-                style={{ width: 16, height: 16, accentColor: 'var(--primary)', cursor: 'pointer' }}
-              />
-              <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Ghi nhớ đăng nhập</span>
-            </label>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={e => setRemember(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: 'var(--primary)', cursor: 'pointer' }}
+                />
+                <span style={{ fontSize: 13, color: 'var(--text-3)' }}>Ghi nhớ đăng nhập</span>
+              </label>
+              <a href="#" style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', textDecoration: 'none' }}
+                 onClick={e => e.preventDefault()}>
+                Quên mật khẩu?
+              </a>
+            </div>
 
-            {/* Error */}
             {error && (
               <div style={{
                 padding: '10px 14px', borderRadius: 10,
-                background: 'rgba(239,68,68,0.1)',
-                border: '1px solid rgba(239,68,68,0.2)',
-                fontSize: 13, color: '#ef4444',
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.25)',
+                fontSize: 13, color: '#dc2626',
+                display: 'flex', alignItems: 'center', gap: 8,
               }}>
-                {error}
+                <span>⚠️</span>{error}
               </div>
             )}
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
               style={{
-                padding: '12px 24px',
-                background: loading ? 'var(--text-4)' : 'linear-gradient(135deg, #FF6B35, #e85d04)',
+                padding: '13px 24px',
+                background: loading ? 'var(--text-4)' : 'var(--gradient-primary)',
                 color: '#fff', border: 'none', borderRadius: 12,
                 fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: loading ? 'none' : '0 4px 16px rgba(255,107,53,0.35)',
+                transition: 'transform 0.15s, box-shadow 0.2s',
+                boxShadow: loading ? 'none' : '0 8px 22px rgba(255,107,53,0.40)',
                 marginTop: 4,
+                letterSpacing: 0.2,
               }}
+              onMouseEnter={e => { if (!loading) e.currentTarget.style.transform = 'translateY(-1px)'; }}
+              onMouseLeave={e => { if (!loading) e.currentTarget.style.transform = 'translateY(0)'; }}
             >
               {loading ? 'Đang đăng nhập...' : 'Đăng nhập →'}
             </button>
           </form>
 
-          <p style={{ fontSize: 12, color: 'var(--text-4)', textAlign: 'center', marginTop: 32 }}>
-            © 2026 ESL English Center. All rights reserved.
+          <div style={{
+            marginTop: 32, padding: '14px 16px',
+            background: 'var(--navy-soft)',
+            border: '1px solid var(--border-light)',
+            borderRadius: 12,
+            fontSize: 12, color: 'var(--text-3)',
+            display: 'flex', alignItems: 'center', gap: 10,
+          }}>
+            <span style={{ fontSize: 16 }}>🔒</span>
+            <span>Hệ thống nội bộ — chỉ dành cho nhân viên trung tâm.</span>
+          </div>
+
+          <p style={{ fontSize: 12, color: 'var(--text-4)', textAlign: 'center', marginTop: 28 }}>
+            © 2026 ESL English Center.
           </p>
         </div>
       </div>
