@@ -9,6 +9,8 @@ import { getNotifications, markAsRead, markAllAsRead } from '../../services';
 import { mapNotification } from '../../lib/mappers';
 import { supabase } from '../../lib/supabase';
 import { SelectBoxBranch, SelectBoxYear, Input, Button } from '../index';
+import { WeatherBadge } from '../common/WeatherBadge';
+import { useWeather } from '../../hooks/useWeather';
 import TEACHERS_DATA from '../../data/teachers.json';
 import STUDENTS_DATA from '../../data/students.json';
 
@@ -29,6 +31,7 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
   const { profile, user, logout } = useAuth();
   const notifRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
+  const { data: weather, loading: weatherLoading } = useWeather();
 
   // Fetch notifications from DB
   const { data: rawNotifs, refetch: refetchNotifs } = useQuery(getNotifications);
@@ -248,6 +251,11 @@ export const Header: React.FC<HeaderProps> = ({ title, onMenuClick, isMobile, on
           <SelectBoxBranch />
           <SelectBoxYear />
         </div>
+      )}
+
+      {/* Weather */}
+      {!isMobile && (
+        <WeatherBadge data={weather} loading={weatherLoading} />
       )}
 
       {/* Theme Settings */}

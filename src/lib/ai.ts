@@ -1,5 +1,5 @@
-import { callGeminiJson, hasGeminiKey } from './gemini'
-import { callClaudeJson,  hasClaudeKey  } from './claude'
+import { callGemini, callGeminiJson, hasGeminiKey } from './gemini'
+import { callClaude, callClaudeJson,  hasClaudeKey  } from './claude'
 
 export type AiProvider = 'claude' | 'gemini' | 'ollama' | 'none'
 
@@ -71,6 +71,35 @@ export async function aiJson<T>(prompt: string, schema: any, opts?: { temperatur
   }
   if (provider === 'ollama') {
     return callOllamaJson<T>(prompt, schema)
+  }
+  throw new Error('Chưa có AI provider nào được cấu hình')
+}
+
+export async function aiText(prompt: string, opts?: { temperature?: number }): Promise<string> {
+  const provider = getActiveProvider()
+  if (provider === 'claude') {
+    return callClaude(prompt, { temperature: opts?.temperature })
+  }
+  if (provider === 'gemini') {
+    return callGemini(prompt, { temperature: opts?.temperature })
+  }
+  if (provider === 'ollama') {
+    // Basic fallback for Ollama text
+    const host = localStorage.getItem('ollama_host') || 'http://localhost:11434'
+    const model = localStorage.getItem('ollama_model') || 'qwen2.5:7b'
+    const res = await fetch(`${host}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: 'user', content: prompt }],
+        stream: false,
+        options: { temperature: opts?.temperature ?? 0.7 }
+      })
+    })
+    if (!res.ok) throw new Error(`Ollama error ${res.status}`)
+    const data = await res.json()
+    return data?.message?.content || ''
   }
   throw new Error('Chưa có AI provider nào được cấu hình')
 }

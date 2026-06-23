@@ -48,12 +48,28 @@ export const TodaySchedule: React.FC<TodayScheduleProps> = ({ classes = [], load
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {loading ? (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
-            Đang tải lịch học...
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', background: 'var(--hover-bg)', borderRadius: 12 }}>
+                <div style={{ width: 4, height: 36, borderRadius: 2, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ width: '65%', height: 13, borderRadius: 6, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                  <div style={{ width: '45%', height: 12, borderRadius: 6, marginTop: 4, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ width: 40, height: 13, borderRadius: 6, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                  <div style={{ width: 30, height: 11, borderRadius: 6, marginTop: 4, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                </div>
+              </div>
+            ))}
           </div>
         ) : classes.length === 0 ? (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
-            Không có lớp học nào hôm nay
+          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-3)' }}>
+            <div style={{ background: 'var(--primary-light)', width: 48, height: 48, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: 'var(--primary)' }}>
+              <Icon name="calendar" size={24} />
+            </div>
+            <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>Không có lớp hôm nay</div>
+            <div style={{ fontSize: 13, marginTop: 4 }}>Tận hưởng ngày nghỉ nhé! 🎉</div>
           </div>
         ) : (
           classes.map((c, i) => (

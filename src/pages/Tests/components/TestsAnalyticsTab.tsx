@@ -5,7 +5,7 @@ import { useQuery } from '../../../hooks/useSupabase'
 import { getTestResults } from '../../../services/tests'
 import type { DbTest } from '../../../types/database'
 import { RadarChart } from './RadarChart'
-import { generateClassInsights } from '../aiInsights'
+import { generateClassInsightsWithAi } from '../aiInsights'
 
 const RADAR_AXES = [
   { key: 'score_reading',   label: 'Đọc' },
@@ -76,14 +76,17 @@ export const TestsAnalyticsTab: React.FC<TestsAnalyticsTabProps> = ({
   const totalAvg   = useMemo(() => avg(withScores.map(r => r.total_score)), [withScores])
   const passRate   = withScores.length ? Math.round((passCount / withScores.length) * 100) : 0
 
-  const handleGenerateAi = () => {
+  const handleGenerateAi = async () => {
     if (!selectedTest || !results) return
     setGeneratingAi(true)
-    // Small timeout for perceived AI "thinking"
-    setTimeout(() => {
-      setAiInsight(generateClassInsights(results, selectedTest))
+    try {
+      const insights = await generateClassInsightsWithAi(results, selectedTest)
+      setAiInsight(insights)
+    } catch (e: any) {
+      console.error(e)
+    } finally {
       setGeneratingAi(false)
-    }, 600)
+    }
   }
 
   const statBox = (label: string, value: string | number, sub?: string, color?: string) => (
@@ -111,12 +114,12 @@ export const TestsAnalyticsTab: React.FC<TestsAnalyticsTabProps> = ({
         <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
           Chọn bài kiểm tra
         </div>
-        {tests.filter(t => t.status === 'completed').length === 0 ? (
+        {tests.length === 0 ? (
           <div style={{ padding: 20, fontSize: 13, color: 'var(--text-4)', textAlign: 'center' }}>
-            Chưa có bài đã hoàn thành
+            Chưa có bài kiểm tra
           </div>
         ) : (
-          tests.filter(t => t.status === 'completed').map(t => (
+          tests.map(t => (
             <button
               key={t.id}
               onClick={() => { onSelectTest(t); setAiInsight('') }}
@@ -146,8 +149,24 @@ export const TestsAnalyticsTab: React.FC<TestsAnalyticsTabProps> = ({
                   background: 'var(--primary)',
                 }} />
               )}
-              <div style={{ fontSize: 13, fontWeight: 600, color: selectedTest?.id === t.id ? 'var(--primary)' : 'var(--text-1)', marginBottom: 2 }}>
-                {t.name}
+              <div style={{ 
+                fontSize: 13, 
+                fontWeight: 600, 
+                color: selectedTest?.id === t.id ? 'var(--primary)' : 'var(--text-1)', 
+                marginBottom: 2,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                <span style={{
+                  display: 'inline-block',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: t.status === 'upcoming' ? 'var(--warning)' : 'var(--success)',
+                  flexShrink: 0,
+                }} title={t.status === 'upcoming' ? 'Sắp diễn ra' : 'Hoàn tất'} />
+                <span>{t.name}</span>
               </div>
               <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
                 {t.class?.name} · {new Date(t.test_date).toLocaleDateString('vi-VN')}

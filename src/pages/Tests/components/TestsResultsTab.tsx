@@ -11,6 +11,7 @@ import { StudentProgressModal } from './StudentProgressModal'
 import { ImportScoresModal } from './ImportScoresModal'
 import { AudioRecorder } from './AudioRecorder'
 import { uploadStudentAudio } from '../../../services/tests'
+import { GradingModal } from './GradingModal'
 
 const PASS_THRESHOLD_DEFAULT = 60
 
@@ -42,8 +43,8 @@ const autoTotal = (d: Draft): number | null => {
     .map(v => parseFloat(v))
     .filter(n => !isNaN(n))
   if (vals.length === 0) return null
-  // Tổng điểm = tổng các kỹ năng (không phải trung bình, vì mỗi kỹ năng có trọng số khác nhau)
-  return Math.round(vals.reduce((a, b) => a + b, 0) * 10) / 10
+  // Tổng điểm = trung bình các kỹ năng đã nhập điểm
+  return Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
 }
 
 function ScoreDisplay({ val }: { val: number | null | undefined }) {
@@ -68,12 +69,13 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
   const [savingId, setSavingId]   = useState<string | null>(null)
   const [bulkRunning, setBulkRunning] = useState(false)
   const [bulkDone, setBulkDone]   = useState(0)
+  const [gradingStudent, setGradingStudent] = useState<StudentRow | null>(null)
   const [progressStudent, setProgressStudent] = useState<{ id: string; name: string } | null>(null)
   const [showImport, setShowImport] = useState(false)
   const [audioStudent, setAudioStudent] = useState<StudentRow | null>(null)
   const [uploadingAudio, setUploadingAudio] = useState(false)
 
-  const handleExportReport = (row: StudentRow) => {
+  const handleExportReport = async (row: StudentRow) => {
     if (!selectedTest || !row.result || row.result.total_score == null) {
       toast.warning('Học sinh chưa có điểm để xuất báo cáo.')
       return
@@ -82,19 +84,24 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
       { ...row.result, student: { id: row.studentId, full_name: row.studentName, level: row.level, status: '' } } as DbTestResult,
       selectedTest
     )
-    const { blobUrl, fileName } = generateParentReport({
-      test: selectedTest,
-      studentName: row.studentName,
-      level: row.level,
-      result: row.result,
-      classAvg: stats?.avg ?? null,
-      feedback: fb,
-    })
-    const a = document.createElement('a')
-    a.href = blobUrl
-    a.download = fileName
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    try {
+      const { blobUrl, fileName } = await generateParentReport({
+        test: selectedTest,
+        studentName: row.studentName,
+        level: row.level,
+        result: row.result,
+        classAvg: stats?.avg ?? null,
+        feedback: fb,
+      })
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = fileName
+      a.click()
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000)
+    } catch (err: any) {
+      console.error(err)
+      toast.error('Lỗi khi xuất PDF cho ' + row.studentName)
+    }
   }
 
   const handleBulkExport = async () => {
@@ -299,8 +306,24 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
                 background: 'var(--primary)',
               }} />
             )}
-            <div style={{ fontSize: 13, fontWeight: 600, color: selectedTest?.id === t.id ? 'var(--primary)' : 'var(--text-1)', marginBottom: 2 }}>
-              {t.name}
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 600, 
+              color: selectedTest?.id === t.id ? 'var(--primary)' : 'var(--text-1)', 
+              marginBottom: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}>
+              <span style={{
+                display: 'inline-block',
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: t.status === 'upcoming' ? 'var(--warning)' : 'var(--success)',
+                flexShrink: 0,
+              }} title={t.status === 'upcoming' ? 'Sắp diễn ra' : 'Hoàn tất'} />
+              <span>{t.name}</span>
             </div>
             <div style={{ fontSize: 11, color: 'var(--text-4)' }}>
               {t.class?.name} · {new Date(t.test_date).toLocaleDateString('vi-VN')}
@@ -473,7 +496,9 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
 
                         {/* Pass/fail */}
                         <td style={tdStyle}>
-                          {row.result?.is_passed != null ? (
+                          {row.result?.grading_status === 'pending' ? (
+                            <Badge variant="warning">Chờ chấm</Badge>
+                          ) : row.result?.is_passed != null ? (
                             <Badge variant={row.result.is_passed ? 'success' : 'error'}>
                               {row.result.is_passed ? 'Đạt' : 'Chưa đạt'}
                             </Badge>
@@ -566,6 +591,15 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
                               >
                                 <Icon name="edit" size={14} style={{ color: 'var(--text-3)' }} />
                               </button>
+                              {row.result?.answers && Object.keys(row.result.answers).length > 0 && (
+                                <button
+                                  onClick={e => { e.stopPropagation(); setGradingStudent(row) }}
+                                  title="Chấm bài tự luận/nói"
+                                  style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4 }}
+                                >
+                                  <Icon name="zap" size={14} style={{ color: row.result.grading_status === 'pending' ? 'var(--warning-dark)' : 'var(--success)' }} />
+                                </button>
+                              )}
                               {row.result?.total_score != null && (
                                 <button
                                   onClick={e => { e.stopPropagation(); handleExportReport(row) }}
@@ -677,6 +711,15 @@ export const TestsResultsTab: React.FC<TestsResultsTabProps> = ({
             )}
           </div>
         </Modal>
+      )}
+
+      {gradingStudent && selectedTest && (
+        <GradingModal
+          open={!!gradingStudent}
+          onClose={() => { setGradingStudent(null); refetchResults() }}
+          test={selectedTest}
+          studentRow={gradingStudent}
+        />
       )}
     </div>
   )

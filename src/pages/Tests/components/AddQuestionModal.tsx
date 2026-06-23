@@ -113,8 +113,8 @@ const AUTOFILL_POOL: Record<string, AutofillQuestion[]> = {
 };
 
 const getOfflineAutofillQuestion = (skill: QuestionSkill, type: QuestionType, level: string, topic?: string): AutofillQuestion => {
-  // Offline: sử dụng bộ Smart Offline Generator của chúng ta
-  // Ưu tiên sử dụng chủ đề được giáo viên cấu hình bên ngoài nếu có
+  // Offline: sá»­ dá»¥ng bá»™ Smart Offline Generator cá»§a chÃºng ta
+  // Æ¯u tiÃªn sá»­ dá»¥ng chá»§ Ä‘á» Ä‘Æ°á»£c giÃ¡o viÃªn cáº¥u hÃ¬nh bÃªn ngoÃ i náº¿u cÃ³
   let selectedTopic = '';
   if (topic?.trim()) {
     const pool = detectPool(topic);
@@ -132,7 +132,7 @@ const getOfflineAutofillQuestion = (skill: QuestionSkill, type: QuestionType, le
       count: 10
     });
 
-    // Tìm câu hỏi có type khớp
+    // TÃ¬m cÃ¢u há»i cÃ³ type khá»›p
     const matchingQ = offlineQuestions.find(q => q.type === type);
     if (matchingQ) {
       return {
@@ -150,8 +150,8 @@ const getOfflineAutofillQuestion = (skill: QuestionSkill, type: QuestionType, le
     console.error('[Offline Autofill] Smart generator failed:', err);
   }
 
-  // Fallback cuối cùng nếu không tìm thấy câu hỏi khớp hoặc lỗi:
-  // Lấy ngẫu nhiên từ pool tĩnh nhưng mở rộng thêm một số lựa chọn
+  // Fallback cuá»‘i cÃ¹ng náº¿u khÃ´ng tÃ¬m tháº¥y cÃ¢u há»i khá»›p hoáº·c lá»—i:
+  // Láº¥y ngáº«u nhiÃªn tá»« pool tÄ©nh nhÆ°ng má»Ÿ rá»™ng thÃªm má»™t sá»‘ lá»±a chá»n
   const staticPools: Record<string, AutofillQuestion[]> = {
     ...AUTOFILL_POOL,
     'true_false': [
@@ -179,7 +179,7 @@ const getOfflineAutofillQuestion = (skill: QuestionSkill, type: QuestionType, le
           { option_text: "True", is_correct: true, order_index: 0 },
           { option_text: "False", is_correct: false, order_index: 1 }
         ],
-        explanation: "Yes, water boils at 100°C under normal atmospheric pressure.",
+        explanation: "Yes, water boils at 100Â°C under normal atmospheric pressure.",
         points: 1
       }
     ],
@@ -319,6 +319,43 @@ export const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
     }
   }, [editingQuestion, open]);
 
+  const isValidQuestion = () => {
+    if (!text.trim()) return false;
+    if (type === 'mcq') {
+      const nonEmptyOptions = options.slice(0, 4).filter(o => o.option_text?.trim());
+      if (nonEmptyOptions.length < 2) return false;
+      return nonEmptyOptions.some(o => o.is_correct);
+    }
+    if (type === 'true_false') {
+      const tfOptions = options.slice(0, 2);
+      if (tfOptions.length < 2) return false;
+      if (!tfOptions[0].option_text?.trim() || !tfOptions[1].option_text?.trim()) return false;
+      return tfOptions.some(o => o.is_correct);
+    }
+    return true;
+  };
+
+  const handleTypeChange = (newType: QuestionType) => {
+    setType(newType);
+    if (newType === 'true_false') {
+      setOptions([
+        { option_text: 'True', is_correct: false, order_index: 0 },
+        { option_text: 'False', is_correct: false, order_index: 1 }
+      ]);
+    } else if (newType === 'mcq') {
+      if (options.length !== 4 || options[0]?.option_text === 'True') {
+        setOptions([
+          { option_text: '', is_correct: false, order_index: 0 },
+          { option_text: '', is_correct: false, order_index: 1 },
+          { option_text: '', is_correct: false, order_index: 2 },
+          { option_text: '', is_correct: false, order_index: 3 },
+        ]);
+      }
+    } else {
+      setOptions([]);
+    }
+  };
+
   const handleSave = () => {
     const payload: Partial<DbTestQuestion> = {
       skill, type,
@@ -389,7 +426,7 @@ export const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
   };
 
   const handleAiAutofill = async () => {
-    toast.success('AI đang tự động tạo câu hỏi...');
+    toast.success('AI Ä‘ang tá»± Ä‘á»™ng táº¡o cÃ¢u há»i...');
     
     try {
       let autofillData: AutofillQuestion;
@@ -438,10 +475,10 @@ export const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
       } else {
         setOptions([]);
       }
-      toast.success('Đã điền câu hỏi mẫu thành công!');
+      toast.success('ÄÃ£ Ä‘iá»n cÃ¢u há»i máº«u thÃ nh cÃ´ng!');
     } catch (err: any) {
       console.error('[Autofill error]', err);
-      toast.error('Có lỗi xảy ra khi tự động điền câu hỏi.');
+      toast.error('CÃ³ lá»—i xáº£y ra khi tá»± Ä‘á»™ng Ä‘iá»n cÃ¢u há»i.');
     }
   };
 
@@ -458,265 +495,350 @@ export const AddQuestionModal: React.FC<AddQuestionModalProps> = ({
           }}>
             <Icon name={editingQuestion ? "edit" : "plus-circle"} size={16} />
           </div>
-          <span>{editingQuestion ? "Chỉnh sửa câu hỏi" : "Thêm câu hỏi mới"}</span>
+          <span>{editingQuestion ? "Chá»‰nh sá»­a cÃ¢u há»i" : "ThÃªm cÃ¢u há»i má»›i"}</span>
         </div>
       }
-      width={600}
+      width={960}
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-          <Select
-            label="Kỹ năng"
-            value={skill}
-            onChange={v => setSkill(v as QuestionSkill)}
-            options={[
-              { value: 'general', label: 'Tổng hợp' },
-              { value: 'reading', label: 'Reading' },
-              { value: 'listening', label: 'Listening' },
-              { value: 'speaking', label: 'Speaking' },
-              { value: 'writing', label: 'Writing' },
-            ]}
-          />
-          <Select
-            label="Loại câu hỏi"
-            value={type}
-            onChange={v => setType(v as QuestionType)}
-            options={[
-              { value: 'mcq', label: 'Trắc nghiệm' },
-              { value: 'true_false', label: 'Đúng/Sai' },
-              { value: 'fill_blank', label: 'Điền từ' },
-              { value: 'short_answer', label: 'Trả lời ngắn' },
-              { value: 'essay', label: 'Tự luận' },
-              { value: 'speaking_prompt', label: 'Nói' },
-            ]}
-          />
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24, alignItems: 'start' }}>
 
-        {/* Textarea for question text with premium formatting bar and AI autofill button */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              Nội dung câu hỏi <span style={{ color: '#ef4444' }}>*</span>
-            </label>
-            <div 
-              onClick={handleAiAutofill}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                fontSize: 12,
-                fontWeight: 600,
-                color: 'var(--primary)',
-                cursor: 'pointer',
-                transition: 'opacity 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-            >
-              <Icon name="zap" size={14} />
-              Tự động điền bằng AI
+        {/* â”€â”€ LEFT: Form â”€â”€ */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <Select
+              label="Ká»¹ nÄƒng"
+              value={skill}
+              onChange={v => setSkill(v as QuestionSkill)}
+              options={[
+                { value: 'general', label: 'Tá»•ng há»£p' },
+                { value: 'reading', label: 'Reading' },
+                { value: 'listening', label: 'Listening' },
+                { value: 'speaking', label: 'Speaking' },
+                { value: 'writing', label: 'Writing' },
+              ]}
+            />
+            <Select
+              label="Loại câu hỏi"
+              value={type}
+              onChange={v => handleTypeChange(v as QuestionType)}
+              options={[
+                { value: 'mcq', label: 'Trắc nghiệm (MCQ)' },
+                { value: 'true_false', label: 'Đúng / Sai' },
+                { value: 'fill_blank', label: 'Điền từ' },
+                { value: 'short_answer', label: 'Trả lời ngắn' },
+                { value: 'essay', label: 'Tự luận' },
+                { value: 'speaking_prompt', label: 'Nói' },
+              ]}
+            />
+          </div>
+
+          {/* Textarea for question text */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                Ná»™i dung cÃ¢u há»i <span style={{ color: '#ef4444' }}>*</span>
+              </label>
+              <div
+                onClick={handleAiAutofill}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 4,
+                  fontSize: 12, fontWeight: 600, color: 'var(--primary)',
+                  cursor: 'pointer', transition: 'opacity 0.2s',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.opacity = '0.8' }}
+                onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+              >
+                <Icon name="zap" size={14} />
+                Tá»± Ä‘á»™ng Ä‘iá»n báº±ng AI
+              </div>
             </div>
-          </div>
-          
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            background: '#f8fafc',
-            border: '1.5px solid var(--border)',
-            borderBottom: 'none',
-            borderTopLeftRadius: 12,
-            borderTopRightRadius: 12,
-            padding: '8px 12px',
-          }}>
-            <button
-              type="button"
-              onClick={() => handleFormatText('bold')}
-              title="Chữ đậm"
+
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              background: '#f8fafc', border: '1.5px solid var(--border)',
+              borderBottom: 'none', borderTopLeftRadius: 12, borderTopRightRadius: 12,
+              padding: '8px 12px',
+            }}>
+              {(['bold', 'italic', 'underline'] as const).map(fmt => (
+                <button key={fmt} type="button" onClick={() => handleFormatText(fmt)}
+                  style={{
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                    padding: '4px 6px', borderRadius: 4,
+                    color: '#475569', fontSize: 13,
+                    fontWeight: fmt === 'bold' ? 'bold' : 'normal',
+                    fontStyle: fmt === 'italic' ? 'italic' : 'normal',
+                    textDecoration: fmt === 'underline' ? 'underline' : 'none',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+                >
+                  {fmt === 'bold' ? 'B' : fmt === 'italic' ? 'I' : 'U'}
+                </button>
+              ))}
+              <button type="button" onClick={() => handleFormatText('highlight')}
+                style={{
+                  background: 'transparent', border: 'none', cursor: 'pointer',
+                  padding: '4px 6px', borderRadius: 4, color: '#475569',
+                }}
+                onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
+              >
+                <Icon name="edit" size={13} />
+              </button>
+            </div>
+
+            <textarea
+              id="question-text-textarea"
+              value={text}
+              onChange={e => setText(e.target.value)}
+              placeholder="Nháº­p ná»™i dung cÃ¢u há»i..."
               style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                padding: '4px 6px', borderRadius: 4, display: 'flex', alignItems: 'center',
-                color: '#475569', fontWeight: 'bold', fontSize: 13
+                width: '100%', minHeight: 110, padding: 12,
+                border: '1.5px solid var(--border)',
+                borderBottomLeftRadius: 12, borderBottomRightRadius: 12,
+                fontSize: 13, fontFamily: 'var(--font)', lineHeight: 1.6,
+                color: 'var(--text-1)', resize: 'vertical', outline: 'none',
+                boxSizing: 'border-box', background: 'var(--input-bg)',
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              B
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFormatText('italic')}
-              title="Chữ nghiêng"
-              style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                padding: '4px 6px', borderRadius: 4, display: 'flex', alignItems: 'center',
-                color: '#475569', fontStyle: 'italic', fontSize: 13
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              I
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFormatText('underline')}
-              title="Gạch chân"
-              style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                padding: '4px 6px', borderRadius: 4, display: 'flex', alignItems: 'center',
-                color: '#475569', textDecoration: 'underline', fontSize: 13
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              U
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFormatText('highlight')}
-              title="Làm nổi bật"
-              style={{
-                background: 'transparent', border: 'none', cursor: 'pointer',
-                padding: '4px 6px', borderRadius: 4, display: 'flex', alignItems: 'center',
-                color: '#475569'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#e2e8f0' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}
-            >
-              <Icon name="edit" size={13} />
-            </button>
+              onFocus={e => { e.target.style.borderColor = 'var(--primary)' }}
+              onBlur={e => { e.target.style.borderColor = 'var(--border)' }}
+            />
           </div>
 
-          <textarea
-            id="question-text-textarea"
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="Nhập nội dung câu hỏi..."
-            style={{
-              width: '100%',
-              minHeight: 120,
-              padding: 12,
-              border: '1.5px solid var(--border)',
-              borderBottomLeftRadius: 12,
-              borderBottomRightRadius: 12,
-              fontSize: 13,
-              fontFamily: 'var(--font)',
-              lineHeight: 1.6,
-              color: 'var(--text-1)',
-              resize: 'vertical',
-              outline: 'none',
-              boxSizing: 'border-box',
-              background: 'var(--input-bg)',
-              transition: 'border-color 0.2s',
-            }}
-            onFocus={e => { e.target.style.borderColor = 'var(--primary)' }}
-            onBlur={e => { e.target.style.borderColor = 'var(--border)' }}
-          />
-        </div>
-
-        <Input
-          label="URL Hình ảnh (nếu có)"
-          value={imageUrl}
-          onChange={setImageUrl}
-          placeholder="https://..."
-          icon="image"
-        />
-
-        <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 16 }}>
           <Input
-            label="Điểm số"
-            type="number"
-            value={points}
-            onChange={v => setPoints(Number(v))}
+            label="URL HÃ¬nh áº£nh (náº¿u cÃ³)"
+            value={imageUrl}
+            onChange={setImageUrl}
+            placeholder="https://..."
+            icon="image"
           />
-          <Input
-            label="Giải thích (không bắt buộc)"
-            value={explanation}
-            onChange={setExplanation}
-            placeholder="Tại sao đáp án này đúng..."
-          />
-        </div>
 
-        {/* Custom premium multiple choice options builder */}
-        {(type === 'mcq' || type === 'true_false') && (
-          <div style={{ marginTop: 8 }}>
-            <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>
-              Các lựa chọn {type === 'mcq' ? '(Chọn 1 đáp án đúng)' : ''}
-            </label>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {options.slice(0, type === 'true_false' ? 2 : 4).map((opt, i) => (
-                <div key={i} style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 12,
-                  background: '#f8fafc',
-                  padding: '8px 12px',
-                  borderRadius: 12,
-                  border: opt.is_correct ? '1.5px solid var(--primary)' : '1.5px solid #e2e8f0',
-                  transition: 'all 0.15s ease'
-                }}>
-                  {/* Custom radio indicator */}
-                  <div 
-                    onClick={() => updateOption(i, 'is_correct', true)}
-                    style={{
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      border: opt.is_correct ? '6px solid var(--primary)' : '2px solid #cbd5e1',
-                      background: '#fff',
-                      cursor: 'pointer',
-                      transition: 'all 0.15s ease',
-                      flexShrink: 0
-                    }}
-                    title="Chọn làm đáp án đúng"
-                  />
-                  
-                  {/* Circular index letter */}
-                  <div style={{
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    background: opt.is_correct ? 'var(--primary)' : '#e2e8f0',
-                    color: opt.is_correct ? '#fff' : '#475569',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    flexShrink: 0,
+          <div style={{ display: 'grid', gridTemplateColumns: '100px 1fr', gap: 16 }}>
+            <Input
+              label="Điểm số"
+              type="number"
+              value={points}
+              onChange={v => setPoints(Number(v))}
+            />
+            <Input
+              label="Giải thích đáp án (hiển thị khi học sinh trả lời sai)"
+              value={explanation}
+              onChange={setExplanation}
+              placeholder="Tại sao đáp án này đúng..."
+            />
+          </div>
+
+          {/* Options builder */}
+          {(type === 'mcq' || type === 'true_false') && (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-2)', marginBottom: 8, display: 'block' }}>
+                Các lựa chọn {type === 'mcq' ? '— click ● để chọn đáp án đúng' : ''}
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {options.slice(0, type === 'true_false' ? 2 : 4).map((opt, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    background: '#f8fafc', padding: '8px 12px', borderRadius: 12,
+                    border: opt.is_correct ? '1.5px solid var(--primary)' : '1.5px solid #e2e8f0',
                     transition: 'all 0.15s ease'
+                  }}>
+                    <div
+                      onClick={() => updateOption(i, 'is_correct', true)}
+                      style={{
+                        width: 20, height: 20, borderRadius: '50%',
+                        border: opt.is_correct ? '6px solid var(--primary)' : '2px solid #cbd5e1',
+                        background: '#fff', cursor: 'pointer',
+                        transition: 'all 0.15s ease', flexShrink: 0
+                      }}
+                      title="Chọn làm đáp án đúng"
+                    />
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: opt.is_correct ? 'var(--primary)' : '#e2e8f0',
+                      color: opt.is_correct ? '#fff' : '#475569',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 700, flexShrink: 0,
+                      transition: 'all 0.15s ease'
+                    }}>
+                      {String.fromCharCode(65 + i)}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <Input
+                        value={opt.option_text || ''}
+                        onChange={v => updateOption(i, 'option_text', v)}
+                        placeholder={type === 'true_false'
+                          ? (i === 0 ? 'True' : 'False')
+                          : `Nhập lựa chọn ${String.fromCharCode(65 + i)}...`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 4 }}>
+            <Button variant="outline" size="lg" onClick={onClose} style={{ minWidth: 80 }}>
+              Hủy
+            </Button>
+            {!editingQuestion && (
+              <Button
+                variant="secondary"
+                size="lg"
+                icon="plus"
+                loading={saving}
+                disabled={!isValidQuestion()}
+                onClick={() => {
+                  onSave(
+                    { skill, type, question_text: text, image_url: imageUrl || null, points, explanation: explanation || null },
+                    (type === 'mcq' || type === 'true_false') ? options.filter(o => o.option_text?.trim()) : []
+                  ).then(() => {
+                    // Reset form for next question — keep skill/type/level
+                    setText(''); setImageUrl(''); setExplanation(''); setPoints(1)
+                    if (type === 'true_false') {
+                      setOptions([
+                        { option_text: 'True', is_correct: false, order_index: 0 },
+                        { option_text: 'False', is_correct: false, order_index: 1 },
+                      ]);
+                    } else if (type === 'mcq') {
+                      setOptions([
+                        { option_text: '', is_correct: false, order_index: 0 },
+                        { option_text: '', is_correct: false, order_index: 1 },
+                        { option_text: '', is_correct: false, order_index: 2 },
+                        { option_text: '', is_correct: false, order_index: 3 },
+                      ]);
+                    } else {
+                      setOptions([]);
+                    }
+                  }).catch(() => {});
+                }}
+                style={{ minWidth: 140 }}
+              >
+                Lưu &amp; Thêm tiếp
+              </Button>
+            )}
+            <Button
+              variant="primary" size="lg"
+              onClick={handleSave}
+              loading={saving}
+              disabled={!isValidQuestion()}
+              style={{ minWidth: 120 }}
+            >
+              {editingQuestion ? 'Cập nhật' : 'Lưu & Đóng'}
+            </Button>
+          </div>
+        </div>
+
+        {/* â”€â”€ RIGHT: Live Preview â”€â”€ */}
+        <div style={{
+          position: 'sticky', top: 0,
+          background: 'var(--hover-bg)',
+          border: '1px solid var(--border)',
+          borderRadius: 16, padding: 20,
+          display: 'flex', flexDirection: 'column', gap: 12,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-4)', letterSpacing: '0.06em' }}>
+            ðŸ‘ Preview â€” nhÃ¬n nhÆ° há»c sinh
+          </div>
+
+          {/* Skill + Type badge row */}
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+              background: '#e0e7ff', color: '#3730a3',
+            }}>
+              {({ general: 'Tá»•ng há»£p', reading: 'Reading', listening: 'Listening', speaking: 'Speaking', writing: 'Writing' } as any)[skill] || skill}
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+              background: '#fef9c3', color: '#92400e',
+            }}>
+              {({ mcq: 'Tráº¯c nghiá»‡m', true_false: 'ÄÃºng/Sai', fill_blank: 'Äiá»n tá»«', short_answer: 'Ngáº¯n', essay: 'Tá»± luáº­n', speaking_prompt: 'NÃ³i' } as any)[type] || type}
+            </span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 6,
+              background: '#dcfce7', color: '#166534',
+            }}>
+              {points} Ä‘iá»ƒm
+            </span>
+          </div>
+
+          {/* Question text */}
+          <div style={{
+            fontSize: 14, fontWeight: 600, color: 'var(--text-1)', lineHeight: 1.6,
+            minHeight: 40,
+            background: 'var(--card)', borderRadius: 10, padding: 12,
+            border: '1px solid var(--border)',
+            whiteSpace: 'pre-wrap',
+          }}>
+            {text || <span style={{ color: 'var(--text-4)', fontStyle: 'italic', fontWeight: 400 }}>Ná»™i dung cÃ¢u há»i sáº½ hiá»‡n á»Ÿ Ä‘Ã¢y...</span>}
+          </div>
+
+          {/* Image preview */}
+          {imageUrl && (
+            <img src={imageUrl} alt="preview" style={{ width: '100%', borderRadius: 8, objectFit: 'cover', maxHeight: 140 }} />
+          )}
+
+          {/* Options preview */}
+          {(type === 'mcq' || type === 'true_false') && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {options.slice(0, type === 'true_false' ? 2 : 4).map((opt, i) => (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 12px', borderRadius: 10,
+                  border: `2px solid ${opt.is_correct ? '#22c55e' : 'var(--border)'}`,
+                  background: opt.is_correct ? '#f0fdf4' : 'var(--card)',
+                }}>
+                  <div style={{
+                    width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
+                    background: opt.is_correct ? '#22c55e' : 'var(--hover-bg)',
+                    color: opt.is_correct ? '#fff' : 'var(--text-3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 700, fontSize: 12,
                   }}>
                     {String.fromCharCode(65 + i)}
                   </div>
-                  
-                  <div style={{ flex: 1 }}>
-                    <Input
-                      value={opt.option_text || ''}
-                      onChange={v => updateOption(i, 'option_text', v)}
-                      placeholder={type === 'true_false' ? (i === 0 ? 'True' : 'False') : `Nhập nội dung lựa chọn ${String.fromCharCode(65 + i)}...`}
-                    />
-                  </div>
+                  <span style={{ fontSize: 13, color: opt.is_correct ? '#15803d' : 'var(--text-1)', fontWeight: opt.is_correct ? 600 : 400 }}>
+                    {opt.option_text || <em style={{ color: 'var(--text-4)' }}>Trá»‘ng...</em>}
+                  </span>
+                  {opt.is_correct && <span style={{ marginLeft: 'auto', fontSize: 11, color: '#15803d', fontWeight: 700 }}>âœ“ ÄÃºng</span>}
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Refactored premium styled buttons */}
-        <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 12 }}>
-          <Button variant="outline" size="lg" onClick={onClose} style={{ minWidth: 100 }}>
-            Hủy
-          </Button>
-          <Button 
-            variant="primary"
-            size="lg"
-            onClick={handleSave} 
-            loading={saving}
-            disabled={!text.trim() || ((type === 'mcq' || type === 'true_false') && !options.some(o => o.is_correct))}
-            style={{ minWidth: 120 }}
-          >
-            Lưu câu hỏi
-          </Button>
+          {/* Explanation preview */}
+          {explanation && (
+            <div style={{
+              fontSize: 12, padding: '10px 12px', borderRadius: 8,
+              background: '#fefce8', border: '1px solid #fde68a',
+              color: '#92400e', lineHeight: 1.5,
+            }}>
+              <span style={{ fontWeight: 700 }}>ðŸ’¡ Giáº£i thÃ­ch: </span>{explanation}
+            </div>
+          )}
+
+          {/* Textarea/Essay placeholder */}
+          {(type === 'fill_blank' || type === 'short_answer' || type === 'essay') && (
+            <div style={{
+              background: 'var(--card)', border: '1px dashed var(--border)',
+              borderRadius: 10, padding: 12,
+              fontSize: 13, color: 'var(--text-4)', fontStyle: 'italic',
+            }}>
+              {type === 'essay' ? '[ Há»c sinh viáº¿t tá»± luáº­n á»Ÿ Ä‘Ã¢y ]' : '[ Há»c sinh Ä‘iá»n cÃ¢u tráº£ lá»i ]'}
+            </div>
+          )}
+
+          {type === 'speaking_prompt' && (
+            <div style={{
+              background: 'var(--card)', border: '1px dashed var(--border)',
+              borderRadius: 10, padding: 12,
+              fontSize: 13, color: 'var(--text-4)', fontStyle: 'italic',
+            }}>
+              ðŸŽ¤ [ Há»c sinh ghi Ã¢m cÃ¢u tráº£ lá»i ]
+            </div>
+          )}
         </div>
       </div>
     </Modal>

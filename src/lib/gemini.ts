@@ -1,9 +1,9 @@
-const GEMINI_MODEL = 'gemini-flash-latest'
+const GEMINI_MODEL = 'gemini-1.5-flash'
 const GEMINI_URL = (apiKey: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`
 
 export const getGeminiKey = (): string =>
-  import.meta.env.VITE_GEMINI_API_KEY || localStorage.getItem('gemini_api_key') || ''
+  localStorage.getItem('gemini_api_key') || import.meta.env.VITE_GEMINI_API_KEY || ''
 
 export const hasGeminiKey = (): boolean => !!getGeminiKey()
 

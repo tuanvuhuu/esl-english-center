@@ -5,10 +5,15 @@ export interface DashboardStats {
   activeClasses: number;
   monthlyRevenue: number;
   totalTeachers: number;
+  attendanceRate: number;
   revenueChart: { month: string; value: number }[];
   distribution: { label: string; value: number; color: string }[];
   attendanceChart: { label: string; value: number; highlight: boolean }[];
   atRiskStudents: { id: string; name: string; className: string; absentCount: number }[];
+  sparklines: {
+    revenue: number[];
+    attendance: number[];
+  };
 }
 
 export const getDashboardStats = async (
@@ -216,15 +221,29 @@ export const getDashboardStats = async (
     }
   }
 
+  // 7. Calculate attendance rate
+  const totalAttRecords = attData.length;
+  const presentRecords = attData.filter(r => r.status === 'present' || r.status === 'late').length;
+  const attendanceRate = totalAttRecords > 0 ? Math.round((presentRecords / totalAttRecords) * 100) : 0;
+
+  // 8. Build sparklines from existing data
+  const revenueSparkline = revenueChart.slice(-7).map(r => r.value);
+  const attendanceSparkline = attendanceChart.slice(-7).map(a => a.value);
+
   return {
     totalStudents: totalStudents || 0,
     activeClasses: activeClasses || 0,
     monthlyRevenue: monthlyRevenue / 1000000,
     totalTeachers: totalTeachers || 0,
+    attendanceRate,
     revenueChart,
     distribution: distribution.length > 0 ? distribution : [{ label: 'Trống', value: 1, color: '#eee' }],
     attendanceChart,
     atRiskStudents,
+    sparklines: {
+      revenue: revenueSparkline,
+      attendance: attendanceSparkline,
+    },
   };
 };
 

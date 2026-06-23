@@ -23,4 +23,5 @@ export { ConfirmProvider, useConfirm } from './ConfirmProvider'
 export { TextWithEllipse } from './TextWithEllipse';
 export { EntityHistoryTimeline } from './EntityHistoryTimeline';
 export { StudentAttendanceModal } from './StudentAttendanceModal';
+export { WeatherBadge } from './WeatherBadge';
 

@@ -293,6 +293,22 @@ export async function uploadStudentAudio(testId: string, studentId: string, blob
   return `${data.publicUrl}?t=${Date.now()}`
 }
 
+export async function uploadStudentAudioForQuestion(
+  testId: string,
+  studentId: string,
+  questionId: string,
+  blob: Blob
+): Promise<string> {
+  const BUCKET = 'test-files'
+  const path = `audio/${testId}/${studentId}/${questionId}.webm`
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, blob, { upsert: true, contentType: 'audio/webm' })
+  if (error) throw error
+  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path)
+  return `${data.publicUrl}?t=${Date.now()}`
+}
+
 export async function removeTestPdf(testId: string): Promise<void> {
   await supabase.storage.from('test-files').remove([`tests/${testId}/test.pdf`])
   await updateTest(testId, { pdf_url: null } as any)

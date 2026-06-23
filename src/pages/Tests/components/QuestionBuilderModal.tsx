@@ -85,22 +85,26 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
       if (editingQuestion) {
         q = await updateTestQuestion(editingQuestion.id, payload);
       } else {
+        const nextOrder = questions.length > 0 ? Math.max(...questions.map(q => q.order_index ?? 0)) + 1 : 0;
         q = await createTestQuestion({
           ...payload as any,
           test_id: test.id,
-          order_index: questions.length
+          order_index: nextOrder
         });
       }
 
-      if (options.length > 0) {
+      // Always call upsertQuestionOptions if there are options, or if we are editing an existing question (to clean up old options if type changed)
+      if (options.length > 0 || editingQuestion) {
         await upsertQuestionOptions(q.id, options as any);
       }
       
       await loadQuestions();
       setShowAdd(false);
       setEditingQuestion(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error('Lỗi khi lưu câu hỏi: ' + err.message);
+      throw err;
     } finally {
       setSaving(false);
     }
@@ -129,7 +133,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
     if (!test) return;
     setLoading(true);
     try {
-      let startIdx = questions.length;
+      let startIdx = questions.length > 0 ? Math.max(...questions.map(q => q.order_index ?? 0)) + 1 : 0;
       for (const g of generated) {
         const q = await createTestQuestion({
           test_id: test.id,
@@ -152,8 +156,9 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
         }
       }
       await loadQuestions();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error('Lỗi khi thêm câu hỏi AI: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -163,7 +168,7 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
     if (!test) return;
     setLoading(true);
     try {
-      let startIdx = questions.length;
+      let startIdx = questions.length > 0 ? Math.max(...questions.map(q => q.order_index ?? 0)) + 1 : 0;
       for (const p of parsed) {
         const q = await createTestQuestion({
           test_id: test.id,
@@ -186,8 +191,9 @@ export const QuestionBuilderModal: React.FC<QuestionBuilderModalProps> = ({
         }
       }
       await loadQuestions();
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error('Lỗi khi import câu hỏi: ' + err.message);
     } finally {
       setLoading(false);
     }

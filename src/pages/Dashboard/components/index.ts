@@ -8,4 +8,6 @@ export { RecentActivity } from './RecentActivity';
 export { QuickActions } from './QuickActions';
 export { StudentDistribution } from './StudentDistribution';
 export { RevenueChart } from './RevenueChart';
+export { WeatherBadge } from './WeatherBadge';
+export { SkeletonCard } from './SkeletonCard';
 export * from './AtRiskStudents';

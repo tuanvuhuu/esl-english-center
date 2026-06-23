@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { useToast, Icon, IconName } from '../../components'
-import { useQuery, useAnimatedNumber } from '../../hooks'
+import { useToast, Icon } from '../../components'
+import { useQuery } from '../../hooks'
 import { getTests, createTest, getTestQuestions, createTestQuestion, upsertQuestionOptions } from '../../services/tests'
 import { notify } from '../../services'
 import { getClasses } from '../../services/classes'
@@ -16,171 +16,16 @@ import { OnlineTestModal } from './components/OnlineTestModal'
 import { exportTestToPdf } from './testExport'
 import { generateQuestionsWithAi } from './aiQuestionGenerator'
 
-interface StatCardProps {
-  label: string
-  count: number | string
-  icon: IconName
-  variant: 'warning' | 'success' | 'primary' | 'info' | 'academic'
-  badgeText?: string
-  aiGlow?: boolean
-}
 
-const VARIANT_CONFIGS = {
-  warning: {
-    color: 'var(--warning-text)',
-    bgColor: 'var(--warning-bg)',
-    borderColor: 'var(--warning-border)',
-    glowColor: 'rgba(245, 158, 11, 0.15)',
-    hoverBorder: 'var(--warning-dark)',
-    hoverShadow: '0 10px 25px -5px rgba(245, 158, 11, 0.15)',
-  },
-  success: {
-    color: 'var(--success-text)',
-    bgColor: 'var(--success-bg)',
-    borderColor: 'var(--success-border)',
-    glowColor: 'rgba(16, 185, 129, 0.15)',
-    hoverBorder: 'var(--success-dark)',
-    hoverShadow: '0 10px 25px -5px rgba(16, 185, 129, 0.15)',
-  },
-  primary: {
-    color: 'var(--primary)',
-    bgColor: 'var(--primary-15)',
-    borderColor: 'rgba(255, 107, 53, 0.25)',
-    glowColor: 'rgba(255, 107, 53, 0.2)',
-    hoverBorder: 'var(--primary-dark)',
-    hoverShadow: '0 10px 25px -5px rgba(255, 107, 53, 0.2)',
-  },
-  info: {
-    color: 'var(--info-text)',
-    bgColor: 'var(--info-bg)',
-    borderColor: 'var(--info-border)',
-    glowColor: 'rgba(59, 130, 246, 0.15)',
-    hoverBorder: 'var(--info-dark)',
-    hoverShadow: '0 10px 25px -5px rgba(59, 130, 246, 0.15)',
-  },
-  academic: {
-    color: 'var(--academic-dark)',
-    bgColor: 'var(--academic-light)',
-    borderColor: 'rgba(124, 58, 237, 0.25)',
-    glowColor: 'rgba(124, 58, 237, 0.15)',
-    hoverBorder: 'var(--academic-dark)',
-    hoverShadow: '0 10px 25px -5px rgba(124, 58, 237, 0.15)',
-  },
-}
-
-const StatCard: React.FC<StatCardProps> = ({ 
-  label, 
-  count, 
-  icon, 
-  variant,
-  badgeText,
-  aiGlow = false
-}) => {
-  const [isHovered, setIsHovered] = useState(false)
-  const config = VARIANT_CONFIGS[variant]
-  
-  const parsedValue = typeof count === 'string' ? parseFloat(count) : Number(count)
-  const [numRef, numVal] = useAnimatedNumber(isNaN(parsedValue) ? 0 : parsedValue, 800)
-  const displayVal = isNaN(parsedValue) ? count : Math.round(Number(numVal))
-
-  return (
-    <div
-      ref={numRef as React.RefObject<HTMLDivElement>}
-      className={`stitch-stat-card ${aiGlow ? 'ai-glow-card' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      style={{
-        ['--hover-border' as any]: config.hoverBorder,
-        ['--hover-shadow' as any]: config.hoverShadow,
-        ['--glow-color' as any]: config.glowColor,
-        background: isHovered 
-          ? `linear-gradient(135deg, var(--card), ${config.bgColor})` 
-          : 'var(--card)',
-        borderColor: isHovered ? config.hoverBorder : 'var(--border-light)',
-        borderRadius: '12px',
-        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-      }}
-    >
-      {/* Background glow gradient that shows up on hover */}
-      <div 
-        className="glow-effect"
-        style={{
-          background: config.glowColor,
-          opacity: isHovered ? 0.6 : 0.15,
-          transform: isHovered ? 'scale(1.2)' : 'scale(1)',
-        }}
-      />
-
-      {/* Top row with icon & badge */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '8px',
-        position: 'relative',
-        zIndex: 1,
-      }}>
-        <div 
-          className="icon-container"
-          style={{
-            background: config.bgColor,
-            border: `1px solid ${config.borderColor}`,
-            transform: isHovered ? 'scale(1.1) rotate(4deg)' : 'scale(1) rotate(0)',
-          }}
-        >
-          <Icon name={icon} size={16} color={config.color} />
-        </div>
-        
-        {badgeText && (
-          <span style={{
-            fontSize: '9px',
-            fontWeight: 700,
-            color: config.color,
-            background: config.bgColor,
-            padding: '2px 6px',
-            borderRadius: '100px',
-            border: `1px solid ${config.borderColor}`,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-          }}>
-            {badgeText}
-          </span>
-        )}
-      </div>
-
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        <h3 style={{
-          fontSize: '10px',
-          fontWeight: 700,
-          color: 'var(--text-3)',
-          margin: 0,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-        }}>
-          {label}
-        </h3>
-        <p style={{
-          fontSize: '24px',
-          fontWeight: 800,
-          color: 'var(--text-1)',
-          margin: '4px 0 0 0',
-          lineHeight: 1.1,
-          fontFamily: 'var(--font)',
-          letterSpacing: '-0.02em',
-        }}>
-          {displayVal}
-        </p>
-      </div>
-    </div>
-  )
-}
 
 export const Tests: React.FC = () => {
   const toast = useToast()
   const [activeTab,    setActiveTab]    = useState('schedule')
   const [selectedTest, setSelectedTest] = useState<DbTest | null>(null)
   const [creating,     setCreating]     = useState(false)
+  const [search,       setSearch]       = useState('')
+  const [typeFilter,   setTypeFilter]   = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
 
   // Unified modal state manager
   const [modal, setModal] = useState<{
@@ -203,13 +48,7 @@ export const Tests: React.FC = () => {
 
 
 
-  const statsSummary = useMemo(() => {
-    return {
-      upcoming: upcomingCount,
-      completed: completedCount,
-      total: tests.length,
-    }
-  }, [upcomingCount, completedCount, tests.length])
+
 
   const handleCreateTest = async (payload: CreateTestPayload) => {
     setCreating(true)
@@ -333,6 +172,12 @@ export const Tests: React.FC = () => {
           <TestsScheduleTab
             tests={tests}
             loading={testsLoading}
+            search={search}
+            onSearchChange={setSearch}
+            typeFilter={typeFilter}
+            onTypeFilterChange={setTypeFilter}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
             onSelectTest={handleSelectTest}
             onBuildQuestions={test => setModal({ type: 'builder', test })}
             onExportPdf={handleExportPdf}
@@ -371,57 +216,7 @@ export const Tests: React.FC = () => {
   return (
     <div>
       <style>{`
-        .stitch-stat-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-          gap: 12px;
-          margin-bottom: 20px;
-        }
-        .stitch-stat-card {
-          position: relative;
-          padding: 14px;
-          border-radius: 12px;
-          background: var(--card);
-          border: 1px solid var(--border-light);
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          cursor: default;
-          box-shadow: var(--shadow-sm);
-        }
-        .stitch-stat-card:hover {
-          transform: translateY(-2px);
-          border-color: var(--hover-border);
-          box-shadow: var(--hover-shadow), var(--shadow-md);
-        }
-        .stitch-stat-card .glow-effect {
-          position: absolute;
-          top: -30px;
-          right: -30px;
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          filter: blur(20px);
-          transition: all 0.35s ease;
-          pointer-events: none;
-        }
-        .stitch-stat-card .icon-container {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
-          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .ai-glow-card {
-          box-shadow: 0 0 10px rgba(59, 130, 246, 0.05), var(--shadow-sm);
-        }
-        .ai-glow-card:hover {
-          box-shadow: 0 0 20px rgba(59, 130, 246, 0.2), var(--shadow-md);
-        }
+
       `}</style>
       {/* Premium Header Control Panel */}
       <div style={{
@@ -478,13 +273,6 @@ export const Tests: React.FC = () => {
               }}>
                 Kiểm tra & Thi
               </h1>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-3)', marginTop: 2 }}>
-                <Icon name="calendar" size={13} style={{ opacity: 0.7 }} />
-                <span>{upcomingCount} sắp tới</span>
-                <span style={{ color: 'var(--border)' }}>|</span>
-                <Icon name="check" size={13} style={{ opacity: 0.7 }} />
-                <span>{completedCount} hoàn thành</span>
-              </div>
             </div>
           </div>
         </div>
@@ -548,38 +336,7 @@ export const Tests: React.FC = () => {
         </div>
       </div>
 
-      {/* Sleek Premium Stats Summary Grid (Stitch Dashboard Inspired) */}
-      <div className="stitch-stat-grid">
-        <StatCard
-          label="Sắp tới"
-          count={statsSummary.upcoming}
-          icon="calendar"
-          variant="warning"
-          badgeText="Sắp diễn ra"
-        />
-        <StatCard
-          label="Đã hoàn thành"
-          count={statsSummary.completed}
-          icon="check"
-          variant="success"
-          badgeText="Hoàn tất"
-        />
-        <StatCard
-          label="Tổng số bài test"
-          count={statsSummary.total}
-          icon="file-text"
-          variant="primary"
-          badgeText="Tổng quan"
-          aiGlow={true}
-        />
-        <StatCard
-          label="Lớp học hoạt động"
-          count={activeClasses.length}
-          icon="award"
-          variant="academic"
-          badgeText="Đang giảng dạy"
-        />
-      </div>
+
 
       {renderTab()}
 

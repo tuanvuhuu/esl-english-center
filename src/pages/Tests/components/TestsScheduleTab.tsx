@@ -45,6 +45,12 @@ function daysUntil(dateStr: string) {
 interface TestsScheduleTabProps {
   tests: DbTest[]
   loading: boolean
+  search: string
+  onSearchChange: (val: string) => void
+  typeFilter: string
+  onTypeFilterChange: (val: string) => void
+  statusFilter: string
+  onStatusFilterChange: (val: string) => void
   onSelectTest: (test: DbTest) => void
   onCreate: () => void
   onBuildQuestions?: (test: DbTest) => void
@@ -54,12 +60,13 @@ interface TestsScheduleTabProps {
 }
 
 export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
-  tests, loading, onSelectTest, onCreate, onBuildQuestions, onExportPdf, onViewPdf, onTakeOnline
+  tests, loading,
+  search, onSearchChange,
+  typeFilter, onTypeFilterChange,
+  statusFilter, onStatusFilterChange,
+  onSelectTest, onCreate, onBuildQuestions, onExportPdf, onViewPdf, onTakeOnline
 }) => {
   const [exportingId, setExportingId] = useState<string | null>(null);
-  const [search, setSearch] = useState('')
-  const [typeFilter, setTypeFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('')
 
   const filtered = useMemo(() => {
     return tests.filter(t => {
@@ -250,14 +257,14 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
           <Input
             placeholder="Tìm tên bài, tên lớp..."
             value={search}
-            onChange={setSearch}
+            onChange={onSearchChange}
             icon="search"
           />
         </div>
 
         <Select
           value={typeFilter}
-          onChange={setTypeFilter}
+          onChange={onTypeFilterChange}
           options={[
             { value: '', label: 'Tất cả loại' },
             ...Object.entries(TYPE_LABELS).map(([v, l]) => ({ value: v, label: l }))
@@ -267,7 +274,7 @@ export const TestsScheduleTab: React.FC<TestsScheduleTabProps> = ({
 
         <Select
           value={statusFilter}
-          onChange={setStatusFilter}
+          onChange={onStatusFilterChange}
           options={[
             { value: '', label: 'Tất cả trạng thái' },
             { value: 'upcoming', label: 'Sắp tới' },

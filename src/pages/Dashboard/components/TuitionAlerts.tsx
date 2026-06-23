@@ -29,7 +29,6 @@ export const TuitionAlerts: React.FC<TuitionAlertsProps> = ({ data, loading = fa
         style={{
           background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(239, 68, 68, 0.03))',
           border: '1.5px dashed rgba(239, 68, 68, 0.25)',
-          marginBottom: 24,
           position: 'relative',
           overflow: 'hidden',
         }}

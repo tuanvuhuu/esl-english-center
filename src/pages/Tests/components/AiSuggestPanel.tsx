@@ -61,10 +61,8 @@ export const AiSuggestPanel: React.FC<AiSuggestPanelProps> = ({
         try {
           results = await searchQuestionsOnline({ topic, skill, level, count, type, skillPoints })
         } catch (e: any) {
-          console.error('[Web Search]', e)
-          setError(`Lỗi tìm kiếm: ${e?.message ?? 'Không thể kết nối Internet.'}`)
-          setGenerating(false)
-          return
+          console.warn('[Web Search] failed, fallback procedural:', e?.message)
+          results = generateQuestions({ topic, skill, level, count, type, skillPoints });
         }
       } else if (mode === 'vocab') {
         try {
@@ -79,7 +77,26 @@ export const AiSuggestPanel: React.FC<AiSuggestPanelProps> = ({
             return;
           }
 
-          results = generateQuestionsFromVocab(selectedWords, allWords, count, vocabType, skillPoints);
+          if (hasAi()) {
+            const wordsList = selectedWords.map(w => w.word);
+            const mappedType = vocabType === 'all' ? 'all' : vocabType === 'spelling' ? 'fill_blank' : vocabType;
+            try {
+              results = await generateQuestionsWithAi({
+                topic: `Vocabulary usage for level ${level}`,
+                skill: 'general',
+                level,
+                count,
+                type: mappedType,
+                skillPoints,
+                vocabularyWords: wordsList
+              });
+            } catch (aiErr: any) {
+              console.warn('[AI Vocab] failed, fallback procedural:', aiErr?.message);
+              results = generateQuestionsFromVocab(selectedWords, allWords, count, vocabType, skillPoints);
+            }
+          } else {
+            results = generateQuestionsFromVocab(selectedWords, allWords, count, vocabType, skillPoints);
+          }
         } catch (e: any) {
           console.error('[Vocab Generate]', e);
           setError(`Lỗi tạo câu hỏi từ vựng: ${e?.message ?? 'Không thể sinh câu hỏi.'}`);

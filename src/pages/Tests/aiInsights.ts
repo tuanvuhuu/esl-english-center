@@ -1,4 +1,5 @@
 import type { DbTestResult, DbTest } from '../../types/database'
+import { aiText, hasAi } from '../../lib/ai'
 
 const SKILL_LABELS: Record<string, string> = {
   score_reading:   'Đọc hiểu',
@@ -116,6 +117,52 @@ export function generateClassInsights(results: DbTestResult[], test: DbTest): st
   }
 
   return lines.join('\n\n')
+}
+
+export async function generateClassInsightsWithAi(results: DbTestResult[], test: DbTest): Promise<string> {
+  const procedural = generateClassInsights(results, test)
+  if (!hasAi()) return procedural
+
+  const withScores = results.filter(r => r.total_score !== null)
+  const stats = withScores.map(r => ({
+    name: r.student?.full_name || 'Học viên',
+    reading: r.score_reading,
+    listening: r.score_listening,
+    speaking: r.score_speaking,
+    writing: r.score_writing,
+    total: r.total_score,
+    passed: r.is_passed
+  }))
+
+  const prompt = `
+Bạn là chuyên gia phân tích giáo dục của trung tâm Anh ngữ ESL.
+Hãy viết một báo cáo phân tích kết quả học tập cho lớp học dựa trên kết quả bài thi sau:
+
+Bài thi: ${test.name}
+Ngưỡng đạt: ${test.pass_threshold}/100
+
+Dữ liệu điểm số của học sinh (thang điểm 100):
+${JSON.stringify(stats, null, 2)}
+
+Hãy viết một nhận xét tổng quan ngắn gọn (150-250 từ) bằng tiếng Việt gồm các ý chính sau:
+1. **Tổng quan:** Đánh giá điểm trung bình lớp, tỷ lệ đạt/chưa đạt.
+2. **Kỹ năng:** Chỉ ra kỹ năng mạnh nhất và yếu nhất của lớp (Đọc/Nghe/Nói/Viết).
+3. **Phân bố điểm:** Nhận xét sự phân bố điểm (đồng đều hay lệch nhiều).
+4. **Học sinh cần quan tâm:** Chỉ đích danh 1-3 bạn có điểm số thấp nhất cần giáo viên hỗ trợ thêm.
+5. **Đề xuất:** Các hành động cụ thể cho giáo viên để cải thiện kỹ năng yếu nhất cho lớp.
+
+Yêu cầu định dạng:
+- Dùng Markdown đẹp mắt với các icon emoji.
+- Ngôn ngữ thân thiện, chuyên nghiệp, mang tính xây dựng.
+`
+
+  try {
+    const response = await aiText(prompt)
+    return response.trim()
+  } catch (err) {
+    console.warn('[AI Insights] failed, using procedural fallback:', err)
+    return procedural
+  }
 }
 
 const SKILL_ENCOURAGEMENT: Record<string, { great: string; good: string; tryMore: string }> = {

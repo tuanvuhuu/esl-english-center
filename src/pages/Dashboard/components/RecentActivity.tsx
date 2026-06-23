@@ -30,12 +30,24 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({ activities = [],
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {loading ? (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
-            Đang tải hoạt động...
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[1, 2, 3].map(i => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 0' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite', flexShrink: 0 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ width: '75%', height: 13, borderRadius: 6, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                  <div style={{ width: '40%', height: 11, borderRadius: 6, marginTop: 6, background: 'linear-gradient(90deg, var(--border-light) 25%, var(--hover-bg) 50%, var(--border-light) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+                </div>
+              </div>
+            ))}
           </div>
         ) : activities.length === 0 ? (
-          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-4)', fontSize: 13 }}>
-            Không có hoạt động gần đây
+          <div style={{ padding: '24px 0', textAlign: 'center', color: 'var(--text-3)' }}>
+            <div style={{ background: '#EDE9FE', width: 48, height: 48, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', color: '#8B5CF6' }}>
+              <Icon name="clock" size={24} />
+            </div>
+            <div style={{ fontWeight: 600, color: 'var(--text-1)' }}>Chưa có hoạt động</div>
+            <div style={{ fontSize: 13, marginTop: 4 }}>Các hoạt động mới sẽ hiển thị ở đây ✨</div>
           </div>
         ) : (
           activities.map((a, i) => (

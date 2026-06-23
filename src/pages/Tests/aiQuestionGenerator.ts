@@ -123,8 +123,9 @@ const buildPrompt = (opts: {
   level: string
   count: number
   type?: string
+  vocabularyWords?: string[]
 }): string => {
-  const { topic, skill, level, count, type = 'all' } = opts
+  const { topic, skill, level, count, type = 'all', vocabularyWords } = opts
   const format = examFormatFor(level)
 
   const skillInstr = skill === 'all'
@@ -139,6 +140,10 @@ const buildPrompt = (opts: {
     ? `Chủ đề: "${topic.trim()}". Tất cả câu hỏi xoay quanh chủ đề này.`
     : 'Chủ đề tự do, phù hợp lứa tuổi học sinh.'
 
+  const vocabInstr = vocabularyWords && vocabularyWords.length > 0
+    ? `\n**Từ vựng bắt buộc sử dụng trong câu hỏi/đáp án**: ${vocabularyWords.slice(0, 10).join(', ')}. Hãy lồng ghép các từ vựng này vào câu hỏi hoặc đáp án một cách tự nhiên nhất.`
+    : ''
+
   return `
 Bạn là cô giáo dạy tiếng Anh cho trẻ em tại trung tâm ESL Việt Nam. Bạn soạn đề kiểm tra cho **${format.exam}** — học sinh **${format.ageRange}**.
 
@@ -148,7 +153,7 @@ Hãy tạo ${count} câu hỏi tiếng Anh:
 
 **Kỹ năng:** ${skillInstr}
 **Loại câu hỏi:** ${typeInstr}
-**Chủ đề:** ${topicInstr}
+**Chủ đề:** ${topicInstr}${vocabInstr}
 
 **Quy tắc:**
 1. Câu hỏi ĐƠN GIẢN, vui, phù hợp tuổi học sinh. KHÔNG dùng từ/cấu trúc cao hơn level.
@@ -191,6 +196,7 @@ export const generateQuestionsWithAi = async (opts: {
   count: number
   type?: string
   skillPoints?: Record<QuestionSkill, number>
+  vocabularyWords?: string[]
 }): Promise<GeneratedQuestion[]> => {
   const prompt = buildPrompt(opts)
   const result = await aiJson<{ questions: GeminiQuestion[] }>(

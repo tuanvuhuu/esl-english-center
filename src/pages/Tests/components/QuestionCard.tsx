@@ -32,16 +32,22 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 }) => {
   const getSkillBadgeInfo = (skill: string) => {
     const v = (skill || 'general').toLowerCase();
-    if (v === 'grammar' || v === 'reading') {
-      return { text: 'GRAMMAR', background: '#ffedd5', color: '#ea580c' };
-    } else if (v === 'vocabulary' || v === 'listening') {
-      return { text: 'VOCABULARY', background: '#f3e8ff', color: '#9333ea' };
-    } else if (v === 'writing' || v === 'general') {
-      return { text: 'WRITING', background: '#ecfdf5', color: '#059669' };
-    } else if (v === 'speaking') {
-      return { text: 'SPEAKING', background: '#fef2f2', color: '#dc2626' };
-    } else {
-      return { text: v.toUpperCase(), background: '#e0f2fe', color: '#0284c7' };
+    switch (v) {
+      case 'reading':
+        return { text: 'READING', background: '#dbeafe', color: '#1e40af' };
+      case 'listening':
+        return { text: 'LISTENING', background: '#f3e8ff', color: '#6b21a8' };
+      case 'speaking':
+        return { text: 'SPEAKING', background: '#fef2f2', color: '#991b1b' };
+      case 'writing':
+        return { text: 'WRITING', background: '#d1fae5', color: '#065f46' };
+      case 'grammar':
+        return { text: 'GRAMMAR', background: '#ffedd5', color: '#9a3412' };
+      case 'vocabulary':
+        return { text: 'VOCABULARY', background: '#fef9c3', color: '#854d0e' };
+      case 'general':
+      default:
+        return { text: 'TỔNG HỢP', background: '#f1f5f9', color: '#334155' };
     }
   };
 

@@ -262,6 +262,8 @@ export interface DbTestResult {
   teacher_feedback: string | null
   ai_feedback: string | null
   speaking_audio_url: string | null
+  answers: Record<string, string> | null
+  grading_status: 'graded' | 'pending' | null
   is_deleted: boolean
   created_at: string
   created_by: string | null

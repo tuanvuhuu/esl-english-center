@@ -8,7 +8,7 @@ export const CLAUDE_MODELS = {
 } as const
 
 export const getClaudeKey = (): string =>
-  import.meta.env.VITE_CLAUDE_API_KEY || localStorage.getItem('claude_api_key') || ''
+  localStorage.getItem('claude_api_key') || import.meta.env.VITE_CLAUDE_API_KEY || ''
 
 export const hasClaudeKey = (): boolean => !!getClaudeKey()
 
